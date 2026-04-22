@@ -1,6 +1,5 @@
 export interface DiagramFeedback {
   summary: string;
-  score: number; // 0-100
   scalabilityIssues: FeedbackItem[];
   bottlenecks: FeedbackItem[];
   singlePointsOfFailure: FeedbackItem[];
@@ -34,7 +33,6 @@ export type ReviewLevel = "mid" | "senior" | "staff" | "deep";
 /* ── Multi-Reviewer AI Response Types ────────────────────────── */
 
 export interface ReviewDimension {
-  score: number;
   issues: FeedbackItem[];
 }
 
@@ -48,7 +46,6 @@ export interface LeadReviewer {
 
 export interface AIReviewResponse {
   level: ReviewLevel;
-  score: number;
   summary: string;
   // Section-based reviewers — always present at every level
   nfrReview: ReviewDimension;

@@ -198,12 +198,10 @@ function validateItem(item: unknown): FeedbackItem {
 /** Validate a ReviewDimension. */
 function validateDimension(raw: unknown): ReviewDimension {
   if (typeof raw !== "object" || raw === null) {
-    return { score: 5, issues: [] };
+    return { issues: [] };
   }
   const d = raw as Record<string, unknown>;
   return {
-    score:
-      typeof d.score === "number" ? Math.max(1, Math.min(10, d.score)) : 5,
     issues: Array.isArray(d.issues) ? d.issues.map(validateItem) : [],
   };
 }
@@ -238,10 +236,6 @@ function validateReview(raw: AIReviewResponse, level: ReviewLevel): AIReviewResp
   const flowRaw = raw.flowAnalysis;
   return {
     level,
-    score:
-      typeof raw.score === "number"
-        ? Math.max(0, Math.min(100, raw.score))
-        : 0,
     summary: typeof raw.summary === "string" ? raw.summary : "",
     // Section-based reviewers — always present
     nfrReview: validateDimension(raw.nfrReview),

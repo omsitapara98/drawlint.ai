@@ -77,36 +77,6 @@ const SEVERITY_BADGE: Record<string, string> = {
   info: "bg-blue-500 text-white",
 };
 
-function scoreColor(score: number, max: number = 100): string {
-  const pct = max === 10 ? score * 10 : score;
-  if (pct < 40) return "text-red-500";
-  if (pct <= 70) return "text-amber-500";
-  return "text-emerald-500";
-}
-
-function scoreRingColor(score: number, max: number = 100): string {
-  const pct = max === 10 ? score * 10 : score;
-  if (pct < 40) return "border-red-500";
-  if (pct <= 70) return "border-amber-500";
-  return "border-emerald-500";
-}
-
-function scoreBgColor(score: number, max: number = 100): string {
-  const pct = max === 10 ? score * 10 : score;
-  if (pct < 40) return "bg-red-500/10";
-  if (pct <= 70) return "bg-amber-500/10";
-  return "bg-emerald-500/10";
-}
-
-/* ── Score Circle ────────────────────────────────────────────── */
-function ScoreCircle({ score }: { score: number }) {
-  return (
-    <div className={`flex h-20 w-20 items-center justify-center rounded-full border-4 ${scoreRingColor(score)} ${scoreBgColor(score)}`}>
-      <span className={`text-2xl font-bold ${scoreColor(score)}`}>{score}</span>
-    </div>
-  );
-}
-
 /* ── Dimension Card ──────────────────────────────────────────── */
 
 const DIMENSION_META: Record<string, { icon: React.ReactNode; label: string; emoji: string }> = {
@@ -166,9 +136,6 @@ function DimensionCard({ name, dimension }: { name: string; dimension: ReviewDim
           <span className="text-sm font-semibold">{meta.label}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Badge className={`${scoreBgColor(dimension.score, 10)} ${scoreColor(dimension.score, 10)} border-0 font-bold`}>
-            {dimension.score}/10
-          </Badge>
           {expanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
         </div>
       </button>
@@ -300,15 +267,14 @@ function AIReviewContent({
   return (
     <ScrollArea className="h-full">
       <div className="flex flex-col gap-3 p-4">
-        {/* Level + Score Header */}
+        {/* Level + Summary Header */}
         <Card>
-          <CardContent className="flex items-center gap-4 py-5">
-            <ScoreCircle score={review.score} />
-            <div className="min-w-0 flex-1">
+          <CardContent className="py-5">
+            <div className="min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="h-4 w-4 text-violet-500" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Overall Score
+                  AI Review
                 </span>
                 <Badge className={`text-[10px] px-2 py-0 ${LEVEL_COLORS[level]}`}>
                   {LEVEL_LABELS[level]}

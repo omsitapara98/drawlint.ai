@@ -213,40 +213,6 @@ function buildDimensionChecklist(
   return lines.join("\n");
 }
 
-/* ── Hard constraints per level ───────────────────────────────── */
-
-function getHardConstraints(level: ReviewLevel): string {
-  if (level === "mid") return "";
-
-  const constraints: string[] = [
-    "HARD CONSTRAINTS (override deductive calculation):",
-  ];
-
-  if (level === "senior" || level === "staff" || level === "deep") {
-    constraints.push(
-      "- HLD: Single point of failure present → CANNOT score above 4",
-      "- HLD: No caching strategy → CANNOT score above 5",
-      "- API: No pagination on list endpoints → CANNOT score above 5",
-    );
-  }
-
-  if (level === "staff" || level === "deep") {
-    constraints.push(
-      "- HLD: No monitoring/alerting/logging → CANNOT score above 4",
-      "- API: No idempotency on mutating operations → CANNOT score above 5",
-    );
-  }
-
-  if (level === "deep") {
-    constraints.push(
-      "- HLD: No disaster recovery plan → CANNOT score above 3",
-      "- API: No auth/authz on endpoints → CANNOT score above 3",
-    );
-  }
-
-  return "\n" + constraints.join("\n");
-}
-
 /* ── Level labels & lead reviewer descriptions ────────────────── */
 
 const LEVEL_LABELS: Record<ReviewLevel, string> = {
@@ -268,25 +234,23 @@ const LEAD_DESCRIPTIONS: Record<ReviewLevel, string> = {
 function buildReviewers(level: ReviewLevel): string {
   const c = CRITERIA[level];
   const label = LEVEL_LABELS[level];
-  const hardConstraints = getHardConstraints(level);
 
   return `THE 6 REVIEWERS (${label}):
 
-1. 📋 NFR REVIEWER — Checklist (${c.nfr.length} criteria). Deduct points for each missing item:
+1. 📋 NFR REVIEWER — Checklist (${c.nfr.length} criteria). Check each item and report issues for missing criteria:
 ${buildDimensionChecklist(level, "nfr")}
 
-2. 🗃️ CORE ENTITIES REVIEWER — Checklist (${c.entities.length} criteria). Deduct points for each missing item:
+2. 🗃️ CORE ENTITIES REVIEWER — Checklist (${c.entities.length} criteria). Check each item and report issues for missing criteria:
 ${buildDimensionChecklist(level, "entities")}
 
-3. 📊 CAPACITY REVIEWER — Checklist (${c.capacity.length} criteria). Deduct points for each missing item:
+3. 📊 CAPACITY REVIEWER — Checklist (${c.capacity.length} criteria). Check each item and report issues for missing criteria:
 ${buildDimensionChecklist(level, "capacity")}
 
-4. 🔌 API REVIEWER — Checklist (${c.api.length} criteria). Deduct points for each missing item:
+4. 🔌 API REVIEWER — Checklist (${c.api.length} criteria). Check each item and report issues for missing criteria:
 ${buildDimensionChecklist(level, "api")}
 
-5. 🏗️ HLD REVIEWER — Checklist (${c.hld.length} criteria). Deduct points for each missing item:
+5. 🏗️ HLD REVIEWER — Checklist (${c.hld.length} criteria). Check each item and report issues for missing criteria:
 ${buildDimensionChecklist(level, "hld")}
-${hardConstraints}
 
 6. 🎯 LEAD REVIEWER — ${LEAD_DESCRIPTIONS[level]}`;
 }
@@ -300,25 +264,12 @@ You will receive a parsed architecture diagram containing:
 
 ${GROUND_RULES}
 
-DIMENSION SCORING — DEDUCTIVE METHOD:
-Each dimension starts at 10. Follow this process:
-
-STEP 1: For each criterion in the checklist, evaluate:
-  ✅ Present and well-executed → no deduction
-  ⚠️ Partially addressed → deduct 1 point
-  ❌ Completely missing → deduct 2 points
-  🚫 Missing AND critical for the system → deduct 3 points
-
-STEP 2: List ALL deductions with justifications in the issues array BEFORE computing the score.
-
-STEP 3: Final dimension score = max(1, 10 - total_deductions)
-
-IMPORTANT: The score must be MECHANICALLY derived from your deduction list.
-- 5+ total deduction points → score MUST be 5 or below
-- 0-1 total deduction points → score SHOULD be 8-10
-- Do NOT override the mechanical score with a "gut feeling"
-
 CRITERIA ARE CUMULATIVE: Each reviewer MUST check ALL criteria from lower levels IN ADDITION to level-specific criteria. The checklist provided already includes all accumulated criteria.
+
+For each criterion in the checklist, evaluate whether it is present and report issues for anything missing or partially addressed. Use severity levels:
+  - "critical": Missing AND critical for the system
+  - "warning": Partially addressed or missing but not critical
+  - "info": Minor observation or suggestion
 
 FLOW ANALYSIS:
 - criticalPath: Trace the primary request flow through the system as "A → B → C"
@@ -344,7 +295,6 @@ const LEAD_REVIEWER_SCHEMA = `
   }`;
 
 const DIMENSION_SCHEMA = `{
-    "score": <1-10>,
     "issues": [
       {
         "severity": "critical" | "warning" | "info",
@@ -360,7 +310,6 @@ Return a JSON object with this EXACT structure:
 
 {
   "level": "<level>",
-  "score": <number 0-100>,
   "summary": "<2-3 sentence overview>",
   "nfrReview": ${DIMENSION_SCHEMA},
   "entitiesReview": ${DIMENSION_SCHEMA},
@@ -374,10 +323,7 @@ Return a JSON object with this EXACT structure:
   },
 ${LEAD_REVIEWER_SCHEMA},
   "followUpQuestions": ["Question 1?", "Question 2?"]
-}
-
-OVERALL SCORE: Weighted average of the 5 dimension scores × 10.
-Weights: nfrReview=10%, entitiesReview=10%, capacityReview=5%, apiReview=20%, hldReview=55%.`;
+}`;
 
 /* ── Build prompt per level ──────────────────────────────────── */
 
