@@ -152,27 +152,27 @@ export function createWhiteboardTemplate(): AnyElement[] {
   // Left column: x 30..1030 (width 1000)
   // Right column: x 1060..2900 (width 1840)
 
-  // ── Row 1: Functional Requirements (70%) + Assumptions (30%) ──
-  elements.push(rect("template-fr-rect", 30, 114, 690, 352, "template-fr-text"));
-  elements.push(text("template-fr-text", "Functional Requirements", "template-fr-rect", 30, 114, 690));
+  // ── Row 1: Functional Requirements (80%) + Assumptions (20%) — same height as NFR ──
+  elements.push(rect("template-fr-rect", 30, 114, 759, 288, "template-fr-text"));
+  elements.push(text("template-fr-text", "Functional Requirements", "template-fr-rect", 30, 114, 759));
 
-  elements.push(rect("template-assumptions-rect", 730, 114, 300, 352, "template-assumptions-text"));
-  elements.push(text("template-assumptions-text", "Assumptions", "template-assumptions-rect", 730, 114, 300));
+  elements.push(rect("template-assumptions-rect", 799, 114, 231, 288, "template-assumptions-text"));
+  elements.push(text("template-assumptions-text", "Assumptions", "template-assumptions-rect", 799, 114, 231));
 
   // ── Row 2: Non-Functional Requirements ──
-  elements.push(rect("template-nfr-rect", 30, 486, 1000, 288, "template-nfr-text"));
-  elements.push(text("template-nfr-text", "Non-Functional Requirements", "template-nfr-rect", 30, 486, 1000));
+  elements.push(rect("template-nfr-rect", 30, 422, 1000, 288, "template-nfr-text"));
+  elements.push(text("template-nfr-text", "Non-Functional Requirements", "template-nfr-rect", 30, 422, 1000));
 
   // ── Row 3: Core Entities (50%) + Capacity Calculations (50%) ──
-  elements.push(rect("template-entities-rect", 30, 794, 490, 200, "template-entities-text"));
-  elements.push(text("template-entities-text", "Core Entities", "template-entities-rect", 30, 794, 490));
+  elements.push(rect("template-entities-rect", 30, 730, 490, 200, "template-entities-text"));
+  elements.push(text("template-entities-text", "Core Entities", "template-entities-rect", 30, 730, 490));
 
-  elements.push(rect("template-capacity-rect", 530, 794, 500, 200, "template-capacity-text"));
-  elements.push(text("template-capacity-text", "Capacity Calculations", "template-capacity-rect", 530, 794, 500));
+  elements.push(rect("template-capacity-rect", 530, 730, 500, 200, "template-capacity-text"));
+  elements.push(text("template-capacity-text", "Capacity Calculations", "template-capacity-rect", 530, 730, 500));
 
-  // ── Row 4: API Routes ──
-  elements.push(rect("template-api-rect", 30, 1014, 1000, 544, "template-api-text"));
-  elements.push(text("template-api-text", "API Routes", "template-api-rect", 30, 1014, 1000));
+  // ── Row 4: API Routes — taller with freed space ──
+  elements.push(rect("template-api-rect", 30, 950, 1000, 608, "template-api-text"));
+  elements.push(text("template-api-text", "API Routes", "template-api-rect", 30, 950, 1000));
 
   // ── Right column: High-Level Design ──
   elements.push(rect("template-hld-rect", 1060, 114, 1840, 1444, "template-hld-text"));
