@@ -20,6 +20,7 @@ export default function Home() {
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [canvasKey, setCanvasKey] = useState(0);
 
   const { feedback, status, error, analyze } = useAnalysis();
 
@@ -57,6 +58,8 @@ export default function Home() {
     const template = createWhiteboardTemplate() as ExcalidrawElement[];
     setElements(template);
     setInitialData(template);
+    setCanvasKey((k) => k + 1);
+    setPanelOpen(false);
   }, []);
 
   if (initialData === null) {
@@ -73,7 +76,7 @@ export default function Home() {
 
       {/* Full-width Excalidraw canvas */}
       <div className="relative flex-1 min-h-0">
-        <DiagramCanvas onChange={handleChange} initialData={initialData} />
+        <DiagramCanvas key={canvasKey} onChange={handleChange} initialData={initialData} />
 
         {/* Floating top-right controls */}
         {!panelOpen && (
