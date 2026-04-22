@@ -40,7 +40,7 @@ export default function DiagramCanvas({
   const excalidrawTheme = mounted && resolvedTheme === "dark" ? "dark" : "light";
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full excalidraw-hide-library">
       <ExcalidrawWrapper
         theme={excalidrawTheme}
         initialData={{
@@ -50,7 +50,19 @@ export default function DiagramCanvas({
         onChange={(elements) => {
           onChange?.(elements);
         }}
+        UIOptions={{
+          canvasActions: {
+            loadScene: false,
+          },
+        }}
       />
+      <style jsx global>{`
+        .excalidraw-hide-library .library-button,
+        .excalidraw-hide-library [data-testid="library-button"],
+        .excalidraw-hide-library .library-menu-items-container {
+          display: none !important;
+        }
+      `}</style>
     </div>
   );
 }

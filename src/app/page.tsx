@@ -64,27 +64,27 @@ export default function Home() {
       <div className="relative flex-1 min-h-0">
         <DiagramCanvas onChange={handleChange} initialData={initialData} />
 
-        {/* Floating Analyze Button — bottom right */}
+        {/* Floating Analyze Button — top right */}
         {!panelOpen && (
-          <div className="absolute bottom-6 right-6 z-30 flex flex-col items-end gap-2">
+          <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
             {hasDrawnShapes && (
-              <div className="rounded-full bg-background/80 backdrop-blur-sm border px-3 py-1 text-xs text-muted-foreground shadow-sm">
+              <div className="rounded-full bg-background/80 backdrop-blur-sm border px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
                 {visibleElements.length} element{visibleElements.length === 1 ? "" : "s"}
               </div>
             )}
             <Button
               onClick={handleAnalyze}
               disabled={status === "analyzing" || !hasDrawnShapes}
-              className="h-12 rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-5 text-white shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:shadow-none disabled:translate-y-0"
+              className="h-9 rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-4 text-sm text-white shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:shadow-none disabled:translate-y-0"
             >
               {status === "analyzing" ? (
                 <>
-                  <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  <span className="mr-1.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   Analyzing…
                 </>
               ) : (
                 <>
-                  <MessageSquareText className="mr-2 h-4 w-4" />
+                  <MessageSquareText className="mr-1.5 h-3.5 w-3.5" />
                   Analyze Design
                 </>
               )}
