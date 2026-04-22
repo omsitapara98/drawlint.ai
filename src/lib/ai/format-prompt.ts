@@ -1,8 +1,21 @@
 import type { ParsedDiagram } from "@/types/diagram";
+import type { ReviewLevel } from "@/types/feedback";
 
-export function formatDiagramForAnalysis(diagram: ParsedDiagram): string {
+const LEVEL_LABELS: Record<ReviewLevel, string> = {
+  mid: "Mid-Level (L4-L5)",
+  senior: "Senior (L5-L6)",
+  staff: "Staff (L6+)",
+  deep: "Deep Analysis (full production review)",
+};
+
+export function formatDiagramForAnalysis(diagram: ParsedDiagram, level: ReviewLevel = "senior"): string {
   const lines: string[] = [];
   const { sections, hld } = diagram;
+
+  // Review mode header
+  lines.push(`=== REVIEW MODE: ${level.toUpperCase()} ===`);
+  lines.push(`Evaluate this design for a ${LEVEL_LABELS[level]} interview.`);
+  lines.push("");
 
   // Whiteboard context sections
   const sectionEntries: { key: keyof typeof sections; label: string }[] = [

@@ -1,12 +1,13 @@
 import type { ParsedDiagram } from "@/types/diagram";
-import type { AIReviewResponse, ReviewDimension, FeedbackItem } from "@/types/feedback";
-import { SYSTEM_DESIGN_REVIEWER_PROMPT } from "./prompts";
+import type { AIReviewResponse, ReviewDimension, FeedbackItem, ReviewLevel, LeadReviewer } from "@/types/feedback";
+import { getReviewPrompt } from "./prompts";
 import { formatDiagramForAnalysis } from "./format-prompt";
 
 interface AnalyzeOptions {
   apiKey?: string;
   endpoint?: string;
   deployment?: string;
+  level?: ReviewLevel;
 }
 
 export class AzureOpenAIError extends Error {
@@ -21,7 +22,7 @@ export class AzureOpenAIError extends Error {
 }
 
 /**
- * Analyze a system design diagram using Azure OpenAI with the 5-reviewer prompt.
+ * Analyze a system design diagram using Azure OpenAI with level-based review prompts.
  *
  * Uses the caller's own Azure OpenAI credentials (BYO key).
  */
@@ -32,6 +33,7 @@ export async function analyzeDesign(
   const apiKey = options?.apiKey ?? process.env.AZURE_OPENAI_API_KEY ?? "";
   const endpoint = options?.endpoint ?? process.env.AZURE_OPENAI_ENDPOINT ?? "";
   const deployment = options?.deployment ?? process.env.AZURE_OPENAI_DEPLOYMENT ?? "";
+  const level: ReviewLevel = options?.level ?? "senior";
   const apiVersion = "2025-01-01-preview";
 
   if (!apiKey) {
@@ -56,13 +58,13 @@ export async function analyzeDesign(
     );
   }
 
-  const formattedDiagram = formatDiagramForAnalysis(diagram);
+  const formattedDiagram = formatDiagramForAnalysis(diagram, level);
 
   const url = `${endpoint.replace(/\/+$/, "")}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
 
   const body = {
     messages: [
-      { role: "system", content: SYSTEM_DESIGN_REVIEWER_PROMPT },
+      { role: "system", content: getReviewPrompt(level) },
       { role: "user", content: formattedDiagram },
     ],
     temperature: 0.3,
@@ -144,7 +146,7 @@ export async function analyzeDesign(
     );
   }
 
-  return validateReview(review);
+  return validateReview(review, level);
 }
 
 /** Extract the text content from the Azure OpenAI chat completion response. */
@@ -206,20 +208,42 @@ function validateDimension(raw: unknown): ReviewDimension {
   };
 }
 
-/** Validate and normalize the parsed AIReviewResponse. */
-function validateReview(raw: AIReviewResponse): AIReviewResponse {
-  const flowRaw = raw.flowAnalysis;
+/** Validate the lead reviewer object. */
+function validateLeadReviewer(raw: unknown): LeadReviewer {
+  if (typeof raw !== "object" || raw === null) {
+    return {
+      topStrengths: [],
+      topRisks: [],
+      signal: "lean-hire",
+      signalReason: "",
+      improvementAreas: [],
+    };
+  }
+  const d = raw as Record<string, unknown>;
+  const validSignals = ["strong-hire", "hire", "lean-hire", "lean-no-hire", "no-hire"] as const;
+  const signal = validSignals.includes(d.signal as typeof validSignals[number])
+    ? (d.signal as LeadReviewer["signal"])
+    : "lean-hire";
   return {
+    topStrengths: Array.isArray(d.topStrengths) ? (d.topStrengths as string[]).slice(0, 5) : [],
+    topRisks: Array.isArray(d.topRisks) ? (d.topRisks as string[]).slice(0, 5) : [],
+    signal,
+    signalReason: typeof d.signalReason === "string" ? d.signalReason : "",
+    improvementAreas: Array.isArray(d.improvementAreas) ? (d.improvementAreas as string[]) : [],
+  };
+}
+
+/** Validate and normalize the parsed AIReviewResponse. */
+function validateReview(raw: AIReviewResponse, level: ReviewLevel): AIReviewResponse {
+  const flowRaw = raw.flowAnalysis;
+  const base: AIReviewResponse = {
+    level,
     score:
       typeof raw.score === "number"
         ? Math.max(0, Math.min(100, raw.score))
         : 0,
     summary: typeof raw.summary === "string" ? raw.summary : "",
-    scalability: validateDimension(raw.scalability),
-    availability: validateDimension(raw.availability),
     bottlenecks: validateDimension(raw.bottlenecks),
-    security: validateDimension(raw.security),
-    completeness: validateDimension(raw.completeness),
     flowAnalysis: {
       criticalPath:
         typeof flowRaw === "object" &&
@@ -240,8 +264,26 @@ function validateReview(raw: AIReviewResponse): AIReviewResponse {
           ? flowRaw.sequenceGaps
           : [],
     },
+    leadReviewer: validateLeadReviewer(raw.leadReviewer),
     followUpQuestions: Array.isArray(raw.followUpQuestions)
       ? raw.followUpQuestions
       : [],
   };
+
+  // Add level-specific dimensions
+  if (level === "mid") {
+    base.correctness = validateDimension(raw.correctness);
+  }
+  if (level === "senior" || level === "staff" || level === "deep") {
+    base.scalability = validateDimension(raw.scalability);
+    base.reliability = validateDimension(raw.reliability);
+  }
+  if (level === "staff" || level === "deep") {
+    base.completeness = validateDimension(raw.completeness);
+  }
+  if (level === "deep") {
+    base.security = validateDimension(raw.security);
+  }
+
+  return base;
 }

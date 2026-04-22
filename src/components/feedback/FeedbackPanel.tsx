@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ParsedDiagram, GraphNode } from "@/types/diagram";
-import type { AIReviewResponse, AnalysisStatus, FeedbackItem, ReviewDimension } from "@/types/feedback";
+import type { AIReviewResponse, AnalysisStatus, FeedbackItem, ReviewDimension, ReviewLevel } from "@/types/feedback";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,10 @@ import {
   Activity,
   Target,
   Layers,
+  CheckCircle2,
+  AlertOctagon,
+  TrendingUp,
+  Wrench,
 } from "lucide-react";
 
 interface FeedbackPanelProps {
@@ -108,11 +112,50 @@ function ScoreCircle({ score }: { score: number }) {
 /* ── Dimension Card ──────────────────────────────────────────── */
 
 const DIMENSION_META: Record<string, { icon: React.ReactNode; label: string; emoji: string }> = {
+  correctness: { icon: <Wrench className="h-4 w-4" />, label: "Correctness", emoji: "🏗️" },
   scalability: { icon: <Zap className="h-4 w-4" />, label: "Scalability", emoji: "🔥" },
-  availability: { icon: <Activity className="h-4 w-4" />, label: "Failure & Availability", emoji: "💀" },
+  reliability: { icon: <Activity className="h-4 w-4" />, label: "Reliability", emoji: "💀" },
   bottlenecks: { icon: <Target className="h-4 w-4" />, label: "Bottlenecks", emoji: "🐌" },
   security: { icon: <Shield className="h-4 w-4" />, label: "Security", emoji: "🔒" },
   completeness: { icon: <Layers className="h-4 w-4" />, label: "Design Completeness", emoji: "📐" },
+};
+
+const LEVEL_LABELS: Record<ReviewLevel, string> = {
+  mid: "Mid (L4-L5)",
+  senior: "Senior (L5-L6)",
+  staff: "Staff (L6+)",
+  deep: "Deep Analysis",
+};
+
+const LEVEL_COLORS: Record<ReviewLevel, string> = {
+  mid: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  senior: "bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200",
+  staff: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+  deep: "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200",
+};
+
+const SIGNAL_STYLES: Record<string, string> = {
+  "strong-hire": "bg-emerald-500 text-white",
+  "hire": "bg-emerald-400 text-white",
+  "lean-hire": "bg-yellow-400 text-yellow-900",
+  "lean-no-hire": "bg-orange-400 text-white",
+  "no-hire": "bg-red-500 text-white",
+};
+
+const SIGNAL_LABELS: Record<string, string> = {
+  "strong-hire": "Strong Hire",
+  "hire": "Hire",
+  "lean-hire": "Lean Hire",
+  "lean-no-hire": "Lean No Hire",
+  "no-hire": "No Hire",
+};
+
+// Which dimensions to show per level, in order
+const DIMENSIONS_BY_LEVEL: Record<ReviewLevel, string[]> = {
+  mid: ["correctness", "bottlenecks"],
+  senior: ["scalability", "reliability", "bottlenecks"],
+  staff: ["scalability", "reliability", "bottlenecks", "completeness"],
+  deep: ["scalability", "reliability", "bottlenecks", "security", "completeness"],
 };
 
 function DimensionCard({ name, dimension }: { name: string; dimension: ReviewDimension }) {
@@ -228,7 +271,7 @@ function AIReviewContent({
         <div className="text-center">
           <p className="text-sm font-medium">Analyzing your design…</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            5 AI reviewers are evaluating scalability, availability, bottlenecks, security, and completeness.
+            AI reviewers are evaluating your design…
           </p>
         </div>
       </div>
@@ -260,10 +303,13 @@ function AIReviewContent({
   // Complete — show review
   if (!review) return null;
 
+  const level = review.level ?? "deep";
+  const dimensionsToShow = DIMENSIONS_BY_LEVEL[level];
+
   return (
     <ScrollArea className="h-full">
       <div className="flex flex-col gap-3 p-4">
-        {/* Score Header */}
+        {/* Level + Score Header */}
         <Card>
           <CardContent className="flex items-center gap-4 py-5">
             <ScoreCircle score={review.score} />
@@ -273,16 +319,94 @@ function AIReviewContent({
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Overall Score
                 </span>
+                <Badge className={`text-[10px] px-2 py-0 ${LEVEL_COLORS[level]}`}>
+                  {LEVEL_LABELS[level]}
+                </Badge>
               </div>
               <p className="text-sm text-foreground">{review.summary}</p>
             </div>
           </CardContent>
         </Card>
 
-        {/* 5 Dimension Cards */}
-        {(["scalability", "availability", "bottlenecks", "security", "completeness"] as const).map((dim) => (
-          <DimensionCard key={dim} name={dim} dimension={review[dim]} />
-        ))}
+        {/* Dimension Cards — only those relevant for the level */}
+        {dimensionsToShow.map((dim) => {
+          const dimension = review[dim as keyof AIReviewResponse] as ReviewDimension | undefined;
+          if (!dimension) return null;
+          return <DimensionCard key={dim} name={dim} dimension={dimension} />;
+        })}
+
+        {/* Lead Reviewer Card */}
+        {review.leadReviewer && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                🎯 Lead Reviewer
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Hire Signal */}
+              <div className="flex items-center gap-3">
+                <Badge className={`text-sm px-3 py-1 font-bold ${SIGNAL_STYLES[review.leadReviewer.signal] ?? "bg-gray-400 text-white"}`}>
+                  {SIGNAL_LABELS[review.leadReviewer.signal] ?? review.leadReviewer.signal}
+                </Badge>
+                {review.leadReviewer.signalReason && (
+                  <p className="text-xs text-muted-foreground flex-1">{review.leadReviewer.signalReason}</p>
+                )}
+              </div>
+
+              {/* Top Strengths */}
+              {review.leadReviewer.topStrengths.length > 0 && (
+                <div>
+                  <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Top Strengths
+                  </h4>
+                  <div className="space-y-1">
+                    {review.leadReviewer.topStrengths.map((s, i) => (
+                      <div key={i} className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500 mt-0.5" />
+                        <span>{s}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Top Risks */}
+              {review.leadReviewer.topRisks.length > 0 && (
+                <div>
+                  <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Top Risks
+                  </h4>
+                  <div className="space-y-1">
+                    {review.leadReviewer.topRisks.map((r, i) => (
+                      <div key={i} className="flex items-start gap-2 text-sm">
+                        <AlertOctagon className="h-4 w-4 shrink-0 text-red-500 mt-0.5" />
+                        <span>{r}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Improvement Areas */}
+              {review.leadReviewer.improvementAreas.length > 0 && (
+                <div>
+                  <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Areas to Improve
+                  </h4>
+                  <div className="space-y-1">
+                    {review.leadReviewer.improvementAreas.map((a, i) => (
+                      <div key={i} className="flex items-start gap-2 text-sm">
+                        <TrendingUp className="h-4 w-4 shrink-0 text-violet-500 mt-0.5" />
+                        <span>{a}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Flow Analysis */}
         {(review.flowAnalysis.criticalPath.length > 0 ||

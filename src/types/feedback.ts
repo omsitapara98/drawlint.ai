@@ -27,25 +27,45 @@ export interface SectionContents {
   hld: string;
 }
 
-/* ── 5-Reviewer AI Response Types ────────────────────────────── */
+/* ── Review Level ────────────────────────────────────────────── */
+
+export type ReviewLevel = "mid" | "senior" | "staff" | "deep";
+
+/* ── Multi-Reviewer AI Response Types ────────────────────────── */
 
 export interface ReviewDimension {
   score: number;
   issues: FeedbackItem[];
 }
 
+export interface LeadReviewer {
+  topStrengths: string[];
+  topRisks: string[];
+  signal: "strong-hire" | "hire" | "lean-hire" | "lean-no-hire" | "no-hire";
+  signalReason: string;
+  improvementAreas: string[];
+}
+
 export interface AIReviewResponse {
+  level: ReviewLevel;
   score: number;
   summary: string;
-  scalability: ReviewDimension;
-  availability: ReviewDimension;
+  // Always present
   bottlenecks: ReviewDimension;
-  security: ReviewDimension;
-  completeness: ReviewDimension;
+  // Present for mid
+  correctness?: ReviewDimension;
+  // Present for senior+
+  scalability?: ReviewDimension;
+  reliability?: ReviewDimension;
+  // Present for staff+
+  completeness?: ReviewDimension;
+  // Present for deep only
+  security?: ReviewDimension;
   flowAnalysis: {
     criticalPath: string[];
     missingEdges: string[];
     sequenceGaps: number[];
   };
+  leadReviewer: LeadReviewer;
   followUpQuestions: string[];
 }

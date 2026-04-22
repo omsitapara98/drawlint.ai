@@ -1,0 +1,5 @@
+.dev-team-memory/decisions/**/*.md merge=union
+.dev-team-memory/memory/**/*.md merge=union
+.dev-team-memory/messages/*.md merge=union
+.dev-team-memory/artifacts/**/*.md merge=union
+.dev-team-memory/directives.md merge=union

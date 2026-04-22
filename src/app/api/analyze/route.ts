@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import type { ParsedDiagram } from "@/types/diagram";
+import type { ReviewLevel } from "@/types/feedback";
 import { analyzeDesign, AzureOpenAIError } from "@/lib/ai";
+
+const VALID_LEVELS: ReviewLevel[] = ["mid", "senior", "staff", "deep"];
 
 interface AnalyzeRequestBody {
   diagram?: ParsedDiagram;
   apiKey?: string;
   endpoint?: string;
   deployment?: string;
+  level?: ReviewLevel;
 }
 
 export async function POST(request: Request) {
@@ -52,10 +56,12 @@ export async function POST(request: Request) {
   }
 
   try {
+    const level: ReviewLevel = body.level && VALID_LEVELS.includes(body.level) ? body.level : "senior";
     const review = await analyzeDesign(body.diagram, {
       apiKey: body.apiKey,
       endpoint: body.endpoint,
       deployment: body.deployment,
+      level,
     });
 
     return NextResponse.json(review);

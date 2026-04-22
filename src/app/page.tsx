@@ -12,7 +12,7 @@ import { useAutoSave } from "@/hooks";
 import { loadDiagram, clearDiagram } from "@/lib/storage";
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
-import type { AIReviewResponse, AnalysisStatus } from "@/types/feedback";
+import type { AIReviewResponse, AnalysisStatus, ReviewLevel } from "@/types/feedback";
 import { X, MessageSquareText, RotateCcw } from "lucide-react";
 
 interface BYOConfig {
@@ -45,6 +45,7 @@ export default function Home() {
   const [aiReview, setAiReview] = useState<AIReviewResponse | null>(null);
   const [aiStatus, setAiStatus] = useState<AnalysisStatus>("idle");
   const [aiError, setAiError] = useState<string | undefined>();
+  const [reviewLevel, setReviewLevel] = useState<ReviewLevel>("senior");
 
   useAutoSave(elements);
 
@@ -99,6 +100,7 @@ export default function Home() {
           apiKey: config.apiKey,
           endpoint: config.endpoint,
           deployment: config.deployment,
+          level: reviewLevel,
         }),
       });
 
@@ -116,7 +118,7 @@ export default function Home() {
         err instanceof Error ? err.message : "An unexpected error occurred.",
       );
     }
-  }, [elements]);
+  }, [elements, reviewLevel]);
 
   const handleNewBoard = useCallback(() => {
     clearDiagram();
@@ -159,6 +161,23 @@ export default function Home() {
               <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
               New Board
             </Button>
+
+            {/* Level selector */}
+            <div className="flex h-9 items-center rounded-full border bg-background/95 backdrop-blur-sm p-0.5">
+              {(["mid", "senior", "staff", "deep"] as const).map((lvl) => (
+                <button
+                  key={lvl}
+                  onClick={() => setReviewLevel(lvl)}
+                  className={`h-8 rounded-full px-3 text-xs font-medium transition-all ${
+                    reviewLevel === lvl
+                      ? "bg-violet-500 text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {lvl === "deep" ? "Deep" : lvl.charAt(0).toUpperCase() + lvl.slice(1)}
+                </button>
+              ))}
+            </div>
 
             <Button
               onClick={handleAnalyze}
