@@ -1,5 +1,5 @@
 import type { ParsedDiagram } from "@/types/diagram";
-import type { AIReviewResponse, ReviewDimension, FeedbackItem, ReviewLevel, LeadReviewer } from "@/types/feedback";
+import type { AIReviewResponse, ReviewDimension, ReviewHighlight, FeedbackItem, ReviewLevel, LeadReviewer } from "@/types/feedback";
 import { getReviewPrompt } from "./prompts";
 import { formatDiagramForAnalysis } from "./format-prompt";
 
@@ -192,15 +192,54 @@ function validateItem(item: unknown): FeedbackItem {
   };
 }
 
-/** Validate a ReviewDimension. */
+/** Validate a single ReviewHighlight. */
+function validateHighlight(item: unknown): ReviewHighlight {
+  const raw = item as Record<string, unknown>;
+  const severity = raw.severity;
+  return {
+    severity: severity === "strong" || severity === "good" ? severity : "good",
+    title: typeof raw.title === "string" ? raw.title : "",
+    description: typeof raw.description === "string" ? raw.description : "",
+  };
+}
+
+const HIGHLIGHT_SEVERITIES = new Set(["strong", "good"]);
+const ISSUE_SEVERITIES = new Set(["critical", "warning", "info"]);
+
+/** Validate a ReviewDimension, gracefully moving misplaced items between arrays. */
 function validateDimension(raw: unknown): ReviewDimension {
   if (typeof raw !== "object" || raw === null) {
-    return { issues: [] };
+    return { highlights: [], issues: [] };
   }
   const d = raw as Record<string, unknown>;
-  return {
-    issues: Array.isArray(d.issues) ? d.issues.map(validateItem) : [],
-  };
+
+  const rawHighlights: unknown[] = Array.isArray(d.highlights) ? d.highlights : [];
+  const rawIssues: unknown[] = Array.isArray(d.issues) ? d.issues : [];
+
+  const highlights: ReviewHighlight[] = [];
+  const issues: FeedbackItem[] = [];
+
+  // Process highlights array — move misplaced issues out
+  for (const item of rawHighlights) {
+    const r = item as Record<string, unknown>;
+    if (ISSUE_SEVERITIES.has(r.severity as string)) {
+      issues.push(validateItem(item));
+    } else {
+      highlights.push(validateHighlight(item));
+    }
+  }
+
+  // Process issues array — move misplaced highlights out
+  for (const item of rawIssues) {
+    const r = item as Record<string, unknown>;
+    if (HIGHLIGHT_SEVERITIES.has(r.severity as string)) {
+      highlights.push(validateHighlight(item));
+    } else {
+      issues.push(validateItem(item));
+    }
+  }
+
+  return { highlights, issues };
 }
 
 /** Validate the lead reviewer object. */

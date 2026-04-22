@@ -269,21 +269,18 @@ CRITERIA ARE CUMULATIVE: Each reviewer MUST check ALL criteria from lower levels
 
 For each criterion in the checklist, evaluate whether it is present and report issues for anything missing or partially addressed.
 
-FEEDBACK SEVERITY LEVELS — CHOOSE CAREFULLY:
-POSITIVE (use for things done WELL — these are NOT "info"):
-- "strong": An exceptional design choice showing deep understanding (e.g., Redis Lua scripts for atomicity, CDC outbox pattern, dynamic rebalancing). Use for clever, non-obvious decisions.
-- "good": A solid, correct decision (e.g., choosing WebSocket over polling for real-time, using Kafka for event streaming). Use when the candidate picked the right tool/pattern.
+FEEDBACK — TWO SEPARATE SECTIONS PER DIMENSION:
 
-NEGATIVE (use for things MISSING or WRONG):
+"highlights" array — things done WELL (use "strong" or "good"):
+- "strong": An exceptional design choice showing deep understanding (e.g., Redis Lua scripts for atomicity, CDC outbox pattern, dynamic rebalancing).
+- "good": A solid, correct decision (e.g., choosing WebSocket over polling for real-time, using Kafka for event streaming).
+
+"issues" array — things MISSING or WRONG (use "critical", "warning", or "info"):
 - "critical": A fundamental issue that would cause the system to fail or not meet requirements.
 - "warning": An important gap that should be addressed but doesn't break the system.
 - "info": A minor suggestion or nice-to-have improvement.
 
-⚠️ IMPORTANT: Do NOT use "info" for positive observations. If something is good, use "good" or "strong". "info" is ONLY for minor improvement suggestions. If you're praising a design choice, it MUST be "strong" or "good".
-
-The "issues" array contains BOTH positive and negative findings — despite the field name, it holds all feedback items including praise. A typical dimension might have: 2 "good" items + 1 "warning" item + 1 "info" item.
-
-Start each dimension's issues with positive findings (strong/good) BEFORE listing problems (critical/warning/info). Do NOT force positives — if nothing stands out as genuinely good, skip them. But when the candidate made a smart choice, acknowledge it with the correct green severity.
+Do NOT force highlights — if nothing stands out as genuinely good, leave the array empty. But when the candidate made a smart choice, put it in highlights with "strong" or "good".
 
 FLOW ANALYSIS:
 - criticalPath: Trace the primary request flow through the system as "A → B → C"
@@ -308,11 +305,18 @@ const LEAD_REVIEWER_SCHEMA = `
   }`;
 
 const DIMENSION_SCHEMA = `{
+    "highlights": [
+      {
+        "severity": "strong" | "good",
+        "title": "<short title>",
+        "description": "<WHY this is a smart design choice>"
+      }
+    ],
     "issues": [
       {
-        "severity": "strong" | "good" | "critical" | "warning" | "info",
+        "severity": "critical" | "warning" | "info",
         "title": "<short title>",
-        "description": "<explanation — for strong/good: WHY this is a smart choice; for critical/warning/info: what's wrong and how to fix>"
+        "description": "<what's wrong and how to fix>"
       }
     ]
   }`;

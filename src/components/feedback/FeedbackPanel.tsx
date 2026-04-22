@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ParsedDiagram, GraphNode } from "@/types/diagram";
-import type { AIReviewResponse, AnalysisStatus, FeedbackItem, ReviewDimension, ReviewLevel } from "@/types/feedback";
+import type { AIReviewResponse, AnalysisStatus, FeedbackItem, ReviewHighlight, ReviewDimension, ReviewLevel } from "@/types/feedback";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -89,14 +89,6 @@ const SEVERITY_LABEL: Record<string, string> = {
   info: "info",
 };
 
-const SEVERITY_ORDER: Record<string, number> = {
-  strong: 0,
-  good: 1,
-  critical: 2,
-  warning: 3,
-  info: 4,
-};
-
 /* ── Dimension Card ──────────────────────────────────────────── */
 
 const DIMENSION_META: Record<string, { icon: React.ReactNode; label: string; emoji: string }> = {
@@ -143,6 +135,7 @@ const SECTION_DIMENSIONS = ["nfrReview", "entitiesReview", "capacityReview", "ap
 function DimensionCard({ name, dimension }: { name: string; dimension: ReviewDimension }) {
   const [expanded, setExpanded] = useState(true);
   const meta = DIMENSION_META[name] ?? { icon: null, label: name, emoji: "" };
+  const hasContent = dimension.highlights.length > 0 || dimension.issues.length > 0;
 
   return (
     <Card>
@@ -159,23 +152,40 @@ function DimensionCard({ name, dimension }: { name: string; dimension: ReviewDim
           {expanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
         </div>
       </button>
-      {expanded && dimension.issues.length > 0 && (
+      {expanded && hasContent && (
         <CardContent className="pt-0 pb-3">
           <div className="space-y-2">
-            {[...dimension.issues]
-              .sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 5) - (SEVERITY_ORDER[b.severity] ?? 5))
-              .map((issue, i) => (
-                <IssueRow key={i} issue={issue} />
-              ))}
+            {dimension.highlights.map((h, i) => (
+              <HighlightRow key={`h-${i}`} highlight={h} />
+            ))}
+            {dimension.issues.map((issue, i) => (
+              <IssueRow key={`i-${i}`} issue={issue} />
+            ))}
           </div>
         </CardContent>
       )}
-      {expanded && dimension.issues.length === 0 && (
+      {expanded && !hasContent && (
         <CardContent className="pt-0 pb-3">
           <p className="text-xs text-muted-foreground italic">No issues found — looks good! ✅</p>
         </CardContent>
       )}
     </Card>
+  );
+}
+
+function HighlightRow({ highlight }: { highlight: ReviewHighlight }) {
+  return (
+    <div className={`rounded-lg border p-3 ${SEVERITY_STYLES[highlight.severity] ?? ""}`}>
+      <div className="flex items-start gap-2">
+        <Badge className={`text-[10px] px-1.5 py-0 shrink-0 ${SEVERITY_BADGE[highlight.severity] ?? ""}`}>
+          {SEVERITY_LABEL[highlight.severity] ?? highlight.severity}
+        </Badge>
+        <div className="min-w-0">
+          <p className="text-sm font-medium">{highlight.title}</p>
+          <p className="mt-1 text-xs opacity-80">{highlight.description}</p>
+        </div>
+      </div>
+    </div>
   );
 }
 

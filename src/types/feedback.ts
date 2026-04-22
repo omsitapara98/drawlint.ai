@@ -8,7 +8,13 @@ export interface DiagramFeedback {
 }
 
 export interface FeedbackItem {
-  severity: "strong" | "good" | "critical" | "warning" | "info";
+  severity: "critical" | "warning" | "info";
+  title: string;
+  description: string;
+}
+
+export interface ReviewHighlight {
+  severity: "strong" | "good";
   title: string;
   description: string;
 }
@@ -32,6 +38,7 @@ export type ReviewLevel = "mid" | "senior" | "staff" | "deep";
 /* ── Multi-Reviewer AI Response Types ────────────────────────── */
 
 export interface ReviewDimension {
+  highlights: ReviewHighlight[];
   issues: FeedbackItem[];
 }
 
