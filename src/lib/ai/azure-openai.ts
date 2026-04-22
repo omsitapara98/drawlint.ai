@@ -189,9 +189,6 @@ function validateItem(item: unknown): FeedbackItem {
         : "info",
     title: typeof raw.title === "string" ? raw.title : "",
     description: typeof raw.description === "string" ? raw.description : "",
-    affectedComponents: Array.isArray(raw.affectedComponents)
-      ? (raw.affectedComponents as string[])
-      : [],
   };
 }
 

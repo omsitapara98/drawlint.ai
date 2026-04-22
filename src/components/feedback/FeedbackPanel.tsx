@@ -167,15 +167,6 @@ function IssueRow({ issue }: { issue: FeedbackItem }) {
         <div className="min-w-0">
           <p className="text-sm font-medium">{issue.title}</p>
           <p className="mt-1 text-xs opacity-80">{issue.description}</p>
-          {issue.affectedComponents && issue.affectedComponents.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {issue.affectedComponents.map((comp, j) => (
-                <Badge key={j} variant="outline" className="text-[10px] px-1.5 py-0">
-                  {comp}
-                </Badge>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>

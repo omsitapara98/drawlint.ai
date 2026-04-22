@@ -11,7 +11,6 @@ export interface FeedbackItem {
   severity: "critical" | "warning" | "info";
   title: string;
   description: string;
-  affectedComponents?: string[];
 }
 
 export type AnalysisStatus = "idle" | "analyzing" | "complete" | "error";

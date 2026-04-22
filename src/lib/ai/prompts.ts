@@ -8,6 +8,7 @@ GROUND RULES — READ CAREFULLY:
 2. The Assumptions section contains the candidate's stated constraints (user count, read/write ratio, SLA targets, etc.). Evaluate the design AGAINST these assumptions — not against arbitrary scale targets.
 3. Judge HOW WELL the design meets the stated FR under the stated assumptions. A design for 10K users doesn't need the same infra as one for 10M users.
 4. The candidate's annotations near components explain their design rationale. Factor this into your evaluation — they may have already considered and addressed concerns you'd raise.
+5. Only flag a checklist criterion as missing if it is RELEVANT to this specific design. For example: if the API has no list/GET endpoints, do not flag "missing pagination." If the API uses WebSocket, evaluate WebSocket message design (message types, payload structure, connection lifecycle) — do not apply REST conventions to WebSocket APIs. Judge what IS there, not what a generic template expects.
 `;
 
 /* ── Cumulative criteria per dimension ────────────────────────── */
@@ -88,10 +89,10 @@ const API_MID = [
 ];
 const API_SENIOR = [
   ...API_MID,
-  "Resource-oriented URL design (not RPC-style)",
-  "Pagination on list endpoints",
-  "Proper HTTP verbs",
-  "Error handling with status codes",
+  "Resource-oriented URL design for REST endpoints (evaluate message types for WebSocket APIs)",
+  "Pagination on list/GET endpoints (skip if no list endpoints exist)",
+  "Proper HTTP verbs for REST endpoints (skip for pure WebSocket APIs)",
+  "Error handling with status codes for REST; error message types for WebSocket",
 ];
 const API_STAFF = [
   ...API_SENIOR,
@@ -279,7 +280,6 @@ FLOW ANALYSIS:
 RULES:
 - Return ONLY valid JSON. No markdown fences, no explanation text outside the JSON.
 - Every issues array must have at least one item if there is a relevant finding; use empty array only if no issues exist.
-- Be specific: reference actual component labels from the diagram in affectedComponents.
 - Be constructive: explain WHY something is an issue and HOW to fix it.
 - If the diagram is minimal (fewer than 3 nodes), still provide feedback and note what to add.
 - Always provide at least 2 follow-up questions that probe the candidate's understanding.
@@ -299,8 +299,7 @@ const DIMENSION_SCHEMA = `{
       {
         "severity": "critical" | "warning" | "info",
         "title": "<short title>",
-        "description": "<detailed explanation with fix recommendation>",
-        "affectedComponents": ["<component-label>"]
+        "description": "<detailed explanation with fix recommendation>"
       }
     ]
   }`;
