@@ -114,12 +114,28 @@ function extractSections(
   };
 }
 
+/* ── Logic description detection ────────────────────────────── */
+
+// Shapes with long multi-line text are logic descriptions, not components.
+// Real components have short labels like "Redis Cache" or "Api Gateway".
+function isLogicDescription(label: string): boolean {
+  if (!label) return false;
+  const lineCount = label.split("\n").length;
+  return lineCount > 3 || label.length > 120;
+}
+
 /* ── Pass 1: Node extraction ────────────────────────────────── */
+
+interface ExtractedShapes {
+  nodes: GraphNode[];
+  logicBoxes: { id: string; label: string; x: number; y: number; w: number; h: number }[];
+}
 
 function extractNodes(
   active: readonly ExcalidrawElement[],
-): GraphNode[] {
+): ExtractedShapes {
   const nodes: GraphNode[] = [];
+  const logicBoxes: ExtractedShapes["logicBoxes"] = [];
 
   for (const el of active) {
     if (isTemplateElement(el.id)) continue;
@@ -127,18 +143,24 @@ function extractNodes(
     if (!inHLD(el.x, el.y)) continue;
 
     const label = getTextForElement(el, active);
-    const nodeType = classifyNode(el.type, label);
     const raw = el as Record<string, unknown>;
+    const w = (raw.width as number) ?? 0;
+    const h = (raw.height as number) ?? 0;
+
+    // Long text in a box → logic description, not a component
+    if (isLogicDescription(label)) {
+      logicBoxes.push({ id: el.id, label, x: el.x, y: el.y, w, h });
+      continue;
+    }
+
+    const nodeType = classifyNode(el.type, label);
 
     nodes.push({
       id: el.id,
       label: label || "",
       type: nodeType,
       position: { x: el.x, y: el.y },
-      dimensions: {
-        width: (raw.width as number) ?? 0,
-        height: (raw.height as number) ?? 0,
-      },
+      dimensions: { width: w, height: h },
       style: {
         strokeColor: (raw.strokeColor as string) ?? "#000000",
         backgroundColor: (raw.backgroundColor as string) ?? "transparent",
@@ -146,7 +168,7 @@ function extractNodes(
     });
   }
 
-  return nodes;
+  return { nodes, logicBoxes };
 }
 
 /* ── Pass 2: Edge extraction ────────────────────────────────── */
@@ -300,9 +322,32 @@ export function parseDiagram(
   const active = elements.filter((e) => !e.isDeleted);
 
   const sections = extractSections(active);
-  const nodes = extractNodes(active);
+  const { nodes, logicBoxes } = extractNodes(active);
   const edges = extractEdges(active, nodes);
   const annotations = extractAnnotations(active, nodes);
+
+  // Merge logic description boxes into annotations
+  for (const box of logicBoxes) {
+    const cx = box.x + box.w / 2;
+    const cy = box.y + box.h / 2;
+    let nearestNodeId = "";
+    let bestDist = Infinity;
+    for (const node of nodes) {
+      const ncx = node.position.x + node.dimensions.width / 2;
+      const ncy = node.position.y + node.dimensions.height / 2;
+      const dist = euclideanDistance(cx, cy, ncx, ncy);
+      if (dist < bestDist) {
+        bestDist = dist;
+        nearestNodeId = node.id;
+      }
+    }
+    annotations.push({
+      id: box.id,
+      text: box.label,
+      position: { x: box.x, y: box.y },
+      nearestNodeId,
+    });
+  }
 
   return {
     sections,

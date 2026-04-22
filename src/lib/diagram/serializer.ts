@@ -86,6 +86,11 @@ export function classifyNode(
 ): NodeType {
   if (!label) return "unknown";
 
+  // Multi-line or long text blocks are logic descriptions, not component labels.
+  // Real components have short names (e.g., "Redis Cache", "Api Gateway").
+  const lineCount = label.split("\n").length;
+  if (lineCount > 3 || label.length > 120) return "service";
+
   for (const [pattern, nodeType] of KEYWORD_MAP) {
     // Some types are shape-sensitive
     if (nodeType === "database") {
