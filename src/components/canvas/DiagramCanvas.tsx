@@ -45,7 +45,12 @@ export default function DiagramCanvas({
         theme={excalidrawTheme}
         initialData={{
           elements: initialData ?? [],
-          appState: { theme: excalidrawTheme },
+          appState: {
+            theme: excalidrawTheme,
+            zoom: { value: 0.3 as never },
+            scrollX: 0,
+            scrollY: 0,
+          },
         }}
         onChange={(elements) => {
           onChange?.(elements);
