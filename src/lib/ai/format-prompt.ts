@@ -50,7 +50,7 @@ export function formatDiagramForAnalysis(diagram: ParsedDiagram, level: ReviewLe
     lines.push("  (none)");
   } else {
     for (const node of hld.nodes) {
-      lines.push(`  - [${node.type.toUpperCase()}] "${node.label}" (id: ${node.id})`);
+      lines.push(`  - [${node.type.toUpperCase()}] "${node.label}"`);
     }
   }
   lines.push("");
@@ -77,10 +77,7 @@ export function formatDiagramForAnalysis(diagram: ParsedDiagram, level: ReviewLe
   if (hld.clusters.length > 0) {
     lines.push(`CLUSTERS (${hld.clusters.length} total):`);
     for (const cluster of hld.clusters) {
-      const members = cluster.memberIds
-        .map((id) => labelById.get(id) ?? id)
-        .join(", ");
-      lines.push(`  - "${cluster.label}" (${cluster.count} members: ${members})`);
+      lines.push(`  - "${cluster.label}" ×${cluster.count}`);
     }
     lines.push("");
   }
@@ -94,20 +91,6 @@ export function formatDiagramForAnalysis(diagram: ParsedDiagram, level: ReviewLe
     }
     lines.push("");
   }
-
-  // Stats
-  lines.push("STATS:");
-  lines.push(`  Total nodes: ${hld.nodes.length}`);
-  lines.push(`  Total connections: ${hld.edges.length}`);
-  lines.push(`  Total clusters: ${hld.clusters.length}`);
-  lines.push(`  Total annotations: ${hld.annotations.length}`);
-  lines.push("");
-
-  // Full JSON for AI to parse
-  lines.push("=== FULL PARSED DIAGRAM JSON ===");
-  lines.push("```json");
-  lines.push(JSON.stringify(diagram, null, 2));
-  lines.push("```");
 
   return lines.join("\n");
 }
