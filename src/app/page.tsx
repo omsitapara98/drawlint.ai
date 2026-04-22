@@ -60,30 +60,41 @@ export default function Home() {
       <Header onOpenSettings={() => setSettingsOpen(true)} />
 
       {/* Analyze toolbar */}
-      <div className="flex shrink-0 items-center justify-between border-b bg-muted/30 px-4 py-2">
-        <p className="text-xs text-muted-foreground">
-          {elements.length > 0
-            ? `${elements.length} element${elements.length === 1 ? "" : "s"} on canvas`
-            : "Start drawing your system design"}
-        </p>
+      <div className="flex shrink-0 items-center justify-between border-b bg-muted/30 px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+          <p className="text-xs text-muted-foreground">
+            {elements.length > 0
+              ? `${elements.length} element${elements.length === 1 ? "" : "s"} on canvas`
+              : "Start drawing your system design"}
+          </p>
+        </div>
         <Button
           size="sm"
           onClick={handleAnalyze}
           disabled={status === "analyzing" || elements.length === 0}
+          className="bg-gradient-to-r from-violet-500 to-indigo-600 text-white hover:from-violet-600 hover:to-indigo-700 shadow-sm transition-all hover:shadow-md disabled:opacity-50"
         >
-          {status === "analyzing" ? "Analyzing…" : "🤖 Analyze"}
+          {status === "analyzing" ? (
+            <>
+              <span className="mr-1.5 inline-block h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              Analyzing…
+            </>
+          ) : (
+            "🤖 Analyze Design"
+          )}
         </Button>
       </div>
 
       {/* Split pane */}
-      <div className="grid flex-1 grid-cols-1 overflow-hidden md:grid-cols-[1fr_400px]">
-        <div className="relative min-h-0 h-full">
+      <div className="grid flex-1 grid-cols-1 overflow-hidden md:grid-cols-[1fr_420px]">
+        <div className="relative min-h-0 h-full border-r">
           <DiagramCanvas
             onChange={handleChange}
             initialData={initialData}
           />
         </div>
-        <div className="h-full overflow-hidden">
+        <div className="h-full overflow-hidden bg-muted/10">
           <FeedbackPanel feedback={feedback} status={status} error={error} />
         </div>
       </div>

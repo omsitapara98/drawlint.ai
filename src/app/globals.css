@@ -128,3 +128,15 @@
     @apply font-sans;
   }
 }
+
+/* Smooth transitions for theme switching */
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* Disable transitions during theme change to prevent flash */
+html.disable-transitions * {
+  transition: none !important;
+}

@@ -1,34 +1,46 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { Moon, Sun, Settings } from "lucide-react";
 
 interface HeaderProps {
   onOpenSettings: () => void;
 }
 
 export default function Header({ onOpenSettings }: HeaderProps) {
+  const { theme, setTheme } = useTheme();
+
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-800 bg-zinc-950 px-4">
-      <div className="flex items-center gap-2">
-        <span className="text-lg" role="img" aria-label="magnifying glass">
-          🔍
-        </span>
-        <span className="text-sm font-semibold tracking-tight text-white">
-          DrawLint.ai
+    <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 sticky top-0 z-50">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-sm font-bold shadow-sm">
+          D
+        </div>
+        <span className="text-sm font-semibold tracking-tight">
+          DrawLint<span className="text-violet-500">.ai</span>
         </span>
       </div>
 
-      <div className="flex items-center gap-3">
-        <a
-          href="https://github.com/omsitapara98/drawlint.ai#readme"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-zinc-400 transition-colors hover:text-white"
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 relative"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          aria-label="Toggle theme"
         >
-          How it works
-        </a>
-        <Button variant="ghost" size="sm" className="text-zinc-300 hover:text-white hover:bg-zinc-800" onClick={onOpenSettings}>
-          Settings
+          <Sun className="h-4 w-4 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={onOpenSettings}
+          aria-label="Settings"
+        >
+          <Settings className="h-4 w-4" />
         </Button>
       </div>
     </header>

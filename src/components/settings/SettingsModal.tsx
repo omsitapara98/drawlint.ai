@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 const STORAGE_KEY = "drawlint:byo-key";
 
@@ -94,6 +95,14 @@ export default function SettingsModal({
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
+          {/* Appearance hint */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">Appearance</h4>
+            <p className="text-xs text-muted-foreground">Toggle dark mode from the header</p>
+          </div>
+
+          <Separator />
+
           <div className="text-xs">
             {configured ? (
               <span className="text-green-600 dark:text-green-400">

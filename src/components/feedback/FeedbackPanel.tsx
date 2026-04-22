@@ -98,10 +98,16 @@ export function FeedbackPanel({ feedback, status, error }: FeedbackPanelProps) {
   // Idle state
   if (status === "idle") {
     return (
-      <div className="flex h-full items-center justify-center p-6">
-        <p className="text-center text-sm text-muted-foreground">
-          Draw a system design and click Analyze to get feedback
-        </p>
+      <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/10 text-3xl">
+          ✏️
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-medium">Ready to analyze</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Draw a system design on the canvas, then click Analyze
+          </p>
+        </div>
       </div>
     );
   }
@@ -145,16 +151,16 @@ export function FeedbackPanel({ feedback, status, error }: FeedbackPanelProps) {
     <ScrollArea className="h-full">
       <div className="flex flex-col gap-4 p-4">
         {/* Score */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30 p-4">
           <div
-            className={`flex h-16 w-16 items-center justify-center rounded-full ring-2 ${getScoreBg(feedback.score)}`}
+            className={`flex h-20 w-20 items-center justify-center rounded-2xl ring-4 ${getScoreBg(feedback.score)} shadow-sm`}
           >
-            <span className={`text-2xl font-bold ${getScoreColor(feedback.score)}`}>
+            <span className={`text-3xl font-bold ${getScoreColor(feedback.score)}`}>
               {feedback.score}
             </span>
           </div>
           <div>
-            <p className="text-sm font-medium">Design Score</p>
+            <p className="text-base font-semibold">Design Score</p>
             <p className="text-xs text-muted-foreground">out of 100</p>
           </div>
         </div>
