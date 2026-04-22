@@ -120,63 +120,33 @@ export function createWhiteboardTemplate(): AnyElement[] {
 
   const elements: AnyElement[] = [];
 
-  // Scaled 2x, vertical reduced 20%. Total canvas: ~2900 x 1600
-  // Left column width: 1000, Right column width: 1840
+  // No title bar. Left column width: 1000, HLD width: 2392 (+30%)
 
-  // ── Title bar (rectangle + bound text) ──
-  elements.push(rect("template-title-rect", 30, 30, 2870, 64, "template-title-text"));
-  elements.push(
-    baseFields({
-      id: "template-title-text",
-      type: "text",
-      x: 50,
-      y: 40,
-      width: 2830,
-      height: 44,
-      index: nextIndex(),
-      strokeColor: "#495057",
-      roundness: null,
-      text: "Title: ",
-      fontSize: 36,
-      fontFamily: 3,
-      textAlign: "left",
-      verticalAlign: "top",
-      containerId: "template-title-rect",
-      originalText: "Title: ",
-      autoResize: true,
-      lineHeight: 1.25,
-      boundElements: [],
-    }),
-  );
+  // ── Row 1: Functional Requirements (80%) + Assumptions (20%) ──
+  elements.push(rect("template-fr-rect", 30, 30, 759, 288, "template-fr-text"));
+  elements.push(text("template-fr-text", "Functional Requirements", "template-fr-rect", 30, 30, 759));
 
-  // Left column: x 30..1030 (width 1000)
-  // Right column: x 1060..2900 (width 1840)
-
-  // ── Row 1: Functional Requirements (80%) + Assumptions (20%) — same height as NFR ──
-  elements.push(rect("template-fr-rect", 30, 114, 759, 288, "template-fr-text"));
-  elements.push(text("template-fr-text", "Functional Requirements", "template-fr-rect", 30, 114, 759));
-
-  elements.push(rect("template-assumptions-rect", 799, 114, 231, 288, "template-assumptions-text"));
-  elements.push(text("template-assumptions-text", "Assumptions", "template-assumptions-rect", 799, 114, 231));
+  elements.push(rect("template-assumptions-rect", 799, 30, 231, 288, "template-assumptions-text"));
+  elements.push(text("template-assumptions-text", "Assumptions", "template-assumptions-rect", 799, 30, 231));
 
   // ── Row 2: Non-Functional Requirements ──
-  elements.push(rect("template-nfr-rect", 30, 422, 1000, 288, "template-nfr-text"));
-  elements.push(text("template-nfr-text", "Non-Functional Requirements", "template-nfr-rect", 30, 422, 1000));
+  elements.push(rect("template-nfr-rect", 30, 338, 1000, 288, "template-nfr-text"));
+  elements.push(text("template-nfr-text", "Non-Functional Requirements", "template-nfr-rect", 30, 338, 1000));
 
   // ── Row 3: Core Entities (50%) + Capacity Calculations (50%) ──
-  elements.push(rect("template-entities-rect", 30, 730, 490, 200, "template-entities-text"));
-  elements.push(text("template-entities-text", "Core Entities", "template-entities-rect", 30, 730, 490));
+  elements.push(rect("template-entities-rect", 30, 646, 490, 200, "template-entities-text"));
+  elements.push(text("template-entities-text", "Core Entities", "template-entities-rect", 30, 646, 490));
 
-  elements.push(rect("template-capacity-rect", 530, 730, 500, 200, "template-capacity-text"));
-  elements.push(text("template-capacity-text", "Capacity Calculations", "template-capacity-rect", 530, 730, 500));
+  elements.push(rect("template-capacity-rect", 530, 646, 500, 200, "template-capacity-text"));
+  elements.push(text("template-capacity-text", "Capacity Calculations", "template-capacity-rect", 530, 646, 500));
 
-  // ── Row 4: API Routes — taller with freed space ──
-  elements.push(rect("template-api-rect", 30, 950, 1000, 608, "template-api-text"));
-  elements.push(text("template-api-text", "API Routes", "template-api-rect", 30, 950, 1000));
+  // ── Row 4: API Routes ──
+  elements.push(rect("template-api-rect", 30, 866, 1000, 608, "template-api-text"));
+  elements.push(text("template-api-text", "API Routes", "template-api-rect", 30, 866, 1000));
 
-  // ── Right column: High-Level Design ──
-  elements.push(rect("template-hld-rect", 1060, 114, 1840, 1444, "template-hld-text"));
-  elements.push(text("template-hld-text", "High-Level Design", "template-hld-rect", 1060, 114, 1840));
+  // ── Right column: High-Level Design — 30% wider ──
+  elements.push(rect("template-hld-rect", 1060, 30, 2392, 1444, "template-hld-text"));
+  elements.push(text("template-hld-text", "High-Level Design", "template-hld-rect", 1060, 30, 2392));
 
   return elements;
 }
