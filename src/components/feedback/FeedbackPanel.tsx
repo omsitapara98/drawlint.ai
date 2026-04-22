@@ -112,6 +112,7 @@ function ScoreCircle({ score }: { score: number }) {
 const DIMENSION_META: Record<string, { icon: React.ReactNode; label: string; emoji: string }> = {
   nfrReview: { icon: <Layers className="h-4 w-4" />, label: "NFR Review", emoji: "📋" },
   entitiesReview: { icon: <Target className="h-4 w-4" />, label: "Core Entities Review", emoji: "🗃️" },
+  capacityReview: { icon: <Activity className="h-4 w-4" />, label: "Capacity Review", emoji: "📊" },
   apiReview: { icon: <Zap className="h-4 w-4" />, label: "API Review", emoji: "🔌" },
   hldReview: { icon: <Activity className="h-4 w-4" />, label: "HLD Review", emoji: "🏗️" },
 };
@@ -147,7 +148,7 @@ const SIGNAL_LABELS: Record<string, string> = {
 };
 
 // All 4 section reviewers always shown at every level
-const SECTION_DIMENSIONS = ["nfrReview", "entitiesReview", "apiReview", "hldReview"] as const;
+const SECTION_DIMENSIONS = ["nfrReview", "entitiesReview", "capacityReview", "apiReview", "hldReview"] as const;
 
 function DimensionCard({ name, dimension }: { name: string; dimension: ReviewDimension }) {
   const [expanded, setExpanded] = useState(true);

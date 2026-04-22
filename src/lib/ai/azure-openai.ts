@@ -246,6 +246,7 @@ function validateReview(raw: AIReviewResponse, level: ReviewLevel): AIReviewResp
     // Section-based reviewers — always present
     nfrReview: validateDimension(raw.nfrReview),
     entitiesReview: validateDimension(raw.entitiesReview),
+    capacityReview: validateDimension(raw.capacityReview),
     apiReview: validateDimension(raw.apiReview),
     hldReview: validateDimension(raw.hldReview),
     flowAnalysis: {

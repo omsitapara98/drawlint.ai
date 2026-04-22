@@ -66,6 +66,7 @@ REVIEW LEVEL: Mid (L4-L5) — Focus on basic correctness. Don't expect advanced 
 Expected depth per reviewer:
 - NFR REVIEWER: Are basic NFRs mentioned? (latency, availability) Acceptable if numbers are rough.
 - CORE ENTITIES REVIEWER: Are key entities identified? (1-word nouns like User, Post, Message) Basic list is sufficient.
+- CAPACITY REVIEWER: Are basic numbers present? (DAU, rough QPS) Math doesn't need to be precise but should be in the right ballpark.
 - API REVIEWER: Do endpoints cover the core FR? Basic REST grammar? CRUD coverage is fine.
 - HLD REVIEWER: Does the design work end-to-end? Are components connected? Data flows logically?
 - LEAD REVIEWER: A correct, logical design with reasonable choices is a strong signal at this level.`;
@@ -75,6 +76,7 @@ REVIEW LEVEL: Senior (L5-L6) — Expect scalability thinking, proper caching, as
 Expected depth per reviewer:
 - NFR REVIEWER: Are NFRs specific and measurable? Consistency model chosen? Numbers tied to assumptions?
 - CORE ENTITIES REVIEWER: Relationships and access patterns considered? Read vs write models?
+- CAPACITY REVIEWER: Are calculations methodical? (DAU → peak QPS → storage/year → bandwidth). Does the HLD architecture actually match these numbers? Flag mismatches.
 - API REVIEWER: Resource-oriented design, pagination, proper HTTP verbs, error handling, status codes?
 - HLD REVIEWER: Scalability for stated load, proper caching, async where needed, basic redundancy, no obvious SPOFs?
 - LEAD REVIEWER: Expect good architectural patterns and scalability awareness.`;
@@ -84,6 +86,7 @@ REVIEW LEVEL: Staff (L6+) — Expect excellence: deep trade-off analysis, operat
 Expected depth per reviewer:
 - NFR REVIEWER: NFRs tied to SLA contracts? Trade-offs between NFRs discussed? (e.g., consistency vs availability)
 - CORE ENTITIES REVIEWER: Data partitioning strategy, hot key awareness, denormalization rationale?
+- CAPACITY REVIEWER: Full estimation chain verified. Storage growth projections realistic? Does the database choice handle calculated QPS? Are cache hit ratios accounted for? Does the design scale to the numbers or will it break?
 - API REVIEWER: Idempotency keys, API versioning, rate limiting, backward compatibility, bulk operations?
 - HLD REVIEWER: Data partitioning, consistency trade-offs, circuit breakers, graceful degradation, operational readiness, monitoring?
 - LEAD REVIEWER: Expect sophisticated trade-off discussions and operational maturity.`;
@@ -93,6 +96,7 @@ REVIEW LEVEL: Deep Analysis — Comprehensive production design review. Go beyon
 Expected depth per reviewer:
 - NFR REVIEWER: All Staff expectations + compliance requirements, multi-region latency budgets, SLA composition across dependencies.
 - CORE ENTITIES REVIEWER: All Staff expectations + GDPR/data retention, cross-region replication strategy, schema evolution.
+- CAPACITY REVIEWER: All Staff expectations + cost modeling (compute + storage + bandwidth), capacity planning for 2-3x growth, auto-scaling thresholds derived from calculations.
 - API REVIEWER: All Staff expectations + security review (auth/authz, injection), API gateway patterns, mTLS between services.
 - HLD REVIEWER: All Staff expectations + multi-region/disaster recovery, blue-green deployments, chaos engineering readiness, cost optimization.
 - LEAD REVIEWER: Assess overall production readiness, not just interview signal.`;
@@ -100,17 +104,19 @@ Expected depth per reviewer:
 /* ── Reviewer descriptions (shared across all levels) ────────── */
 
 const REVIEWERS = `
-THE 5 REVIEWERS:
+THE 6 REVIEWERS:
 
 1. 📋 NFR REVIEWER — Reviews the Non-Functional Requirements section. Are NFRs well-defined (latency targets, throughput, availability SLA, consistency model)? Do they match the scale from Assumptions? Are they measurable?
 
 2. 🗃️ CORE ENTITIES REVIEWER — Reviews the Core Entities section. Are entities well-identified (typically 1-word nouns: User, Tweet, Post, Video, Message, Order, etc.)? Are relationships clear? Is the data model appropriate for the use case?
 
-3. 🔌 API REVIEWER — Reviews the API Routes section. For REST: checks resource-oriented design, proper HTTP verbs, URL grammar, pagination, error codes. For WebSocket: checks message-based protocol design, event types, connection lifecycle. For GraphQL: checks query/mutation separation, schema design. Are all FR covered by at least one API endpoint?
+3. 📊 CAPACITY REVIEWER — Reviews the Capacity Calculations section. Are the math and estimates correct? (DAU → QPS → storage → bandwidth). Does the design actually adhere to these numbers? If the candidate calculated 50K QPS, does the architecture handle that? Are storage estimates realistic? Does the design match the scale the candidate calculated, or is there a mismatch between the numbers and the components chosen?
 
-4. 🏗️ HLD REVIEWER — Reviews the High-Level Design diagram. FR Completeness: does the design fulfill ALL stated functional requirements? NFR Adherence: does the architecture meet the stated NFRs? Component Correctness: are the right components used, does data flow make sense? Scalability: can it handle the scale stated in Assumptions? Reliability: SPOFs, redundancy for critical paths. Bottlenecks: hot paths, sync chains, missing caching.
+4. 🔌 API REVIEWER — Reviews the API Routes section. For REST: checks resource-oriented design, proper HTTP verbs, URL grammar, pagination, error codes. For WebSocket: checks message-based protocol design, event types, connection lifecycle. For GraphQL: checks query/mutation separation, schema design. Are all FR covered by at least one API endpoint?
 
-5. 🎯 LEAD REVIEWER — Summarizes across all reviewers: top 3 strengths, top 3 risks, hire signal for the given level (strong-hire / hire / lean-hire / lean-no-hire / no-hire), signal reason, and what to improve next.`;
+5. 🏗️ HLD REVIEWER — Reviews the High-Level Design diagram. FR Completeness: does the design fulfill ALL stated functional requirements? NFR Adherence: does the architecture meet the stated NFRs? Capacity Adherence: does the architecture handle the scale from capacity calculations? Component Correctness: are the right components used, does data flow make sense? Scalability: can it handle the scale stated in Assumptions? Reliability: SPOFs, redundancy for critical paths. Bottlenecks: hot paths, sync chains, missing caching.
+
+6. 🎯 LEAD REVIEWER — Summarizes across all reviewers: top 3 strengths, top 3 risks, hire signal for the given level (strong-hire / hire / lean-hire / lean-no-hire / no-hire), signal reason, and what to improve next.`;
 
 const RESPONSE_SCHEMA = `
 Return a JSON object with this EXACT structure:
@@ -121,6 +127,7 @@ Return a JSON object with this EXACT structure:
   "summary": "<2-3 sentence overview>",
   "nfrReview": ${DIMENSION_SCHEMA},
   "entitiesReview": ${DIMENSION_SCHEMA},
+  "capacityReview": ${DIMENSION_SCHEMA},
   "apiReview": ${DIMENSION_SCHEMA},
   "hldReview": ${DIMENSION_SCHEMA},
   "flowAnalysis": {
@@ -132,8 +139,8 @@ ${LEAD_REVIEWER_SCHEMA},
   "followUpQuestions": ["Question 1?", "Question 2?"]
 }
 
-OVERALL SCORE: Weighted average of the 4 dimension scores × 10.
-Weights: nfrReview=15%, entitiesReview=15%, apiReview=25%, hldReview=45%.`;
+OVERALL SCORE: Weighted average of the 5 dimension scores × 10.
+Weights: nfrReview=10%, entitiesReview=10%, capacityReview=15%, apiReview=20%, hldReview=45%.`;
 
 /* ── Build prompt per level ──────────────────────────────────── */
 

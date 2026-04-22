@@ -53,6 +53,7 @@ export interface AIReviewResponse {
   // Section-based reviewers — always present at every level
   nfrReview: ReviewDimension;
   entitiesReview: ReviewDimension;
+  capacityReview: ReviewDimension;
   apiReview: ReviewDimension;
   hldReview: ReviewDimension;
   flowAnalysis: {
