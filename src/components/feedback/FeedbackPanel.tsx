@@ -196,6 +196,18 @@ export function FeedbackPanel({ diagram }: FeedbackPanelProps) {
               )}
           </CardContent>
         </Card>
+
+        {/* Raw JSON dump */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold">Raw JSON</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <pre className="max-h-96 overflow-auto rounded-md bg-muted p-3 text-[11px] leading-relaxed">
+              {JSON.stringify(diagram, null, 2)}
+            </pre>
+          </CardContent>
+        </Card>
       </div>
     </ScrollArea>
   );
