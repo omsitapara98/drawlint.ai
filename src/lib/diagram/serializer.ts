@@ -4,6 +4,7 @@ import type {
   DiagramConnection,
   SerializedDiagram,
 } from "@/types/diagram";
+import type { SectionContents } from "@/types/feedback";
 
 type NodeType = DiagramNode["type"];
 
@@ -122,4 +123,67 @@ export function serializeDiagram(
     rawElementCount: elements.length,
     timestamp: Date.now(),
   };
+}
+
+/* ── Section extraction for local preview ─────────────────────── */
+
+const SECTION_DEFS: {
+  rectId: string;
+  textId: string;
+  key: keyof SectionContents;
+}[] = [
+  { rectId: "template-fr-rect", textId: "template-fr-text", key: "functionalRequirements" },
+  { rectId: "template-assumptions-rect", textId: "template-assumptions-text", key: "assumptions" },
+  { rectId: "template-nfr-rect", textId: "template-nfr-text", key: "nonFunctionalRequirements" },
+  { rectId: "template-entities-rect", textId: "template-entities-text", key: "coreEntities" },
+  { rectId: "template-capacity-rect", textId: "template-capacity-text", key: "capacityCalculations" },
+  { rectId: "template-api-rect", textId: "template-api-text", key: "apiRoutes" },
+  { rectId: "template-hld-rect", textId: "template-hld-text", key: "hld" },
+];
+
+/**
+ * Extract user-typed text from each template section rectangle.
+ * Finds text elements positioned within each section's bounds,
+ * excluding the locked header labels.
+ */
+export function extractSectionContents(
+  elements: readonly ExcalidrawElement[],
+): SectionContents {
+  const active = elements.filter((e) => !e.isDeleted);
+
+  const result: SectionContents = {
+    functionalRequirements: "",
+    assumptions: "",
+    nonFunctionalRequirements: "",
+    coreEntities: "",
+    capacityCalculations: "",
+    apiRoutes: "",
+    hld: "",
+  };
+
+  const headerTextIds = new Set(SECTION_DEFS.map((s) => s.textId));
+
+  for (const section of SECTION_DEFS) {
+    const rectEl = active.find((e) => e.id === section.rectId);
+    if (!rectEl) continue;
+
+    const rx = rectEl.x;
+    const ry = rectEl.y;
+    const rw = (rectEl as Record<string, unknown>).width as number;
+    const rh = (rectEl as Record<string, unknown>).height as number;
+
+    const texts: string[] = [];
+    for (const el of active) {
+      if (el.type !== "text") continue;
+      if (headerTextIds.has(el.id)) continue;
+      if (el.x >= rx && el.x <= rx + rw && el.y >= ry && el.y <= ry + rh) {
+        const t = ((el as Record<string, unknown>).text as string) ?? "";
+        if (t.trim()) texts.push(t.trim());
+      }
+    }
+
+    result[section.key] = texts.join("\n");
+  }
+
+  return result;
 }

@@ -16,3 +16,13 @@ export interface FeedbackItem {
 }
 
 export type AnalysisStatus = "idle" | "analyzing" | "complete" | "error";
+
+export interface SectionContents {
+  functionalRequirements: string;
+  assumptions: string;
+  nonFunctionalRequirements: string;
+  coreEntities: string;
+  capacityCalculations: string;
+  apiRoutes: string;
+  hld: string;
+}

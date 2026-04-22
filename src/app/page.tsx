@@ -8,9 +8,10 @@ import { FeedbackPanel } from "@/components/feedback";
 import { Header } from "@/components/layout";
 import { SettingsModal } from "@/components/settings";
 import { Button } from "@/components/ui/button";
-import { useAutoSave, useAnalysis } from "@/hooks";
+import { useAutoSave } from "@/hooks";
 import { loadDiagram, clearDiagram } from "@/lib/storage";
-import { serializeDiagram, createWhiteboardTemplate } from "@/lib/diagram";
+import { extractSectionContents, createWhiteboardTemplate } from "@/lib/diagram";
+import type { SectionContents } from "@/types/feedback";
 import { X, MessageSquareText, RotateCcw } from "lucide-react";
 
 export default function Home() {
@@ -21,8 +22,7 @@ export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [canvasKey, setCanvasKey] = useState(0);
-
-  const { feedback, status, error, analyze } = useAnalysis();
+  const [sectionContents, setSectionContents] = useState<SectionContents | null>(null);
 
   useAutoSave(elements);
 
@@ -48,10 +48,10 @@ export default function Home() {
   );
 
   const handleAnalyze = useCallback(() => {
-    const serialized = serializeDiagram(elements);
-    analyze(serialized);
+    const sections = extractSectionContents(elements);
+    setSectionContents(sections);
     setPanelOpen(true);
-  }, [elements, analyze]);
+  }, [elements]);
 
   const handleNewBoard = useCallback(() => {
     clearDiagram();
@@ -60,6 +60,7 @@ export default function Home() {
     setInitialData(template);
     setCanvasKey((k) => k + 1);
     setPanelOpen(false);
+    setSectionContents(null);
   }, []);
 
   if (initialData === null) {
@@ -91,28 +92,13 @@ export default function Home() {
               New Board
             </Button>
 
-            {hasDrawnShapes && (
-              <div className="rounded-full bg-background/80 backdrop-blur-sm border px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
-                {visibleElements.length} element
-                {visibleElements.length === 1 ? "" : "s"}
-              </div>
-            )}
             <Button
               onClick={handleAnalyze}
-              disabled={status === "analyzing" || !hasDrawnShapes}
+              disabled={!hasDrawnShapes}
               className="h-9 rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-4 text-sm text-white shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:shadow-none disabled:translate-y-0"
             >
-              {status === "analyzing" ? (
-                <>
-                  <span className="mr-1.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  Analyzing…
-                </>
-              ) : (
-                <>
-                  <MessageSquareText className="mr-1.5 h-3.5 w-3.5" />
-                  Analyze Design
-                </>
-              )}
+              <MessageSquareText className="mr-1.5 h-3.5 w-3.5" />
+              Analyze Design
             </Button>
           </div>
         )}
@@ -137,10 +123,10 @@ export default function Home() {
                   variant="ghost"
                   size="sm"
                   onClick={handleAnalyze}
-                  disabled={status === "analyzing" || !hasDrawnShapes}
+                  disabled={!hasDrawnShapes}
                   className="text-xs"
                 >
-                  {status === "analyzing" ? "Analyzing…" : "Re-analyze"}
+                  Re-analyze
                 </Button>
                 <Button
                   variant="ghost"
@@ -156,11 +142,7 @@ export default function Home() {
 
             {/* Panel content */}
             <div className="flex-1 overflow-hidden">
-              <FeedbackPanel
-                feedback={feedback}
-                status={status}
-                error={error}
-              />
+              <FeedbackPanel sections={sectionContents} />
             </div>
           </div>
         </div>
