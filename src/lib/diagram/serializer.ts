@@ -9,12 +9,26 @@ import type { SectionContents } from "@/types/feedback";
 type NodeType = DiagramNode["type"];
 
 const KEYWORD_MAP: [RegExp, NodeType][] = [
-  [/\b(db|database|sql|mongo|postgres|redis|dynamo)\b/i, "database"],
-  [/\b(queue|kafka|rabbitmq|sqs)\b/i, "queue"],
-  [/\b(cache|redis|memcached)\b/i, "cache"],
-  [/\b(lb|load\s*balancer|nginx|haproxy)\b/i, "load-balancer"],
-  [/\b(client|user|browser|mobile)\b/i, "client"],
-  [/\b(s3|blob|storage|bucket)\b/i, "storage"],
+  // Infrastructure
+  [/\b(api[\s_-]?gateway)\b/i, "api-gateway"],
+  [/\b(lb|load[\s_-]?balancer|nginx|haproxy|envoy|traefik)\b/i, "load-balancer"],
+  [/\b(cdn|cloudfront|akamai|fastly|edge[\s_-]?cache)\b/i, "cdn"],
+  [/\b(dns|route\s*53|name[\s_-]?server)\b/i, "dns"],
+  [/\b(firewall|waf|security[\s_-]?group)\b/i, "firewall"],
+
+  // Data stores
+  [/\b(db|database|sql|mysql|mongo|postgres|dynamo|cockroach|aurora|rds|cassandra|spanner)\b/i, "database"],
+  [/\b(cache|redis|memcached|elasticache)\b/i, "cache"],
+  [/\b(s3|blob|storage|bucket|gcs|azure[\s_-]?blob|minio|object[\s_-]?store)\b/i, "storage"],
+
+  // Messaging
+  [/\b(kafka|rabbitmq|sqs|queue|amqp|activemq|celery|bull)\b/i, "queue"],
+  [/\b(pub[\s_-]?sub|sns|event[\s_-]?bus|event[\s_-]?hub|nats|event[\s_-]?stream|notification)\b/i, "pubsub"],
+
+  // Compute
+  [/\b(worker|cron|job|scheduler|consumer|processor|daemon|batch)\b/i, "worker"],
+  [/\b(server|instance|node|vm|container|pod)\b/i, "server"],
+  [/\b(client|user|browser|mobile|frontend|app|player)\b/i, "client"],
 ];
 
 export function getTextForElement(
@@ -87,34 +101,17 @@ export function classifyNode(
   if (!label) return "unknown";
 
   // Multi-line or long text blocks are logic descriptions, not component labels.
-  // Real components have short names (e.g., "Redis Cache", "Api Gateway").
   const lineCount = label.split("\n").length;
   if (lineCount > 3 || label.length > 120) return "service";
 
   for (const [pattern, nodeType] of KEYWORD_MAP) {
-    // Some types are shape-sensitive
-    if (nodeType === "database") {
-      if (
-        (shapeType === "rectangle" || shapeType === "diamond") &&
-        pattern.test(label)
-      )
-        return "database";
-    } else if (nodeType === "load-balancer") {
-      if (
-        (shapeType === "ellipse" || shapeType === "diamond") &&
-        pattern.test(label)
-      )
-        return "load-balancer";
-    } else if (shapeType === "rectangle" && pattern.test(label)) {
-      return nodeType;
-    }
+    if (pattern.test(label)) return nodeType;
   }
 
-  // Default: labeled rectangle → service
-  if (shapeType === "rectangle") return "service";
+  // Default: any labeled shape → service
+  if (label.trim()) return "service";
 
-  // For non-rectangle shapes with text but no keyword match, still treat as service
-  return "service";
+  return "unknown";
 }
 
 const SHAPE_TYPES = new Set(["rectangle", "diamond", "ellipse"]);

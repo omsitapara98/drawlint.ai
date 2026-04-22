@@ -6,13 +6,20 @@ export type { ExcalidrawElement };
 export interface DiagramNode {
   id: string;
   type:
-    | "service"
-    | "database"
-    | "queue"
-    | "cache"
-    | "load-balancer"
     | "client"
+    | "api-gateway"
+    | "load-balancer"
+    | "service"
+    | "worker"
+    | "database"
+    | "cache"
+    | "queue"
+    | "pubsub"
     | "storage"
+    | "cdn"
+    | "dns"
+    | "firewall"
+    | "server"
     | "unknown";
   label: string;
   position: { x: number; y: number };
