@@ -236,14 +236,18 @@ function validateLeadReviewer(raw: unknown): LeadReviewer {
 /** Validate and normalize the parsed AIReviewResponse. */
 function validateReview(raw: AIReviewResponse, level: ReviewLevel): AIReviewResponse {
   const flowRaw = raw.flowAnalysis;
-  const base: AIReviewResponse = {
+  return {
     level,
     score:
       typeof raw.score === "number"
         ? Math.max(0, Math.min(100, raw.score))
         : 0,
     summary: typeof raw.summary === "string" ? raw.summary : "",
-    bottlenecks: validateDimension(raw.bottlenecks),
+    // Section-based reviewers — always present
+    nfrReview: validateDimension(raw.nfrReview),
+    entitiesReview: validateDimension(raw.entitiesReview),
+    apiReview: validateDimension(raw.apiReview),
+    hldReview: validateDimension(raw.hldReview),
     flowAnalysis: {
       criticalPath:
         typeof flowRaw === "object" &&
@@ -269,21 +273,4 @@ function validateReview(raw: AIReviewResponse, level: ReviewLevel): AIReviewResp
       ? raw.followUpQuestions
       : [],
   };
-
-  // Add level-specific dimensions
-  if (level === "mid") {
-    base.correctness = validateDimension(raw.correctness);
-  }
-  if (level === "senior" || level === "staff" || level === "deep") {
-    base.scalability = validateDimension(raw.scalability);
-    base.reliability = validateDimension(raw.reliability);
-  }
-  if (level === "staff" || level === "deep") {
-    base.completeness = validateDimension(raw.completeness);
-  }
-  if (level === "deep") {
-    base.security = validateDimension(raw.security);
-  }
-
-  return base;
 }

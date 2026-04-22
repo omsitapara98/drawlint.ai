@@ -50,17 +50,11 @@ export interface AIReviewResponse {
   level: ReviewLevel;
   score: number;
   summary: string;
-  // Always present
-  bottlenecks: ReviewDimension;
-  // Present for mid
-  correctness?: ReviewDimension;
-  // Present for senior+
-  scalability?: ReviewDimension;
-  reliability?: ReviewDimension;
-  // Present for staff+
-  completeness?: ReviewDimension;
-  // Present for deep only
-  security?: ReviewDimension;
+  // Section-based reviewers — always present at every level
+  nfrReview: ReviewDimension;
+  entitiesReview: ReviewDimension;
+  apiReview: ReviewDimension;
+  hldReview: ReviewDimension;
   flowAnalysis: {
     criticalPath: string[];
     missingEdges: string[];

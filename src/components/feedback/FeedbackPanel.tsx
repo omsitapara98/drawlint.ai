@@ -17,7 +17,6 @@ import {
   Sparkles,
   ArrowRight,
   HelpCircle,
-  Shield,
   Zap,
   Activity,
   Target,
@@ -25,7 +24,6 @@ import {
   CheckCircle2,
   AlertOctagon,
   TrendingUp,
-  Wrench,
 } from "lucide-react";
 
 interface FeedbackPanelProps {
@@ -112,12 +110,10 @@ function ScoreCircle({ score }: { score: number }) {
 /* ── Dimension Card ──────────────────────────────────────────── */
 
 const DIMENSION_META: Record<string, { icon: React.ReactNode; label: string; emoji: string }> = {
-  correctness: { icon: <Wrench className="h-4 w-4" />, label: "Correctness", emoji: "🏗️" },
-  scalability: { icon: <Zap className="h-4 w-4" />, label: "Scalability", emoji: "🔥" },
-  reliability: { icon: <Activity className="h-4 w-4" />, label: "Reliability", emoji: "💀" },
-  bottlenecks: { icon: <Target className="h-4 w-4" />, label: "Bottlenecks", emoji: "🐌" },
-  security: { icon: <Shield className="h-4 w-4" />, label: "Security", emoji: "🔒" },
-  completeness: { icon: <Layers className="h-4 w-4" />, label: "Design Completeness", emoji: "📐" },
+  nfrReview: { icon: <Layers className="h-4 w-4" />, label: "NFR Review", emoji: "📋" },
+  entitiesReview: { icon: <Target className="h-4 w-4" />, label: "Core Entities Review", emoji: "🗃️" },
+  apiReview: { icon: <Zap className="h-4 w-4" />, label: "API Review", emoji: "🔌" },
+  hldReview: { icon: <Activity className="h-4 w-4" />, label: "HLD Review", emoji: "🏗️" },
 };
 
 const LEVEL_LABELS: Record<ReviewLevel, string> = {
@@ -150,13 +146,8 @@ const SIGNAL_LABELS: Record<string, string> = {
   "no-hire": "No Hire",
 };
 
-// Which dimensions to show per level, in order
-const DIMENSIONS_BY_LEVEL: Record<ReviewLevel, string[]> = {
-  mid: ["correctness", "bottlenecks"],
-  senior: ["scalability", "reliability", "bottlenecks"],
-  staff: ["scalability", "reliability", "bottlenecks", "completeness"],
-  deep: ["scalability", "reliability", "bottlenecks", "security", "completeness"],
-};
+// All 4 section reviewers always shown at every level
+const SECTION_DIMENSIONS = ["nfrReview", "entitiesReview", "apiReview", "hldReview"] as const;
 
 function DimensionCard({ name, dimension }: { name: string; dimension: ReviewDimension }) {
   const [expanded, setExpanded] = useState(true);
@@ -304,7 +295,6 @@ function AIReviewContent({
   if (!review) return null;
 
   const level = review.level ?? "deep";
-  const dimensionsToShow = DIMENSIONS_BY_LEVEL[level];
 
   return (
     <ScrollArea className="h-full">
@@ -328,12 +318,10 @@ function AIReviewContent({
           </CardContent>
         </Card>
 
-        {/* Dimension Cards — only those relevant for the level */}
-        {dimensionsToShow.map((dim) => {
-          const dimension = review[dim as keyof AIReviewResponse] as ReviewDimension | undefined;
-          if (!dimension) return null;
-          return <DimensionCard key={dim} name={dim} dimension={dimension} />;
-        })}
+        {/* Section Reviewer Cards — always all 4 */}
+        {SECTION_DIMENSIONS.map((dim) => (
+          <DimensionCard key={dim} name={dim} dimension={review[dim]} />
+        ))}
 
         {/* Lead Reviewer Card */}
         {review.leadReviewer && (

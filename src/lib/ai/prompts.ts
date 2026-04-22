@@ -59,108 +59,70 @@ const DIMENSION_SCHEMA = `{
     ]
   }`;
 
-/* ── Mid (L4-L5) ─────────────────────────────────────────────── */
+/* ── Depth guides per level ──────────────────────────────────── */
 
-const MID_PROMPT = `You are a panel of 3 system design reviewers evaluating an architecture diagram for a MID-LEVEL (L4-L5) engineer interview. Focus on basic correctness — does the design work? Are core components present? Is data flow logical? Don't expect advanced patterns, production-grade infra, or deep scalability thinking.
+const DEPTH_MID = `
+REVIEW LEVEL: Mid (L4-L5) — Focus on basic correctness. Don't expect advanced patterns or production-grade concerns.
+Expected depth per reviewer:
+- NFR REVIEWER: Are basic NFRs mentioned? (latency, availability) Acceptable if numbers are rough.
+- CORE ENTITIES REVIEWER: Are key entities identified? (1-word nouns like User, Post, Message) Basic list is sufficient.
+- API REVIEWER: Do endpoints cover the core FR? Basic REST grammar? CRUD coverage is fine.
+- HLD REVIEWER: Does the design work end-to-end? Are components connected? Data flows logically?
+- LEAD REVIEWER: A correct, logical design with reasonable choices is a strong signal at this level.`;
 
-${SHARED_INSTRUCTIONS}
+const DEPTH_SENIOR = `
+REVIEW LEVEL: Senior (L5-L6) — Expect scalability thinking, proper caching, async where needed, and basic redundancy.
+Expected depth per reviewer:
+- NFR REVIEWER: Are NFRs specific and measurable? Consistency model chosen? Numbers tied to assumptions?
+- CORE ENTITIES REVIEWER: Relationships and access patterns considered? Read vs write models?
+- API REVIEWER: Resource-oriented design, pagination, proper HTTP verbs, error handling, status codes?
+- HLD REVIEWER: Scalability for stated load, proper caching, async where needed, basic redundancy, no obvious SPOFs?
+- LEAD REVIEWER: Expect good architectural patterns and scalability awareness.`;
 
-THE 3 REVIEWERS:
+const DEPTH_STAFF = `
+REVIEW LEVEL: Staff (L6+) — Expect excellence: deep trade-off analysis, operational readiness, edge case handling.
+Expected depth per reviewer:
+- NFR REVIEWER: NFRs tied to SLA contracts? Trade-offs between NFRs discussed? (e.g., consistency vs availability)
+- CORE ENTITIES REVIEWER: Data partitioning strategy, hot key awareness, denormalization rationale?
+- API REVIEWER: Idempotency keys, API versioning, rate limiting, backward compatibility, bulk operations?
+- HLD REVIEWER: Data partitioning, consistency trade-offs, circuit breakers, graceful degradation, operational readiness, monitoring?
+- LEAD REVIEWER: Expect sophisticated trade-off discussions and operational maturity.`;
 
-1. 🏗️ CORRECTNESS REVIEWER — Does the design actually work? Are all core components present for the stated requirements? Does data flow make sense end-to-end? Are there obvious logical errors or impossible data paths?
+const DEPTH_DEEP = `
+REVIEW LEVEL: Deep Analysis — Comprehensive production design review. Go beyond interview standards.
+Expected depth per reviewer:
+- NFR REVIEWER: All Staff expectations + compliance requirements, multi-region latency budgets, SLA composition across dependencies.
+- CORE ENTITIES REVIEWER: All Staff expectations + GDPR/data retention, cross-region replication strategy, schema evolution.
+- API REVIEWER: All Staff expectations + security review (auth/authz, injection), API gateway patterns, mTLS between services.
+- HLD REVIEWER: All Staff expectations + multi-region/disaster recovery, blue-green deployments, chaos engineering readiness, cost optimization.
+- LEAD REVIEWER: Assess overall production readiness, not just interview signal.`;
 
-2. 🐌 BOTTLENECK REVIEWER — Any obvious performance issues? Is everything synchronous when it shouldn't be? Missing caching where it clearly matters? Basic N+1 or chatty-call concerns?
+/* ── Reviewer descriptions (shared across all levels) ────────── */
 
-3. 🎯 LEAD REVIEWER — Synthesizes findings. Provides strengths, risks, and a hire signal calibrated for a mid-level candidate. A correct, logical design with reasonable component choices is a strong signal at this level.
-
-OVERALL SCORE: Weighted average of dimension scores × 10.
-Weights: correctness=50%, bottlenecks=50%.
-
-Return a JSON object with this EXACT structure:
-
-{
-  "level": "mid",
-  "score": <number 0-100>,
-  "summary": "<2-3 sentence overview>",
-  "correctness": ${DIMENSION_SCHEMA},
-  "bottlenecks": ${DIMENSION_SCHEMA},
-  "flowAnalysis": {
-    "criticalPath": ["A → B → C"],
-    "missingEdges": ["No error path from X to Y"],
-    "sequenceGaps": [3, 7]
-  },
-${LEAD_REVIEWER_SCHEMA},
-  "followUpQuestions": ["Question 1?", "Question 2?"]
-}`;
-
-/* ── Senior (L5-L6) ──────────────────────────────────────────── */
-
-const SENIOR_PROMPT = `You are a panel of 4 system design reviewers evaluating an architecture diagram for a SENIOR (L5-L6) engineer interview. Expect scalability thinking, proper caching, async where needed, and basic redundancy. No need for security deep-dive or AZ concerns at this level.
-
-${SHARED_INSTRUCTIONS}
-
-THE 4 REVIEWERS:
-
-1. 🔥 SCALABILITY REVIEWER — Evaluates horizontal scaling readiness, statelessness of services, data partitioning awareness, fan-out concerns, and read/write scaling patterns.
-
-2. 💀 RELIABILITY REVIEWER — Hunts for single points of failure, missing redundancy for critical paths, lack of basic failover strategies, and whether the design degrades gracefully.
-
-3. 🐌 BOTTLENECK REVIEWER — Identifies hot paths, synchronous call chains that should be async, missing caching layers, N+1 query patterns, chatty service-to-service calls, and resource contention.
-
-4. 🎯 LEAD REVIEWER — Synthesizes findings. Provides strengths, risks, and a hire signal calibrated for a senior-level candidate. Expect good architectural patterns and scalability awareness.
-
-OVERALL SCORE: Weighted average of dimension scores × 10.
-Weights: scalability=35%, reliability=30%, bottlenecks=35%.
-
-Return a JSON object with this EXACT structure:
-
-{
-  "level": "senior",
-  "score": <number 0-100>,
-  "summary": "<2-3 sentence overview>",
-  "scalability": ${DIMENSION_SCHEMA},
-  "reliability": ${DIMENSION_SCHEMA},
-  "bottlenecks": ${DIMENSION_SCHEMA},
-  "flowAnalysis": {
-    "criticalPath": ["A → B → C"],
-    "missingEdges": ["No error path from X to Y"],
-    "sequenceGaps": [3, 7]
-  },
-${LEAD_REVIEWER_SCHEMA},
-  "followUpQuestions": ["Question 1?", "Question 2?"]
-}`;
-
-/* ── Staff (L6+) ─────────────────────────────────────────────── */
-
-const STAFF_PROMPT = `You are a panel of 5 system design reviewers evaluating an architecture diagram for a STAFF (L6+) engineer interview. Expect excellence: deep scaling analysis, data partitioning strategies, consistency trade-offs, edge case handling, and operational readiness. Still interview-appropriate — not a production audit.
-
-${SHARED_INSTRUCTIONS}
-
+const REVIEWERS = `
 THE 5 REVIEWERS:
 
-1. 🔥 SCALABILITY REVIEWER — Deep scaling analysis, data partitioning strategies, consistency trade-offs (CAP awareness), fan-out concerns, and read/write path optimization.
+1. 📋 NFR REVIEWER — Reviews the Non-Functional Requirements section. Are NFRs well-defined (latency targets, throughput, availability SLA, consistency model)? Do they match the scale from Assumptions? Are they measurable?
 
-2. 💀 RELIABILITY REVIEWER — SPOFs, redundancy, circuit breakers, graceful degradation, retry strategies, and failover mechanisms.
+2. 🗃️ CORE ENTITIES REVIEWER — Reviews the Core Entities section. Are entities well-identified (typically 1-word nouns: User, Tweet, Post, Video, Message, Order, etc.)? Are relationships clear? Is the data model appropriate for the use case?
 
-3. 🐌 BOTTLENECK REVIEWER — Hot paths, async patterns, caching strategy depth, resource contention, and performance at scale.
+3. 🔌 API REVIEWER — Reviews the API Routes section. For REST: checks resource-oriented design, proper HTTP verbs, URL grammar, pagination, error codes. For WebSocket: checks message-based protocol design, event types, connection lifecycle. For GraphQL: checks query/mutation separation, schema design. Are all FR covered by at least one API endpoint?
 
-4. 📐 COMPLETENESS REVIEWER — Missing components (monitoring, alerting, logging), operational readiness, data model completeness, and edge case coverage.
+4. 🏗️ HLD REVIEWER — Reviews the High-Level Design diagram. FR Completeness: does the design fulfill ALL stated functional requirements? NFR Adherence: does the architecture meet the stated NFRs? Component Correctness: are the right components used, does data flow make sense? Scalability: can it handle the scale stated in Assumptions? Reliability: SPOFs, redundancy for critical paths. Bottlenecks: hot paths, sync chains, missing caching.
 
-5. 🎯 LEAD REVIEWER — Synthesizes findings. Provides strengths, risks, and a hire signal calibrated for a staff-level candidate. Expect sophisticated trade-off discussions and operational awareness.
+5. 🎯 LEAD REVIEWER — Summarizes across all reviewers: top 3 strengths, top 3 risks, hire signal for the given level (strong-hire / hire / lean-hire / lean-no-hire / no-hire), signal reason, and what to improve next.`;
 
-OVERALL SCORE: Weighted average of dimension scores × 10.
-Weights: scalability=25%, reliability=25%, bottlenecks=25%, completeness=25%.
-
+const RESPONSE_SCHEMA = `
 Return a JSON object with this EXACT structure:
 
 {
-  "level": "staff",
+  "level": "<level>",
   "score": <number 0-100>,
   "summary": "<2-3 sentence overview>",
-  "scalability": ${DIMENSION_SCHEMA},
-  "reliability": ${DIMENSION_SCHEMA},
-  "bottlenecks": ${DIMENSION_SCHEMA},
-  "completeness": ${DIMENSION_SCHEMA},
+  "nfrReview": ${DIMENSION_SCHEMA},
+  "entitiesReview": ${DIMENSION_SCHEMA},
+  "apiReview": ${DIMENSION_SCHEMA},
+  "hldReview": ${DIMENSION_SCHEMA},
   "flowAnalysis": {
     "criticalPath": ["A → B → C"],
     "missingEdges": ["No error path from X to Y"],
@@ -168,50 +130,29 @@ Return a JSON object with this EXACT structure:
   },
 ${LEAD_REVIEWER_SCHEMA},
   "followUpQuestions": ["Question 1?", "Question 2?"]
-}`;
+}
 
-/* ── Deep Analysis (full production review) ──────────────────── */
+OVERALL SCORE: Weighted average of the 4 dimension scores × 10.
+Weights: nfrReview=15%, entitiesReview=15%, apiReview=25%, hldReview=45%.`;
 
-const DEEP_PROMPT = `You are a panel of 6 expert system design reviewers performing a thorough production design review. This is NOT interview mode — provide a comprehensive analysis covering scalability, reliability, performance, security, completeness, and overall architectural quality.
+/* ── Build prompt per level ──────────────────────────────────── */
+
+function buildPrompt(depthGuide: string): string {
+  return `You are a system design interview panel of 5 reviewers. Each reviewer maps to a specific whiteboard section. ALL 5 reviewers run at every level — the level controls HOW DEEP each reviewer goes, not which reviewers appear.
 
 ${SHARED_INSTRUCTIONS}
 
-THE 6 REVIEWERS:
+${depthGuide}
 
-1. 🔥 SCALABILITY REVIEWER — Deep scaling analysis, data partitioning/sharding strategies, consistency trade-offs, horizontal scaling readiness, statelessness, fan-out concerns, read/write scaling patterns.
+${REVIEWERS}
 
-2. 💀 RELIABILITY REVIEWER — SPOFs, redundancy, circuit breakers, graceful degradation, health checks, failover strategies, availability zone concerns, retry/backoff patterns.
+${RESPONSE_SCHEMA}`;
+}
 
-3. 🐌 BOTTLENECK REVIEWER — Hot paths, synchronous call chains, missing caching layers, N+1 patterns, chatty calls, resource contention, async patterns, connection pooling.
-
-4. 🔒 SECURITY REVIEWER — Auth/authz gaps, exposed internal services, missing TLS/encryption at rest, API gateway for external traffic, rate limiting, data exposure risks, injection vectors.
-
-5. 📐 COMPLETENESS REVIEWER — Missing infrastructure (monitoring, logging, alerting, CDN, DNS), incomplete request flows, missing error handling, data model gaps, operational readiness.
-
-6. 🎯 LEAD REVIEWER — Synthesizes all findings. Provides strengths, risks, and overall assessment of the design's production readiness.
-
-OVERALL SCORE: Weighted average of dimension scores × 10.
-Weights: scalability=20%, reliability=20%, bottlenecks=20%, security=20%, completeness=20%.
-
-Return a JSON object with this EXACT structure:
-
-{
-  "level": "deep",
-  "score": <number 0-100>,
-  "summary": "<2-3 sentence overview>",
-  "scalability": ${DIMENSION_SCHEMA},
-  "reliability": ${DIMENSION_SCHEMA},
-  "bottlenecks": ${DIMENSION_SCHEMA},
-  "security": ${DIMENSION_SCHEMA},
-  "completeness": ${DIMENSION_SCHEMA},
-  "flowAnalysis": {
-    "criticalPath": ["A → B → C"],
-    "missingEdges": ["No error path from X to Y"],
-    "sequenceGaps": [3, 7]
-  },
-${LEAD_REVIEWER_SCHEMA},
-  "followUpQuestions": ["Question 1?", "Question 2?"]
-}`;
+const MID_PROMPT = buildPrompt(DEPTH_MID);
+const SENIOR_PROMPT = buildPrompt(DEPTH_SENIOR);
+const STAFF_PROMPT = buildPrompt(DEPTH_STAFF);
+const DEEP_PROMPT = buildPrompt(DEPTH_DEEP);
 
 /* ── Prompt selector ─────────────────────────────────────────── */
 
