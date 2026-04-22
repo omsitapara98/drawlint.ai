@@ -24,6 +24,20 @@ DIMENSION SCORING (1-10):
 - 8-9: Very good — well thought out with only minor suggestions
 - 10: Excellent — exemplary in this dimension
 
+CRITICAL SCORING RULE — THE BAR RISES WITH LEVEL:
+The SAME design MUST score LOWER at higher levels because the expectations are stricter.
+- At MID level: a working design with basic components scores 7-8.
+- At SENIOR level: that same design might score 5-6 because it lacks caching, async patterns, or redundancy that a senior should include.
+- At STAFF level: that same design might score 3-4 because it lacks data partitioning, consistency trade-offs, or operational concerns that a staff engineer should address.
+- At DEEP level: even further — missing security, multi-region, disaster recovery drops the score more.
+
+Think of it this way: a 7/10 at Mid means "good for a mid-level candidate." A 7/10 at Staff means "good for a staff-level candidate" — which is a MUCH higher absolute bar. The same design cannot score 7 at both levels. If it does, you are NOT adjusting the bar correctly.
+
+Example: A design with Redis cache, single DB, no sharding, no circuit breakers:
+- Mid: 8/10 (great — they have caching and it works)
+- Senior: 5/10 (where's the read replica? Why no async processing?)
+- Staff: 3/10 (no sharding strategy? No circuit breakers? No monitoring?)
+
 FLOW ANALYSIS:
 - criticalPath: Trace the primary request flow through the system as "A → B → C"
 - missingEdges: Identify connections that should exist but don't (error paths, fallbacks, monitoring)
