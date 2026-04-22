@@ -142,9 +142,10 @@ const SECTION_DEFS: {
 ];
 
 /**
- * Extract user-typed text from each template section rectangle.
- * Finds text elements positioned within each section's bounds,
- * excluding the locked header labels.
+ * Extract user content from each template section rectangle.
+ * Captures shapes (rectangle, ellipse, diamond) with their bound text labels,
+ * plus standalone text elements. Uses the parent shape's position for bound
+ * text to prevent cross-section bleeding.
  */
 export function extractSectionContents(
   elements: readonly ExcalidrawElement[],
@@ -161,7 +162,22 @@ export function extractSectionContents(
     hld: "",
   };
 
-  const headerTextIds = new Set(SECTION_DEFS.map((s) => s.textId));
+  const templateIds = new Set(
+    SECTION_DEFS.flatMap((s) => [s.rectId, s.textId]),
+  );
+
+  // Build a set of text IDs bound to a container so we skip them
+  // during standalone text scanning (they're captured via their parent shape)
+  const boundTextIds = new Set<string>();
+  for (const el of active) {
+    const containerId = (el as Record<string, unknown>).containerId as
+      | string
+      | null
+      | undefined;
+    if (containerId && el.type === "text") {
+      boundTextIds.add(el.id);
+    }
+  }
 
   for (const section of SECTION_DEFS) {
     const rectEl = active.find((e) => e.id === section.rectId);
@@ -172,17 +188,33 @@ export function extractSectionContents(
     const rw = (rectEl as Record<string, unknown>).width as number;
     const rh = (rectEl as Record<string, unknown>).height as number;
 
-    const texts: string[] = [];
+    const inBounds = (ex: number, ey: number) =>
+      ex >= rx && ex <= rx + rw && ey >= ry && ey <= ry + rh;
+
+    const collected: string[] = [];
+
+    // 1. Shapes (rectangle, ellipse, diamond) within bounds → get bound text labels
     for (const el of active) {
-      if (el.type !== "text") continue;
-      if (headerTextIds.has(el.id)) continue;
-      if (el.x >= rx && el.x <= rx + rw && el.y >= ry && el.y <= ry + rh) {
-        const t = ((el as Record<string, unknown>).text as string) ?? "";
-        if (t.trim()) texts.push(t.trim());
-      }
+      if (templateIds.has(el.id)) continue;
+      if (!["rectangle", "ellipse", "diamond"].includes(el.type)) continue;
+      if (!inBounds(el.x, el.y)) continue;
+
+      const label = getTextForElement(el, active);
+      if (label.trim()) collected.push(label.trim());
     }
 
-    result[section.key] = texts.join("\n");
+    // 2. Standalone text (not bound to any shape) within bounds
+    for (const el of active) {
+      if (el.type !== "text") continue;
+      if (templateIds.has(el.id)) continue;
+      if (boundTextIds.has(el.id)) continue;
+      if (!inBounds(el.x, el.y)) continue;
+
+      const t = ((el as Record<string, unknown>).text as string) ?? "";
+      if (t.trim()) collected.push(t.trim());
+    }
+
+    result[section.key] = collected.join("\n");
   }
 
   return result;
