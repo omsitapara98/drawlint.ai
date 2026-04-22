@@ -17,7 +17,7 @@ const KEYWORD_MAP: [RegExp, NodeType][] = [
   [/\b(s3|blob|storage|bucket)\b/i, "storage"],
 ];
 
-function getTextForElement(
+export function getTextForElement(
   element: ExcalidrawElement,
   allElements: readonly ExcalidrawElement[],
 ): string {
@@ -40,7 +40,7 @@ function getTextForElement(
   return "";
 }
 
-function classifyNode(
+export function classifyNode(
   shapeType: string,
   label: string,
 ): NodeType {
@@ -127,7 +127,7 @@ export function serializeDiagram(
 
 /* ── Section extraction for local preview ─────────────────────── */
 
-const SECTION_DEFS: {
+export const SECTION_DEFS: {
   rectId: string;
   textId: string;
   key: keyof SectionContents;

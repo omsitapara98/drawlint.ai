@@ -31,3 +31,45 @@ export interface SerializedDiagram {
   rawElementCount: number;
   timestamp: number;
 }
+
+/* ── Graph parser types ──────────────────────────────────────── */
+
+export interface GraphNode {
+  id: string;
+  label: string;
+  type: DiagramNode["type"];
+  position: { x: number; y: number };
+  dimensions: { width: number; height: number };
+  style: { strokeColor: string; backgroundColor: string };
+}
+
+export interface GraphEdge {
+  id: string;
+  from: string;
+  to: string;
+  label: string;
+  sequence?: number;
+}
+
+export interface GraphAnnotation {
+  id: string;
+  text: string;
+  position: { x: number; y: number };
+  nearestNodeId: string;
+}
+
+export interface ParsedDiagram {
+  sections: {
+    functionalRequirements: string;
+    assumptions: string;
+    nonFunctionalRequirements: string;
+    coreEntities: string;
+    capacityCalculations: string;
+    apiRoutes: string;
+  };
+  hld: {
+    nodes: GraphNode[];
+    edges: GraphEdge[];
+    annotations: GraphAnnotation[];
+  };
+}

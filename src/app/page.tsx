@@ -10,8 +10,8 @@ import { SettingsModal } from "@/components/settings";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks";
 import { loadDiagram, clearDiagram } from "@/lib/storage";
-import { extractSectionContents, createWhiteboardTemplate } from "@/lib/diagram";
-import type { SectionContents } from "@/types/feedback";
+import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
+import type { ParsedDiagram } from "@/types/diagram";
 import { X, MessageSquareText, RotateCcw } from "lucide-react";
 
 export default function Home() {
@@ -22,7 +22,7 @@ export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [canvasKey, setCanvasKey] = useState(0);
-  const [sectionContents, setSectionContents] = useState<SectionContents | null>(null);
+  const [parsedDiagram, setParsedDiagram] = useState<ParsedDiagram | null>(null);
 
   useAutoSave(elements);
 
@@ -48,8 +48,8 @@ export default function Home() {
   );
 
   const handleAnalyze = useCallback(() => {
-    const sections = extractSectionContents(elements);
-    setSectionContents(sections);
+    const diagram = parseDiagram(elements);
+    setParsedDiagram(diagram);
     setPanelOpen(true);
   }, [elements]);
 
@@ -60,7 +60,7 @@ export default function Home() {
     setInitialData(template);
     setCanvasKey((k) => k + 1);
     setPanelOpen(false);
-    setSectionContents(null);
+    setParsedDiagram(null);
   }, []);
 
   if (initialData === null) {
@@ -142,7 +142,7 @@ export default function Home() {
 
             {/* Panel content */}
             <div className="flex-1 overflow-hidden">
-              <FeedbackPanel sections={sectionContents} />
+              <FeedbackPanel diagram={parsedDiagram} />
             </div>
           </div>
         </div>
