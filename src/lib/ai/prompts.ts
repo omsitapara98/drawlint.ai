@@ -10,6 +10,289 @@ GROUND RULES — READ CAREFULLY:
 4. The candidate's annotations near components explain their design rationale. Factor this into your evaluation — they may have already considered and addressed concerns you'd raise.
 `;
 
+/* ── Cumulative criteria per dimension ────────────────────────── */
+
+const NFR_MID = [
+  "Basic NFRs mentioned (latency, availability, consistency)",
+  "Rough numbers present",
+];
+const NFR_SENIOR = [
+  ...NFR_MID,
+  "NFRs specific and measurable (e.g. \"p99 < 200ms\")",
+  "Consistency model chosen (strong/eventual)",
+  "Numbers tied to assumptions",
+];
+const NFR_STAFF = [
+  ...NFR_SENIOR,
+  "Trade-offs between NFRs discussed (consistency vs availability)",
+  "NFRs inform architectural choices",
+  "SLA contracts considered",
+];
+const NFR_DEEP = [
+  ...NFR_STAFF,
+  "Compliance requirements",
+  "Multi-region latency budgets",
+  "SLA composition across service dependencies",
+];
+
+const ENTITIES_MID = [
+  "Key entities listed (1-word nouns)",
+  "Basic attributes present",
+];
+const ENTITIES_SENIOR = [
+  ...ENTITIES_MID,
+  "Relationships between entities defined",
+  "Read vs write access patterns identified",
+  "Indexing strategy considered",
+];
+const ENTITIES_STAFF = [
+  ...ENTITIES_SENIOR,
+  "Data partitioning/sharding strategy",
+  "Hot key awareness",
+  "Denormalization rationale discussed",
+];
+const ENTITIES_DEEP = [
+  ...ENTITIES_STAFF,
+  "GDPR/data retention concerns",
+  "Cross-region replication strategy",
+  "Schema evolution plan",
+];
+
+const CAPACITY_MID = [
+  "Basic numbers present (DAU, rough QPS)",
+  "Right ballpark for scale",
+];
+const CAPACITY_SENIOR = [
+  ...CAPACITY_MID,
+  "Calculations are methodical (DAU → QPS → storage → bandwidth)",
+  "HLD matches calculated numbers",
+  "Component choices justified by scale",
+];
+const CAPACITY_STAFF = [
+  ...CAPACITY_SENIOR,
+  "Storage growth projections",
+  "Cache hit ratios accounted for",
+  "DB choice handles calculated QPS",
+];
+const CAPACITY_DEEP = [
+  ...CAPACITY_STAFF,
+  "Cost modeling (compute + storage + bandwidth)",
+  "2-3x growth capacity planning",
+  "Auto-scaling thresholds derived from calculations",
+];
+
+const API_MID = [
+  "Endpoints cover core FR",
+  "Basic REST or WebSocket structure",
+  "CRUD coverage for primary entities",
+];
+const API_SENIOR = [
+  ...API_MID,
+  "Resource-oriented URL design (not RPC-style)",
+  "Pagination on list endpoints",
+  "Proper HTTP verbs",
+  "Error handling with status codes",
+];
+const API_STAFF = [
+  ...API_SENIOR,
+  "Idempotency keys on mutating operations",
+  "API versioning strategy",
+  "Rate limiting",
+  "Backward compatibility",
+  "Bulk operations",
+];
+const API_DEEP = [
+  ...API_STAFF,
+  "Auth/authz on every endpoint",
+  "Injection prevention",
+  "API gateway patterns",
+  "mTLS between internal services",
+];
+
+const HLD_MID = [
+  "Design works end-to-end",
+  "Components connected logically",
+  "Data flows address the FR",
+  "No orphaned components",
+];
+const HLD_SENIOR = [
+  ...HLD_MID,
+  "Scalability for stated load",
+  "Caching where needed",
+  "Async processing for heavy operations",
+  "Basic redundancy (no obvious SPOFs)",
+];
+const HLD_STAFF = [
+  ...HLD_SENIOR,
+  "Data partitioning strategy",
+  "Consistency trade-offs explicitly addressed",
+  "Circuit breakers",
+  "Graceful degradation",
+  "Operational readiness (monitoring, alerting, logging)",
+];
+const HLD_DEEP = [
+  ...HLD_STAFF,
+  "Multi-region/disaster recovery",
+  "Blue-green deployment strategy",
+  "Chaos engineering readiness",
+  "Cost optimization",
+  "Full observability stack",
+];
+
+/* ── Criteria lookup by level ─────────────────────────────────── */
+
+interface LevelCriteria {
+  nfr: string[];
+  entities: string[];
+  capacity: string[];
+  api: string[];
+  hld: string[];
+}
+
+const CRITERIA: Record<ReviewLevel, LevelCriteria> = {
+  mid:    { nfr: NFR_MID,    entities: ENTITIES_MID,    capacity: CAPACITY_MID,    api: API_MID,    hld: HLD_MID },
+  senior: { nfr: NFR_SENIOR, entities: ENTITIES_SENIOR, capacity: CAPACITY_SENIOR, api: API_SENIOR, hld: HLD_SENIOR },
+  staff:  { nfr: NFR_STAFF,  entities: ENTITIES_STAFF,  capacity: CAPACITY_STAFF,  api: API_STAFF,  hld: HLD_STAFF },
+  deep:   { nfr: NFR_DEEP,   entities: ENTITIES_DEEP,   capacity: CAPACITY_DEEP,   api: API_DEEP,   hld: HLD_DEEP },
+};
+
+/* ── Helpers ───────────────────────────────────────────────────── */
+
+/** Build a numbered checklist with section headers showing origin level */
+function buildDimensionChecklist(
+  level: ReviewLevel,
+  dim: keyof LevelCriteria,
+): string {
+  const midCounts: Record<keyof LevelCriteria, number> = {
+    nfr: NFR_MID.length, entities: ENTITIES_MID.length,
+    capacity: CAPACITY_MID.length, api: API_MID.length, hld: HLD_MID.length,
+  };
+  const seniorCounts: Record<keyof LevelCriteria, number> = {
+    nfr: NFR_SENIOR.length, entities: ENTITIES_SENIOR.length,
+    capacity: CAPACITY_SENIOR.length, api: API_SENIOR.length, hld: HLD_SENIOR.length,
+  };
+  const staffCounts: Record<keyof LevelCriteria, number> = {
+    nfr: NFR_STAFF.length, entities: ENTITIES_STAFF.length,
+    capacity: CAPACITY_STAFF.length, api: API_STAFF.length, hld: HLD_STAFF.length,
+  };
+
+  const criteria = CRITERIA[level][dim];
+  const lines: string[] = [];
+  let idx = 1;
+
+  // BASICS (Mid)
+  lines.push("BASICS:");
+  for (let i = 0; i < midCounts[dim]; i++, idx++) {
+    lines.push(`  ${idx}. ${criteria[i]}`);
+  }
+
+  if (level === "mid") return lines.join("\n");
+
+  // SCALABILITY (Senior+)
+  lines.push("SCALABILITY (Senior+):");
+  for (let i = midCounts[dim]; i < seniorCounts[dim]; i++, idx++) {
+    lines.push(`  ${idx}. ${criteria[i]}`);
+  }
+
+  if (level === "senior") return lines.join("\n");
+
+  // PRODUCTION-READINESS (Staff+)
+  lines.push("PRODUCTION-READINESS (Staff+):");
+  for (let i = seniorCounts[dim]; i < staffCounts[dim]; i++, idx++) {
+    lines.push(`  ${idx}. ${criteria[i]}`);
+  }
+
+  if (level === "staff") return lines.join("\n");
+
+  // DEEP-DIVE (Deep)
+  lines.push("DEEP-DIVE (Deep):");
+  for (let i = staffCounts[dim]; i < criteria.length; i++, idx++) {
+    lines.push(`  ${idx}. ${criteria[i]}`);
+  }
+
+  return lines.join("\n");
+}
+
+/* ── Hard constraints per level ───────────────────────────────── */
+
+function getHardConstraints(level: ReviewLevel): string {
+  if (level === "mid") return "";
+
+  const constraints: string[] = [
+    "HARD CONSTRAINTS (override deductive calculation):",
+  ];
+
+  if (level === "senior" || level === "staff" || level === "deep") {
+    constraints.push(
+      "- HLD: Single point of failure present → CANNOT score above 4",
+      "- HLD: No caching strategy → CANNOT score above 5",
+      "- API: No pagination on list endpoints → CANNOT score above 5",
+    );
+  }
+
+  if (level === "staff" || level === "deep") {
+    constraints.push(
+      "- HLD: No monitoring/alerting/logging → CANNOT score above 4",
+      "- API: No idempotency on mutating operations → CANNOT score above 5",
+    );
+  }
+
+  if (level === "deep") {
+    constraints.push(
+      "- HLD: No disaster recovery plan → CANNOT score above 3",
+      "- API: No auth/authz on endpoints → CANNOT score above 3",
+    );
+  }
+
+  return "\n" + constraints.join("\n");
+}
+
+/* ── Level labels & lead reviewer descriptions ────────────────── */
+
+const LEVEL_LABELS: Record<ReviewLevel, string> = {
+  mid: "MID LEVEL — be encouraging, focus on correctness",
+  senior: "SENIOR LEVEL — expect good practices, penalize missing scalability",
+  staff: "STAFF LEVEL — expect excellence, penalize missing depth",
+  deep: "DEEP ANALYSIS — full production audit, strictest criteria",
+};
+
+const LEAD_DESCRIPTIONS: Record<ReviewLevel, string> = {
+  mid: "A correct, logical design with reasonable component choices is a STRONG signal at mid level. Be encouraging about what they got right.",
+  senior: "Expect good architectural patterns and scalability awareness. A design that works but doesn't scale is a concern at this level.",
+  staff: "Expect sophisticated trade-off discussions and operational maturity. The design should demonstrate WHY choices were made, not just WHAT was chosen.",
+  deep: "Assess overall production readiness. This is NOT an interview — it's a launch readiness review.",
+};
+
+/* ── Build reviewer block for a level ─────────────────────────── */
+
+function buildReviewers(level: ReviewLevel): string {
+  const c = CRITERIA[level];
+  const label = LEVEL_LABELS[level];
+  const hardConstraints = getHardConstraints(level);
+
+  return `THE 6 REVIEWERS (${label}):
+
+1. 📋 NFR REVIEWER — Checklist (${c.nfr.length} criteria). Deduct points for each missing item:
+${buildDimensionChecklist(level, "nfr")}
+
+2. 🗃️ CORE ENTITIES REVIEWER — Checklist (${c.entities.length} criteria). Deduct points for each missing item:
+${buildDimensionChecklist(level, "entities")}
+
+3. 📊 CAPACITY REVIEWER — Checklist (${c.capacity.length} criteria). Deduct points for each missing item:
+${buildDimensionChecklist(level, "capacity")}
+
+4. 🔌 API REVIEWER — Checklist (${c.api.length} criteria). Deduct points for each missing item:
+${buildDimensionChecklist(level, "api")}
+
+5. 🏗️ HLD REVIEWER — Checklist (${c.hld.length} criteria). Deduct points for each missing item:
+${buildDimensionChecklist(level, "hld")}
+${hardConstraints}
+
+6. 🎯 LEAD REVIEWER — ${LEAD_DESCRIPTIONS[level]}`;
+}
+
+/* ── Shared instructions (deductive scoring) ──────────────────── */
+
 const SHARED_INSTRUCTIONS = `
 You will receive a parsed architecture diagram containing:
 - Text sections (functional requirements, assumptions, NFRs, core entities, capacity calculations, API routes)
@@ -17,24 +300,25 @@ You will receive a parsed architecture diagram containing:
 
 ${GROUND_RULES}
 
-DIMENSION SCORING (1-10):
-- 1-3: Critical gaps — fundamental issues
-- 4-5: Significant issues — important pieces missing but core idea is viable
-- 6-7: Good — covers most best practices, minor improvements needed
-- 8-9: Very good — well thought out with only minor suggestions
-- 10: Excellent — exemplary in this dimension
+DIMENSION SCORING — DEDUCTIVE METHOD:
+Each dimension starts at 10. Follow this process:
 
-MANDATORY SCORING CALIBRATION BY LEVEL:
-The level determines WHAT you check for — not an artificial score cap. At higher levels, you evaluate MORE criteria, so a design with gaps naturally scores lower because it fails more checks.
+STEP 1: For each criterion in the checklist, evaluate:
+  ✅ Present and well-executed → no deduction
+  ⚠️ Partially addressed → deduct 1 point
+  ❌ Completely missing → deduct 2 points
+  🚫 Missing AND critical for the system → deduct 3 points
 
-- MID: You check basic correctness, data flow, component presence. A design that nails these scores 8-9. A design missing basics scores 3-4.
-- SENIOR: You check everything Mid checks PLUS caching, async patterns, redundancy, read/write separation. A design missing these senior expectations gets penalized — even if it was "great" at Mid level.
-- STAFF: You check everything Senior checks PLUS data partitioning, consistency trade-offs, circuit breakers, operational readiness. Many more ways to lose points.
-- DEEP: You check everything Staff checks PLUS security, multi-region, DR, compliance. The most criteria = the most ways to score low.
+STEP 2: List ALL deductions with justifications in the issues array BEFORE computing the score.
 
-The key insight: the SAME design has MORE gaps at higher levels because you're checking for MORE things. A design scoring 80 at Mid might score 55 at Senior (missing caching, async) and 35 at Staff (missing partitioning, circuit breakers, monitoring) — not because of artificial caps, but because it genuinely fails more checks.
+STEP 3: Final dimension score = max(1, 10 - total_deductions)
 
-If a design truly has sharding, circuit breakers, monitoring, async patterns, and operational readiness — it CAN score 85+ even at Staff level. Don't cap great designs. But most designs are NOT that thorough, so scores naturally drop at higher levels.
+IMPORTANT: The score must be MECHANICALLY derived from your deduction list.
+- 5+ total deduction points → score MUST be 5 or below
+- 0-1 total deduction points → score SHOULD be 8-10
+- Do NOT override the mechanical score with a "gut feeling"
+
+CRITERIA ARE CUMULATIVE: Each reviewer MUST check ALL criteria from lower levels IN ADDITION to level-specific criteria. The checklist provided already includes all accumulated criteria.
 
 FLOW ANALYSIS:
 - criticalPath: Trace the primary request flow through the system as "A → B → C"
@@ -71,68 +355,6 @@ const DIMENSION_SCHEMA = `{
     ]
   }`;
 
-/* ── Per-level reviewer descriptions (merged with depth) ───── */
-
-const REVIEWERS_MID = `
-THE 6 REVIEWERS (MID LEVEL — be encouraging, focus on correctness):
-
-1. 📋 NFR REVIEWER — Are basic NFRs mentioned at all? (e.g., "low latency", "high availability"). Rough numbers are fine. Don't penalize for missing consistency model or precise SLA targets — that's beyond mid level.
-
-2. 🗃️ CORE ENTITIES REVIEWER — Are key entities listed? (1-word nouns like User, Post, Message). A basic list is sufficient. Don't penalize for missing relationships or access patterns.
-
-3. 📊 CAPACITY REVIEWER — Are basic numbers present? (DAU, rough QPS). Math doesn't need to be precise — right ballpark is enough. Don't penalize for missing storage growth projections.
-
-4. 🔌 API REVIEWER — Do endpoints cover the core FR? Basic REST or WebSocket structure? CRUD coverage is fine. Don't penalize for missing pagination, idempotency, or versioning.
-
-5. 🏗️ HLD REVIEWER — Does the design work end-to-end? Are components connected? Does data flow logically? Does it address the FR? Don't penalize for missing caching, async patterns, or redundancy — those are senior expectations.
-
-6. 🎯 LEAD REVIEWER — A correct, logical design with reasonable component choices is a STRONG signal at mid level. Be encouraging about what they got right.`;
-
-const REVIEWERS_SENIOR = `
-THE 6 REVIEWERS (SENIOR LEVEL — expect good practices, penalize missing scalability):
-
-1. 📋 NFR REVIEWER — Are NFRs specific and measurable? Is a consistency model chosen (strong vs eventual)? Are numbers tied to assumptions? Penalize vague NFRs like "fast" without a number.
-
-2. 🗃️ CORE ENTITIES REVIEWER — Are relationships and access patterns considered? Read vs write models identified? Penalize if entities are just listed without thinking about how they're queried.
-
-3. 📊 CAPACITY REVIEWER — Are calculations methodical? (DAU → peak QPS → storage/year → bandwidth). Does the HLD architecture actually match these numbers? Flag mismatches between calculated scale and chosen components.
-
-4. 🔌 API REVIEWER — Resource-oriented design? Pagination? Proper HTTP verbs? Error handling with status codes? Penalize RPC-style URLs, missing pagination on list endpoints.
-
-5. 🏗️ HLD REVIEWER — Scalability for the stated load? Proper caching where needed? Async processing for heavy operations? Basic redundancy? No obvious SPOFs? Penalize single DB without read replicas at scale, all-sync call chains.
-
-6. 🎯 LEAD REVIEWER — Expect good architectural patterns and scalability awareness. A design that works but doesn't scale is a concern at this level.`;
-
-const REVIEWERS_STAFF = `
-THE 6 REVIEWERS (STAFF LEVEL — expect excellence, penalize missing depth):
-
-1. 📋 NFR REVIEWER — Are NFRs tied to SLA contracts? Are trade-offs between NFRs discussed (e.g., consistency vs availability, latency vs durability)? Penalize NFRs that don't inform architectural choices.
-
-2. 🗃️ CORE ENTITIES REVIEWER — Data partitioning strategy discussed? Hot key awareness? Denormalization rationale? Penalize if data model doesn't address scale or access pattern concerns.
-
-3. 📊 CAPACITY REVIEWER — Full estimation chain verified. Storage growth projections realistic? Does the database choice handle calculated QPS? Are cache hit ratios accounted for? Penalize if design can't handle the numbers the candidate themselves calculated.
-
-4. 🔌 API REVIEWER — Idempotency keys? API versioning strategy? Rate limiting? Backward compatibility? Bulk operations for efficiency? Penalize APIs that would break under real-world usage patterns.
-
-5. 🏗️ HLD REVIEWER — Data partitioning? Consistency trade-offs explicitly addressed? Circuit breakers? Graceful degradation? Operational readiness (monitoring, alerting, logging)? Penalize designs that would work in a demo but fail in production.
-
-6. 🎯 LEAD REVIEWER — Expect sophisticated trade-off discussions and operational maturity. The design should demonstrate WHY choices were made, not just WHAT was chosen.`;
-
-const REVIEWERS_DEEP = `
-THE 6 REVIEWERS (DEEP ANALYSIS — full production audit, strictest criteria):
-
-1. 📋 NFR REVIEWER — All Staff expectations + compliance requirements, multi-region latency budgets, SLA composition across service dependencies.
-
-2. 🗃️ CORE ENTITIES REVIEWER — All Staff expectations + GDPR/data retention concerns, cross-region replication strategy, schema evolution plan.
-
-3. 📊 CAPACITY REVIEWER — All Staff expectations + cost modeling (compute + storage + bandwidth), capacity planning for 2-3x growth, auto-scaling thresholds derived from calculations.
-
-4. 🔌 API REVIEWER — All Staff expectations + security review (auth/authz on every endpoint, injection prevention), API gateway patterns, mTLS between internal services.
-
-5. 🏗️ HLD REVIEWER — All Staff expectations + multi-region/disaster recovery, blue-green deployment strategy, chaos engineering readiness, cost optimization, observability stack.
-
-6. 🎯 LEAD REVIEWER — Assess overall production readiness. This is NOT an interview — it's a launch readiness review.`;
-
 const RESPONSE_SCHEMA = `
 Return a JSON object with this EXACT structure:
 
@@ -159,20 +381,20 @@ Weights: nfrReview=10%, entitiesReview=10%, capacityReview=5%, apiReview=20%, hl
 
 /* ── Build prompt per level ──────────────────────────────────── */
 
-function buildPrompt(reviewers: string): string {
-  return `You are a system design interview panel of 6 reviewers. Each reviewer maps to a specific whiteboard section. The reviewer descriptions below define EXACTLY what to check and penalize at this level — do NOT check for things not listed in your reviewer description.
+function buildPrompt(level: ReviewLevel): string {
+  return `You are a system design interview panel of 6 reviewers. Each reviewer maps to a specific whiteboard section. Criteria are CUMULATIVE across levels. Each reviewer MUST check ALL criteria from lower levels IN ADDITION to level-specific criteria.
 
 ${SHARED_INSTRUCTIONS}
 
-${reviewers}
+${buildReviewers(level)}
 
 ${RESPONSE_SCHEMA}`;
 }
 
-const MID_PROMPT = buildPrompt(REVIEWERS_MID);
-const SENIOR_PROMPT = buildPrompt(REVIEWERS_SENIOR);
-const STAFF_PROMPT = buildPrompt(REVIEWERS_STAFF);
-const DEEP_PROMPT = buildPrompt(REVIEWERS_DEEP);
+const MID_PROMPT = buildPrompt("mid");
+const SENIOR_PROMPT = buildPrompt("senior");
+const STAFF_PROMPT = buildPrompt("staff");
+const DEEP_PROMPT = buildPrompt("deep");
 
 /* ── Prompt selector ─────────────────────────────────────────── */
 
