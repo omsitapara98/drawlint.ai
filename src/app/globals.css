@@ -129,7 +129,8 @@
   }
 }
 
-/* Hide Excalidraw library button and library panel */
+/* Hide Excalidraw library button/sidebar trigger and library panel */
+.excalidraw .sidebar-trigger,
 .excalidraw .library-button,
 .excalidraw [data-testid="library-button"],
 .excalidraw .library-menu-items-container,
@@ -137,7 +138,9 @@
 .excalidraw button[aria-label="Library"],
 .excalidraw .library-unit,
 .excalidraw .library-menu-browse-button,
-.excalidraw .publish-library-button {
+.excalidraw .publish-library-button,
+.excalidraw .publish-library,
+.excalidraw .default-sidebar {
   display: none !important;
 }
 
