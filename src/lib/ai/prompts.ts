@@ -140,7 +140,7 @@ ${LEAD_REVIEWER_SCHEMA},
 }
 
 OVERALL SCORE: Weighted average of the 5 dimension scores × 10.
-Weights: nfrReview=10%, entitiesReview=10%, capacityReview=15%, apiReview=20%, hldReview=45%.`;
+Weights: nfrReview=10%, entitiesReview=10%, capacityReview=5%, apiReview=20%, hldReview=55%.`;
 
 /* ── Build prompt per level ──────────────────────────────────── */
 
