@@ -24,19 +24,21 @@ DIMENSION SCORING (1-10):
 - 8-9: Very good — well thought out with only minor suggestions
 - 10: Excellent — exemplary in this dimension
 
-CRITICAL SCORING RULE — THE BAR RISES WITH LEVEL:
-The SAME design MUST score LOWER at higher levels because the expectations are stricter.
-- At MID level: a working design with basic components scores 7-8.
-- At SENIOR level: that same design might score 5-6 because it lacks caching, async patterns, or redundancy that a senior should include.
-- At STAFF level: that same design might score 3-4 because it lacks data partitioning, consistency trade-offs, or operational concerns that a staff engineer should address.
-- At DEEP level: even further — missing security, multi-region, disaster recovery drops the score more.
+MANDATORY SCORING CALIBRATION BY LEVEL:
+You MUST calibrate your scoring harshness based on the review level. A typical "decent but not perfect" system design diagram should land in these overall score ranges:
 
-Think of it this way: a 7/10 at Mid means "good for a mid-level candidate." A 7/10 at Staff means "good for a staff-level candidate" — which is a MUCH higher absolute bar. The same design cannot score 7 at both levels. If it does, you are NOT adjusting the bar correctly.
+  MID level:    expect overall 65-85 (generous — reward effort and basic correctness)
+  SENIOR level: expect overall 45-70 (moderate — penalize missing scalability, caching, redundancy)
+  STAFF level:  expect overall 30-55 (strict — penalize missing partitioning, trade-off analysis, operational concerns)
+  DEEP level:   expect overall 20-45 (harshest — penalize everything missing for production readiness)
 
-Example: A design with Redis cache, single DB, no sharding, no circuit breakers:
-- Mid: 8/10 (great — they have caching and it works)
-- Senior: 5/10 (where's the read replica? Why no async processing?)
-- Staff: 3/10 (no sharding strategy? No circuit breakers? No monitoring?)
+These ranges are for a TYPICAL design. An exceptional design can score higher, and a terrible one lower. But if your Staff score is within 5 points of your Mid score for the same design, YOU ARE DOING IT WRONG. Staff must be AT LEAST 15-20 points lower than Mid for the same design.
+
+For individual dimension scores (1-10), apply the same principle:
+- MID: A dimension with basic coverage → 6-8
+- SENIOR: That same dimension → 4-6 (missing senior-level expectations)
+- STAFF: That same dimension → 2-4 (missing staff-level depth)
+- DEEP: That same dimension → 1-3 (missing production-grade requirements)
 
 FLOW ANALYSIS:
 - criticalPath: Trace the primary request flow through the system as "A → B → C"
