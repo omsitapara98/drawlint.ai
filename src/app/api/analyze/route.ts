@@ -4,6 +4,7 @@ import { analyzeDesign, AzureOpenAIError } from "@/lib/ai";
 
 interface AnalyzeRequestBody {
   diagram?: SerializedDiagram;
+  sections?: Record<string, string>;
   apiKey?: string;
   endpoint?: string;
   deployment?: string;
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
       apiKey: body.apiKey,
       endpoint: body.endpoint,
       deployment: body.deployment,
+      sections: body.sections,
     });
 
     return NextResponse.json(feedback);

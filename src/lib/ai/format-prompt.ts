@@ -1,7 +1,54 @@
 import type { SerializedDiagram } from "@/types/diagram";
 
-export function formatDiagramForAnalysis(diagram: SerializedDiagram): string {
+export function formatDiagramForAnalysis(
+  diagram: SerializedDiagram,
+  sections?: Record<string, string>,
+): string {
   const lines: string[] = [];
+
+  // Whiteboard context sections (if provided)
+  if (sections) {
+    const hasContent = Object.values(sections).some((v) => v.trim().length > 0);
+    if (hasContent) {
+      lines.push("=== CANDIDATE'S WHITEBOARD NOTES ===");
+      lines.push("");
+
+      if (sections.questionTitle?.trim()) {
+        lines.push(`DESIGN QUESTION: ${sections.questionTitle.trim()}`);
+        lines.push("");
+      }
+      if (sections.functionalRequirements?.trim()) {
+        lines.push("FUNCTIONAL REQUIREMENTS:");
+        lines.push(sections.functionalRequirements.trim());
+        lines.push("");
+      }
+      if (sections.assumptions?.trim()) {
+        lines.push("ASSUMPTIONS:");
+        lines.push(sections.assumptions.trim());
+        lines.push("");
+      }
+      if (sections.nonFunctionalRequirements?.trim()) {
+        lines.push("NON-FUNCTIONAL REQUIREMENTS:");
+        lines.push(sections.nonFunctionalRequirements.trim());
+        lines.push("");
+      }
+      if (sections.coreEntities?.trim()) {
+        lines.push("CORE ENTITIES:");
+        lines.push(sections.coreEntities.trim());
+        lines.push("");
+      }
+      if (sections.capacityCalculations?.trim()) {
+        lines.push("CAPACITY CALCULATIONS:");
+        lines.push(sections.capacityCalculations.trim());
+        lines.push("");
+      }
+      if (sections.apiRoutes?.trim()) {
+        lines.push("API ROUTES:");
+        lines.push(sections.apiRoutes.trim());
+        lines.push("");
+      }
+    }
+  }
 
   lines.push("=== ARCHITECTURE DIAGRAM ===");
   lines.push("");

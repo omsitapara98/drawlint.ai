@@ -16,11 +16,21 @@ interface BYOKeyConfig {
   deployment?: string;
 }
 
+export interface WhiteboardSections {
+  questionTitle: string;
+  functionalRequirements: string;
+  assumptions: string;
+  nonFunctionalRequirements: string;
+  coreEntities: string;
+  capacityCalculations: string;
+  apiRoutes: string;
+}
+
 interface UseAnalysisReturn {
   feedback: DiagramFeedback | null;
   status: AnalysisStatus;
   error: string | undefined;
-  analyze: (diagram: SerializedDiagram) => Promise<void>;
+  analyze: (diagram: SerializedDiagram, sections?: WhiteboardSections) => Promise<void>;
   reset: () => void;
 }
 
@@ -29,7 +39,7 @@ export function useAnalysis(): UseAnalysisReturn {
   const [status, setStatus] = useState<AnalysisStatus>("idle");
   const [error, setError] = useState<string | undefined>();
 
-  const analyze = useCallback(async (diagram: SerializedDiagram) => {
+  const analyze = useCallback(async (diagram: SerializedDiagram, sections?: WhiteboardSections) => {
     setError(undefined);
     setFeedback(null);
 
@@ -63,6 +73,7 @@ export function useAnalysis(): UseAnalysisReturn {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           diagram,
+          ...(sections && { sections }),
           ...(byoConfig.apiKey && {
             apiKey: byoConfig.apiKey,
             endpoint: byoConfig.endpoint,

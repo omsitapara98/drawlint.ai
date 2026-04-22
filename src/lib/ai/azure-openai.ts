@@ -7,6 +7,7 @@ interface AnalyzeOptions {
   apiKey?: string;
   endpoint?: string;
   deployment?: string;
+  sections?: Record<string, string>;
 }
 
 export class AzureOpenAIError extends Error {
@@ -57,7 +58,7 @@ export async function analyzeDesign(
     );
   }
 
-  const formattedDiagram = formatDiagramForAnalysis(diagram);
+  const formattedDiagram = formatDiagramForAnalysis(diagram, options?.sections);
 
   const url = `${endpoint.replace(/\/+$/, "")}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
 
