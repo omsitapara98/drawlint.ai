@@ -267,10 +267,16 @@ ${GROUND_RULES}
 
 CRITERIA ARE CUMULATIVE: Each reviewer MUST check ALL criteria from lower levels IN ADDITION to level-specific criteria. The checklist provided already includes all accumulated criteria.
 
-For each criterion in the checklist, evaluate whether it is present and report issues for anything missing or partially addressed. Use severity levels:
-  - "critical": Missing AND critical for the system
-  - "warning": Partially addressed or missing but not critical
-  - "info": Minor observation or suggestion
+For each criterion in the checklist, evaluate whether it is present and report issues for anything missing or partially addressed.
+
+FEEDBACK SEVERITY LEVELS (use all that apply):
+- "strong": Something the candidate did exceptionally well — a design choice that shows deep understanding. Use sparingly.
+- "good": A solid, correct design decision worth acknowledging. Use when something is done right.
+- "critical": A fundamental issue that would cause the system to fail or not meet requirements.
+- "warning": An important gap that should be addressed but doesn't break the system.
+- "info": A minor suggestion or nice-to-have improvement.
+
+Start each dimension's issues with positive findings (strong/good) BEFORE listing problems (critical/warning/info). Do NOT force positives — if nothing stands out as genuinely good, skip them. But if the candidate made a smart choice (e.g., using Redis Lua scripts for atomicity, CDC for outbox pattern), acknowledge it.
 
 FLOW ANALYSIS:
 - criticalPath: Trace the primary request flow through the system as "A → B → C"
@@ -297,7 +303,7 @@ const LEAD_REVIEWER_SCHEMA = `
 const DIMENSION_SCHEMA = `{
     "issues": [
       {
-        "severity": "critical" | "warning" | "info",
+        "severity": "strong" | "good" | "critical" | "warning" | "info",
         "title": "<short title>",
         "description": "<detailed explanation with fix recommendation>"
       }

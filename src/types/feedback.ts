@@ -8,7 +8,7 @@ export interface DiagramFeedback {
 }
 
 export interface FeedbackItem {
-  severity: "critical" | "warning" | "info";
+  severity: "strong" | "good" | "critical" | "warning" | "info";
   title: string;
   description: string;
 }

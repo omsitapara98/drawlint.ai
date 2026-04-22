@@ -66,15 +66,35 @@ const TYPE_COLORS: Record<GraphNode["type"], string> = {
 };
 
 const SEVERITY_STYLES: Record<string, string> = {
+  strong: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+  good: "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-300 border-green-200 dark:border-green-800",
   critical: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border-red-200 dark:border-red-800",
   warning: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 border-amber-200 dark:border-amber-800",
   info: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border-blue-200 dark:border-blue-800",
 };
 
 const SEVERITY_BADGE: Record<string, string> = {
+  strong: "bg-emerald-600 text-white",
+  good: "bg-green-500 text-white",
   critical: "bg-red-500 text-white",
   warning: "bg-amber-500 text-white",
   info: "bg-blue-500 text-white",
+};
+
+const SEVERITY_LABEL: Record<string, string> = {
+  strong: "⭐ Excellent",
+  good: "✅ Good",
+  critical: "critical",
+  warning: "warning",
+  info: "info",
+};
+
+const SEVERITY_ORDER: Record<string, number> = {
+  strong: 0,
+  good: 1,
+  critical: 2,
+  warning: 3,
+  info: 4,
 };
 
 /* ── Dimension Card ──────────────────────────────────────────── */
@@ -142,9 +162,11 @@ function DimensionCard({ name, dimension }: { name: string; dimension: ReviewDim
       {expanded && dimension.issues.length > 0 && (
         <CardContent className="pt-0 pb-3">
           <div className="space-y-2">
-            {dimension.issues.map((issue, i) => (
-              <IssueRow key={i} issue={issue} />
-            ))}
+            {[...dimension.issues]
+              .sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 5) - (SEVERITY_ORDER[b.severity] ?? 5))
+              .map((issue, i) => (
+                <IssueRow key={i} issue={issue} />
+              ))}
           </div>
         </CardContent>
       )}
@@ -162,7 +184,7 @@ function IssueRow({ issue }: { issue: FeedbackItem }) {
     <div className={`rounded-lg border p-3 ${SEVERITY_STYLES[issue.severity] ?? ""}`}>
       <div className="flex items-start gap-2">
         <Badge className={`text-[10px] px-1.5 py-0 shrink-0 ${SEVERITY_BADGE[issue.severity] ?? ""}`}>
-          {issue.severity}
+          {SEVERITY_LABEL[issue.severity] ?? issue.severity}
         </Badge>
         <div className="min-w-0">
           <p className="text-sm font-medium">{issue.title}</p>
