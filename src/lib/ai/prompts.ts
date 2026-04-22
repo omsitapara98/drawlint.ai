@@ -272,8 +272,8 @@ For each criterion in the checklist, evaluate whether it is present and report i
 FEEDBACK — TWO SEPARATE SECTIONS PER DIMENSION:
 
 "highlights" array — things done WELL (use "strong" or "good"):
-- "strong": An exceptional design choice showing deep understanding (e.g., Redis Lua scripts for atomicity, CDC outbox pattern, dynamic rebalancing).
-- "good": A solid, correct decision (e.g., choosing WebSocket over polling for real-time, using Kafka for event streaming).
+- "strong": An exceptional design choice showing deep understanding. Use sparingly.
+- "good": A solid, correct decision worth acknowledging.
 
 "issues" array — things MISSING or WRONG (use "critical", "warning", or "info"):
 - "critical": A fundamental issue that would cause the system to fail or not meet requirements.
@@ -281,6 +281,13 @@ FEEDBACK — TWO SEPARATE SECTIONS PER DIMENSION:
 - "info": A minor suggestion or nice-to-have improvement.
 
 Do NOT force highlights — if nothing stands out as genuinely good, leave the array empty. But when the candidate made a smart choice, put it in highlights with "strong" or "good".
+
+SECTION OWNERSHIP — each reviewer ONLY comments on their own section:
+- NFR reviewer: comments on NFR quality (latency targets, availability SLAs, consistency model) — NOT on HLD component choices
+- Entities reviewer: comments on data models, relationships, access patterns — NOT on infrastructure
+- Capacity reviewer: comments on calculations, projections, sizing — NOT on component design
+- API reviewer: comments on endpoint design, message types, protocols — NOT on backend architecture
+- HLD reviewer: comments on component choices (Redis, Kafka, caching, rebalancing, Lua scripts, CDC patterns, circuit breakers, etc.) — this is where infrastructure and design pattern feedback belongs
 
 RULES:
 - Return ONLY valid JSON. No markdown fences, no explanation text outside the JSON.
