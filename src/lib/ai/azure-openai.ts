@@ -1,7 +1,8 @@
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, ReviewDimension, ReviewHighlight, FeedbackItem, ReviewLevel, LeadReviewer } from "@/types/feedback";
-import { getReviewPrompt } from "./prompts";
-import { formatDiagramForAnalysis } from "./format-prompt";
+import { getReviewPrompt, getReviewerPrompt, getLeadReviewerPrompt } from "./prompts";
+import type { ReviewerSection } from "./prompts";
+import { formatDiagramForAnalysis, formatSectionForReview } from "./format-prompt";
 
 interface AnalyzeOptions {
   apiKey?: string;
@@ -283,4 +284,198 @@ function validateReview(raw: AIReviewResponse, level: ReviewLevel): AIReviewResp
       ? raw.followUpQuestions
       : [],
   };
+}
+
+/* ── Multi-call mode ─────────────────────────────────────────── */
+
+const REVIEWER_SECTIONS: ReviewerSection[] = ["nfr", "entities", "capacity", "api", "hld"];
+
+const SECTION_TO_REVIEW_KEY: Record<ReviewerSection, keyof Pick<AIReviewResponse, "nfrReview" | "entitiesReview" | "capacityReview" | "apiReview" | "hldReview">> = {
+  nfr: "nfrReview",
+  entities: "entitiesReview",
+  capacity: "capacityReview",
+  api: "apiReview",
+  hld: "hldReview",
+};
+
+const SECTION_DISPLAY_NAME: Record<ReviewerSection, string> = {
+  nfr: "NFR",
+  entities: "Entities",
+  capacity: "Capacity",
+  api: "API",
+  hld: "HLD",
+};
+
+/**
+ * Analyze a system design diagram using multiple focused API calls.
+ * 5 section reviewers run in parallel, then 1 Lead Reviewer synthesizes.
+ */
+export async function analyzeDesignMultiCall(
+  diagram: ParsedDiagram,
+  options?: AnalyzeOptions,
+): Promise<AIReviewResponse> {
+  const apiKey = options?.apiKey ?? process.env.AZURE_OPENAI_API_KEY ?? "";
+  const endpoint = options?.endpoint ?? process.env.AZURE_OPENAI_ENDPOINT ?? "";
+  const deployment = options?.deployment ?? process.env.AZURE_OPENAI_DEPLOYMENT ?? "";
+  const level: ReviewLevel = options?.level ?? "senior";
+  const apiVersion = "2025-01-01-preview";
+
+  if (!apiKey) {
+    throw new AzureOpenAIError("No Azure OpenAI API key configured.", 400, "missing_api_key");
+  }
+  if (!endpoint) {
+    throw new AzureOpenAIError("No Azure OpenAI endpoint configured.", 400, "missing_endpoint");
+  }
+  if (!deployment) {
+    throw new AzureOpenAIError("No Azure OpenAI deployment configured.", 400, "missing_deployment");
+  }
+
+  const url = `${endpoint.replace(/\/+$/, "")}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
+
+  /** Make a single API call and parse the JSON response. */
+  async function callReviewer(systemPrompt: string, userContent: string): Promise<unknown> {
+    const body = {
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+      ],
+      temperature: 0.3,
+      max_tokens: 2048,
+      response_format: { type: "json_object" },
+    };
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "api-key": apiKey },
+        body: JSON.stringify(body),
+      });
+    } catch (err) {
+      throw new AzureOpenAIError(
+        `Network error: ${err instanceof Error ? err.message : String(err)}`,
+        undefined,
+        "network_error",
+      );
+    }
+
+    if (!response.ok) {
+      const status = response.status;
+      let errorBody = "";
+      try { errorBody = await response.text(); } catch { /* ignore */ }
+
+      if (status === 401 || status === 403) {
+        throw new AzureOpenAIError("Authentication failed.", status, "auth_error");
+      }
+      if (status === 429) {
+        throw new AzureOpenAIError("Rate limit exceeded.", 429, "rate_limit");
+      }
+      throw new AzureOpenAIError(`Azure OpenAI request failed (HTTP ${status}): ${errorBody}`, status, "api_error");
+    }
+
+    let json: unknown;
+    try { json = await response.json(); } catch {
+      throw new AzureOpenAIError("Failed to parse response as JSON.", undefined, "parse_error");
+    }
+
+    const content = extractContent(json);
+    try { return JSON.parse(content); } catch {
+      throw new AzureOpenAIError("Model returned invalid JSON.", undefined, "malformed_response");
+    }
+  }
+
+  // Step 1: Fire 5 section reviewer calls in parallel
+  const sectionResults = await Promise.all(
+    REVIEWER_SECTIONS.map(async (section) => {
+      const systemPrompt = getReviewerPrompt(section, level);
+      const userContent = formatSectionForReview(diagram, section, level);
+      const result = await callReviewer(systemPrompt, userContent);
+      return { section, result };
+    }),
+  );
+
+  // Validate each section result into a ReviewDimension
+  const dimensions: Record<string, ReviewDimension> = {};
+  for (const { section, result } of sectionResults) {
+    dimensions[section] = validateDimension(result);
+  }
+
+  // Step 2: Build lead reviewer input from section results
+  const leadUserContent = buildLeadReviewerInput(diagram, dimensions, level);
+  const leadSystemPrompt = getLeadReviewerPrompt(level);
+  const leadResult = await callReviewer(leadSystemPrompt, leadUserContent) as Record<string, unknown>;
+
+  // Step 3: Assemble final AIReviewResponse
+  const assembled: AIReviewResponse = {
+    level,
+    summary: typeof leadResult.summary === "string" ? leadResult.summary : "",
+    nfrReview: dimensions["nfr"],
+    entitiesReview: dimensions["entities"],
+    capacityReview: dimensions["capacity"],
+    apiReview: dimensions["api"],
+    hldReview: dimensions["hld"],
+    leadReviewer: validateLeadReviewer(leadResult.leadReviewer),
+    followUpQuestions: Array.isArray(leadResult.followUpQuestions)
+      ? leadResult.followUpQuestions as string[]
+      : [],
+  };
+
+  return assembled;
+}
+
+/** Build the user content for the Lead Reviewer call, summarizing all 5 reviewer findings. */
+function buildLeadReviewerInput(
+  diagram: ParsedDiagram,
+  dimensions: Record<string, ReviewDimension>,
+  level: ReviewLevel,
+): string {
+  const lines: string[] = [];
+  const { sections } = diagram;
+
+  lines.push(`=== REVIEW MODE: ${level.toUpperCase()} ===`);
+  lines.push("");
+
+  // Include FR + Assumptions for context
+  if (sections.functionalRequirements?.trim()) {
+    lines.push("FUNCTIONAL REQUIREMENTS:");
+    lines.push(sections.functionalRequirements.trim());
+    lines.push("");
+  }
+  if (sections.assumptions?.trim()) {
+    lines.push("ASSUMPTIONS:");
+    lines.push(sections.assumptions.trim());
+    lines.push("");
+  }
+
+  lines.push("=== REVIEWER FINDINGS ===");
+  lines.push("");
+
+  for (const section of REVIEWER_SECTIONS) {
+    const dim = dimensions[section];
+    const name = SECTION_DISPLAY_NAME[section];
+
+    lines.push(`--- ${name} Reviewer ---`);
+
+    if (dim.highlights.length > 0) {
+      lines.push("Highlights:");
+      for (const h of dim.highlights) {
+        lines.push(`  [${h.severity}] ${h.title}: ${h.description}`);
+      }
+    } else {
+      lines.push("Highlights: (none)");
+    }
+
+    if (dim.issues.length > 0) {
+      lines.push("Issues:");
+      for (const i of dim.issues) {
+        lines.push(`  [${i.severity}] ${i.title}: ${i.description}`);
+      }
+    } else {
+      lines.push("Issues: (none)");
+    }
+
+    lines.push("");
+  }
+
+  return lines.join("\n");
 }

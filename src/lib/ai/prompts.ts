@@ -370,3 +370,131 @@ export function getReviewPrompt(level: ReviewLevel): string {
 
 /** @deprecated Use getReviewPrompt("deep") instead */
 export const SYSTEM_DESIGN_REVIEWER_PROMPT = DEEP_PROMPT;
+
+/* ── Multi-call: per-reviewer prompts ─────────────────────────── */
+
+/** Section reviewer names matching multi-call flow */
+export type ReviewerSection = "nfr" | "entities" | "capacity" | "api" | "hld";
+
+const REVIEWER_NAMES: Record<ReviewerSection, string> = {
+  nfr: "NFR Reviewer",
+  entities: "Core Entities Reviewer",
+  capacity: "Capacity Reviewer",
+  api: "API Reviewer",
+  hld: "HLD Reviewer",
+};
+
+const REVIEWER_FOCUS: Record<ReviewerSection, string> = {
+  nfr: "non-functional requirements quality (latency targets, availability SLAs, consistency model). Do NOT comment on HLD component choices or infrastructure.",
+  entities: "data models, entity relationships, access patterns, and indexing strategies. Do NOT comment on infrastructure or API design.",
+  capacity: "capacity calculations, projections, sizing, and whether numbers are methodical. Do NOT comment on component design or API routes.",
+  api: "endpoint/message design, protocols, REST conventions or WebSocket patterns. Do NOT comment on backend architecture or data modeling.",
+  hld: "component choices, architecture patterns, scalability, redundancy, and operational readiness. This is where infrastructure and design pattern feedback belongs.",
+};
+
+const INDIVIDUAL_RESPONSE_SCHEMA = `
+Return a JSON object with this EXACT structure:
+
+{
+  "highlights": [
+    {
+      "severity": "strong" | "good",
+      "title": "<short title>",
+      "description": "<WHY this is a smart design choice>"
+    }
+  ],
+  "issues": [
+    {
+      "severity": "critical" | "warning" | "info",
+      "title": "<short title>",
+      "description": "<what's wrong and how to fix>"
+    }
+  ]
+}`;
+
+/**
+ * Build a focused system prompt for a single section reviewer (multi-call mode).
+ */
+export function getReviewerPrompt(reviewer: ReviewerSection, level: ReviewLevel): string {
+  const name = REVIEWER_NAMES[reviewer];
+  const focus = REVIEWER_FOCUS[reviewer];
+  const checklist = buildDimensionChecklist(level, reviewer);
+  const label = LEVEL_LABELS[level];
+
+  return `You are the ${name} on a system design interview panel. You are reviewing at ${label}.
+
+${GROUND_RULES}
+
+YOUR SOLE RESPONSIBILITY: ${focus}
+
+SECTION OWNERSHIP: You are the ${name}. ONLY comment on your own section. Do not provide feedback on other dimensions.
+
+YOUR CHECKLIST (${CRITERIA[level][reviewer].length} criteria — check each one):
+${checklist}
+
+CRITERIA ARE CUMULATIVE: Check ALL criteria from lower levels IN ADDITION to level-specific criteria. The checklist above already includes all accumulated criteria.
+
+FEEDBACK — TWO SEPARATE ARRAYS:
+
+"highlights" array — things done WELL (use "strong" or "good"):
+- "strong": An exceptional design choice showing deep understanding. Use sparingly.
+- "good": A solid, correct decision worth acknowledging.
+
+"issues" array — things MISSING or WRONG (use "critical", "warning", or "info"):
+- "critical": A fundamental issue that would cause the system to fail or not meet requirements.
+- "warning": An important gap that should be addressed but doesn't break the system.
+- "info": A minor suggestion or nice-to-have improvement.
+
+Do NOT force highlights — if nothing stands out as genuinely good, leave the array empty.
+
+RULES:
+- Return ONLY valid JSON. No markdown fences, no explanation text outside the JSON.
+- Every issues array must have at least one item if there is a relevant finding; use empty array only if no issues exist.
+- Be constructive: explain WHY something is an issue and HOW to fix it.
+
+${INDIVIDUAL_RESPONSE_SCHEMA}`;
+}
+
+const LEAD_REVIEWER_RESPONSE_SCHEMA = `
+Return a JSON object with this EXACT structure:
+
+{
+  "summary": "<2-3 sentence overview of the entire design>",
+  "leadReviewer": {
+    "topStrengths": ["Strength 1", "Strength 2", "Strength 3"],
+    "topRisks": ["Risk 1", "Risk 2", "Risk 3"],
+    "signal": "strong-hire" | "hire" | "lean-hire" | "lean-no-hire" | "no-hire",
+    "signalReason": "<brief justification for the hire signal>",
+    "improvementAreas": ["Area 1", "Area 2"]
+  },
+  "followUpQuestions": ["Question 1?", "Question 2?"]
+}`;
+
+/**
+ * Build the system prompt for the Lead Reviewer (multi-call mode).
+ * The Lead Reviewer synthesizes the 5 individual reviewer summaries.
+ */
+export function getLeadReviewerPrompt(level: ReviewLevel): string {
+  const label = LEVEL_LABELS[level];
+  const desc = LEAD_DESCRIPTIONS[level];
+
+  return `You are the Lead Reviewer on a system design interview panel. You are reviewing at ${label}.
+
+${GROUND_RULES}
+
+YOUR ROLE: You will receive the Functional Requirements, Assumptions, and the summaries from 5 specialist reviewers (NFR, Entities, Capacity, API, HLD). Synthesize their findings into an overall assessment.
+
+${desc}
+
+Provide:
+1. A 2-3 sentence summary of the overall design quality
+2. Your lead reviewer assessment (top strengths, top risks, hire signal with justification, improvement areas)
+3. At least 2 follow-up questions that probe the candidate's understanding
+
+RULES:
+- Return ONLY valid JSON. No markdown fences, no explanation text outside the JSON.
+- Base your assessment on the reviewer findings provided. Do not invent issues not mentioned by the reviewers.
+- The hire signal should reflect the AGGREGATE quality across all dimensions.
+
+${LEAD_REVIEWER_RESPONSE_SCHEMA}`;
+}

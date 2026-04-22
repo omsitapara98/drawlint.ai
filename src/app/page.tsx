@@ -12,7 +12,7 @@ import { useAutoSave } from "@/hooks";
 import { loadDiagram, clearDiagram } from "@/lib/storage";
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
-import type { AIReviewResponse, AnalysisStatus, ReviewLevel } from "@/types/feedback";
+import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewMode } from "@/types/feedback";
 import { X, MessageSquareText, RotateCcw } from "lucide-react";
 
 interface BYOConfig {
@@ -46,6 +46,7 @@ export default function Home() {
   const [aiStatus, setAiStatus] = useState<AnalysisStatus>("idle");
   const [aiError, setAiError] = useState<string | undefined>();
   const [reviewLevel, setReviewLevel] = useState<ReviewLevel>("senior");
+  const [reviewMode, setReviewMode] = useState<ReviewMode>("single");
 
   useAutoSave(elements);
 
@@ -101,6 +102,7 @@ export default function Home() {
           endpoint: config.endpoint,
           deployment: config.deployment,
           level: reviewLevel,
+          mode: reviewMode,
         }),
       });
 
@@ -118,7 +120,7 @@ export default function Home() {
         err instanceof Error ? err.message : "An unexpected error occurred.",
       );
     }
-  }, [elements, reviewLevel]);
+  }, [elements, reviewLevel, reviewMode]);
 
   const handleNewBoard = useCallback(() => {
     clearDiagram();
@@ -161,6 +163,23 @@ export default function Home() {
               <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
               New Board
             </Button>
+
+            {/* Mode selector */}
+            <div className="flex h-9 items-center rounded-full border bg-background/95 backdrop-blur-sm p-0.5">
+              {(["single", "multi"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setReviewMode(m)}
+                  className={`h-8 rounded-full px-3 text-xs font-medium transition-all ${
+                    reviewMode === m
+                      ? "bg-indigo-500 text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {m === "single" ? "Single Shot" : "Multi Review"}
+                </button>
+              ))}
+            </div>
 
             {/* Level selector */}
             <div className="flex h-9 items-center rounded-full border bg-background/95 backdrop-blur-sm p-0.5">
