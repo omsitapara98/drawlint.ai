@@ -26,3 +26,26 @@ export interface SectionContents {
   apiRoutes: string;
   hld: string;
 }
+
+/* ── 5-Reviewer AI Response Types ────────────────────────────── */
+
+export interface ReviewDimension {
+  score: number;
+  issues: FeedbackItem[];
+}
+
+export interface AIReviewResponse {
+  score: number;
+  summary: string;
+  scalability: ReviewDimension;
+  availability: ReviewDimension;
+  bottlenecks: ReviewDimension;
+  security: ReviewDimension;
+  completeness: ReviewDimension;
+  flowAnalysis: {
+    criticalPath: string[];
+    missingEdges: string[];
+    sequenceGaps: number[];
+  };
+  followUpQuestions: string[];
+}

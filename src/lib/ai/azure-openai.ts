@@ -1,5 +1,5 @@
-import type { SerializedDiagram } from "@/types/diagram";
-import type { DiagramFeedback } from "@/types/feedback";
+import type { ParsedDiagram } from "@/types/diagram";
+import type { AIReviewResponse, ReviewDimension, FeedbackItem } from "@/types/feedback";
 import { SYSTEM_DESIGN_REVIEWER_PROMPT } from "./prompts";
 import { formatDiagramForAnalysis } from "./format-prompt";
 
@@ -7,7 +7,6 @@ interface AnalyzeOptions {
   apiKey?: string;
   endpoint?: string;
   deployment?: string;
-  sections?: Record<string, string>;
 }
 
 export class AzureOpenAIError extends Error {
@@ -22,19 +21,18 @@ export class AzureOpenAIError extends Error {
 }
 
 /**
- * Analyze a system design diagram using Azure OpenAI.
+ * Analyze a system design diagram using Azure OpenAI with the 5-reviewer prompt.
  *
- * If `options.apiKey` is provided, uses the caller's own Azure OpenAI credentials (BYO key).
- * Otherwise falls back to platform environment variables.
+ * Uses the caller's own Azure OpenAI credentials (BYO key).
  */
 export async function analyzeDesign(
-  diagram: SerializedDiagram,
+  diagram: ParsedDiagram,
   options?: AnalyzeOptions,
-): Promise<DiagramFeedback> {
+): Promise<AIReviewResponse> {
   const apiKey = options?.apiKey ?? process.env.AZURE_OPENAI_API_KEY ?? "";
   const endpoint = options?.endpoint ?? process.env.AZURE_OPENAI_ENDPOINT ?? "";
   const deployment = options?.deployment ?? process.env.AZURE_OPENAI_DEPLOYMENT ?? "";
-  const apiVersion = process.env.AZURE_OPENAI_API_VERSION ?? "2024-02-01";
+  const apiVersion = "2025-01-01-preview";
 
   if (!apiKey) {
     throw new AzureOpenAIError(
@@ -58,7 +56,7 @@ export async function analyzeDesign(
     );
   }
 
-  const formattedDiagram = formatDiagramForAnalysis(diagram, options?.sections);
+  const formattedDiagram = formatDiagramForAnalysis(diagram);
 
   const url = `${endpoint.replace(/\/+$/, "")}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
 
@@ -135,9 +133,9 @@ export async function analyzeDesign(
   const content = extractContent(json);
 
   // Parse the inner JSON from the assistant message
-  let feedback: DiagramFeedback;
+  let review: AIReviewResponse;
   try {
-    feedback = JSON.parse(content) as DiagramFeedback;
+    review = JSON.parse(content) as AIReviewResponse;
   } catch {
     throw new AzureOpenAIError(
       "Azure OpenAI returned a non-JSON response. The model may have produced invalid output.",
@@ -146,7 +144,7 @@ export async function analyzeDesign(
     );
   }
 
-  return validateFeedback(feedback);
+  return validateReview(review);
 }
 
 /** Extract the text content from the Azure OpenAI chat completion response. */
@@ -178,15 +176,72 @@ function extractContent(json: unknown): string {
   );
 }
 
-/** Validate and normalize the parsed DiagramFeedback object. */
-function validateFeedback(raw: DiagramFeedback): DiagramFeedback {
+/** Validate a single FeedbackItem. */
+function validateItem(item: unknown): FeedbackItem {
+  const raw = item as Record<string, unknown>;
+  const severity = raw.severity;
   return {
+    severity:
+      severity === "critical" || severity === "warning" || severity === "info"
+        ? severity
+        : "info",
+    title: typeof raw.title === "string" ? raw.title : "",
+    description: typeof raw.description === "string" ? raw.description : "",
+    affectedComponents: Array.isArray(raw.affectedComponents)
+      ? (raw.affectedComponents as string[])
+      : [],
+  };
+}
+
+/** Validate a ReviewDimension. */
+function validateDimension(raw: unknown): ReviewDimension {
+  if (typeof raw !== "object" || raw === null) {
+    return { score: 5, issues: [] };
+  }
+  const d = raw as Record<string, unknown>;
+  return {
+    score:
+      typeof d.score === "number" ? Math.max(1, Math.min(10, d.score)) : 5,
+    issues: Array.isArray(d.issues) ? d.issues.map(validateItem) : [],
+  };
+}
+
+/** Validate and normalize the parsed AIReviewResponse. */
+function validateReview(raw: AIReviewResponse): AIReviewResponse {
+  const flowRaw = raw.flowAnalysis;
+  return {
+    score:
+      typeof raw.score === "number"
+        ? Math.max(0, Math.min(100, raw.score))
+        : 0,
     summary: typeof raw.summary === "string" ? raw.summary : "",
-    score: typeof raw.score === "number" ? Math.max(0, Math.min(100, raw.score)) : 0,
-    scalabilityIssues: Array.isArray(raw.scalabilityIssues) ? raw.scalabilityIssues : [],
-    bottlenecks: Array.isArray(raw.bottlenecks) ? raw.bottlenecks : [],
-    singlePointsOfFailure: Array.isArray(raw.singlePointsOfFailure) ? raw.singlePointsOfFailure : [],
-    suggestions: Array.isArray(raw.suggestions) ? raw.suggestions : [],
-    followUpQuestions: Array.isArray(raw.followUpQuestions) ? raw.followUpQuestions : [],
+    scalability: validateDimension(raw.scalability),
+    availability: validateDimension(raw.availability),
+    bottlenecks: validateDimension(raw.bottlenecks),
+    security: validateDimension(raw.security),
+    completeness: validateDimension(raw.completeness),
+    flowAnalysis: {
+      criticalPath:
+        typeof flowRaw === "object" &&
+        flowRaw !== null &&
+        Array.isArray(flowRaw.criticalPath)
+          ? flowRaw.criticalPath
+          : [],
+      missingEdges:
+        typeof flowRaw === "object" &&
+        flowRaw !== null &&
+        Array.isArray(flowRaw.missingEdges)
+          ? flowRaw.missingEdges
+          : [],
+      sequenceGaps:
+        typeof flowRaw === "object" &&
+        flowRaw !== null &&
+        Array.isArray(flowRaw.sequenceGaps)
+          ? flowRaw.sequenceGaps
+          : [],
+    },
+    followUpQuestions: Array.isArray(raw.followUpQuestions)
+      ? raw.followUpQuestions
+      : [],
   };
 }

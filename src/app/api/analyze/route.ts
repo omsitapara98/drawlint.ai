@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import type { SerializedDiagram } from "@/types/diagram";
+import type { ParsedDiagram } from "@/types/diagram";
 import { analyzeDesign, AzureOpenAIError } from "@/lib/ai";
 
 interface AnalyzeRequestBody {
-  diagram?: SerializedDiagram;
-  sections?: Record<string, string>;
+  diagram?: ParsedDiagram;
   apiKey?: string;
   endpoint?: string;
   deployment?: string;
@@ -29,9 +28,13 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!Array.isArray(body.diagram.nodes) || body.diagram.nodes.length === 0) {
+  if (
+    !body.diagram.hld ||
+    !Array.isArray(body.diagram.hld.nodes) ||
+    body.diagram.hld.nodes.length === 0
+  ) {
     return NextResponse.json(
-      { error: "Diagram must contain at least one node." },
+      { error: "Diagram must contain at least one node in the HLD." },
       { status: 400 },
     );
   }
@@ -49,14 +52,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const feedback = await analyzeDesign(body.diagram, {
+    const review = await analyzeDesign(body.diagram, {
       apiKey: body.apiKey,
       endpoint: body.endpoint,
       deployment: body.deployment,
-      sections: body.sections,
     });
 
-    return NextResponse.json(feedback);
+    return NextResponse.json(review);
   } catch (err) {
     if (err instanceof AzureOpenAIError) {
       const status = err.statusCode ?? 500;

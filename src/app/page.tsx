@@ -12,7 +12,26 @@ import { useAutoSave } from "@/hooks";
 import { loadDiagram, clearDiagram } from "@/lib/storage";
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
+import type { AIReviewResponse, AnalysisStatus } from "@/types/feedback";
 import { X, MessageSquareText, RotateCcw } from "lucide-react";
+
+interface BYOConfig {
+  apiKey: string;
+  endpoint: string;
+  deployment: string;
+}
+
+function loadBYOConfig(): BYOConfig | null {
+  try {
+    const raw = localStorage.getItem("drawlint:byo-key");
+    if (!raw) return null;
+    const config = JSON.parse(raw) as BYOConfig;
+    if (config.apiKey && config.endpoint && config.deployment) return config;
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export default function Home() {
   const [elements, setElements] = useState<ExcalidrawElement[]>([]);
@@ -23,6 +42,9 @@ export default function Home() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [canvasKey, setCanvasKey] = useState(0);
   const [parsedDiagram, setParsedDiagram] = useState<ParsedDiagram | null>(null);
+  const [aiReview, setAiReview] = useState<AIReviewResponse | null>(null);
+  const [aiStatus, setAiStatus] = useState<AnalysisStatus>("idle");
+  const [aiError, setAiError] = useState<string | undefined>();
 
   useAutoSave(elements);
 
@@ -47,10 +69,53 @@ export default function Home() {
     ["rectangle", "diamond", "ellipse", "arrow", "line"].includes(el.type),
   );
 
-  const handleAnalyze = useCallback(() => {
+  const handleAnalyze = useCallback(async () => {
+    // 1. Parse diagram locally
     const diagram = parseDiagram(elements);
     setParsedDiagram(diagram);
     setPanelOpen(true);
+
+    // 2. Check for BYO key
+    const config = loadBYOConfig();
+    if (!config) {
+      // No BYO key — show local parse only
+      setAiStatus("idle");
+      setAiReview(null);
+      setAiError(undefined);
+      return;
+    }
+
+    // 3. Send to AI
+    setAiStatus("analyzing");
+    setAiError(undefined);
+    setAiReview(null);
+
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          diagram,
+          apiKey: config.apiKey,
+          endpoint: config.endpoint,
+          deployment: config.deployment,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error ?? `Analysis failed (${res.status})`);
+      }
+
+      const data = (await res.json()) as AIReviewResponse;
+      setAiReview(data);
+      setAiStatus("complete");
+    } catch (err) {
+      setAiStatus("error");
+      setAiError(
+        err instanceof Error ? err.message : "An unexpected error occurred.",
+      );
+    }
   }, [elements]);
 
   const handleNewBoard = useCallback(() => {
@@ -61,6 +126,9 @@ export default function Home() {
     setCanvasKey((k) => k + 1);
     setPanelOpen(false);
     setParsedDiagram(null);
+    setAiReview(null);
+    setAiStatus("idle");
+    setAiError(undefined);
   }, []);
 
   if (initialData === null) {
@@ -123,10 +191,10 @@ export default function Home() {
                   variant="ghost"
                   size="sm"
                   onClick={handleAnalyze}
-                  disabled={!hasDrawnShapes}
+                  disabled={!hasDrawnShapes || aiStatus === "analyzing"}
                   className="text-xs"
                 >
-                  Re-analyze
+                  {aiStatus === "analyzing" ? "Analyzing…" : "Re-analyze"}
                 </Button>
                 <Button
                   variant="ghost"
@@ -142,7 +210,14 @@ export default function Home() {
 
             {/* Panel content */}
             <div className="flex-1 overflow-hidden">
-              <FeedbackPanel diagram={parsedDiagram} />
+              <FeedbackPanel
+                diagram={parsedDiagram}
+                aiReview={aiReview}
+                aiStatus={aiStatus}
+                aiError={aiError}
+                onRetry={handleAnalyze}
+                onOpenSettings={() => setSettingsOpen(true)}
+              />
             </div>
           </div>
         </div>

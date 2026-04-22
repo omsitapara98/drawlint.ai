@@ -1,12 +1,36 @@
 "use client";
 
+import { useState } from "react";
 import type { ParsedDiagram, GraphNode } from "@/types/diagram";
+import type { AIReviewResponse, AnalysisStatus, FeedbackItem, ReviewDimension } from "@/types/feedback";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Loader2,
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Settings,
+  Sparkles,
+  ArrowRight,
+  HelpCircle,
+  Shield,
+  Zap,
+  Activity,
+  Target,
+  Layers,
+} from "lucide-react";
 
 interface FeedbackPanelProps {
   diagram: ParsedDiagram | null;
+  aiReview?: AIReviewResponse | null;
+  aiStatus?: AnalysisStatus;
+  aiError?: string;
+  onRetry?: () => void;
+  onOpenSettings?: () => void;
 }
 
 const SECTION_LABELS: {
@@ -39,23 +63,316 @@ const TYPE_COLORS: Record<GraphNode["type"], string> = {
   unknown: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
 };
 
-export function FeedbackPanel({ diagram }: FeedbackPanelProps) {
-  if (!diagram) {
+const SEVERITY_STYLES: Record<string, string> = {
+  critical: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border-red-200 dark:border-red-800",
+  warning: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+  info: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+};
+
+const SEVERITY_BADGE: Record<string, string> = {
+  critical: "bg-red-500 text-white",
+  warning: "bg-amber-500 text-white",
+  info: "bg-blue-500 text-white",
+};
+
+function scoreColor(score: number, max: number = 100): string {
+  const pct = max === 10 ? score * 10 : score;
+  if (pct < 40) return "text-red-500";
+  if (pct <= 70) return "text-amber-500";
+  return "text-emerald-500";
+}
+
+function scoreRingColor(score: number, max: number = 100): string {
+  const pct = max === 10 ? score * 10 : score;
+  if (pct < 40) return "border-red-500";
+  if (pct <= 70) return "border-amber-500";
+  return "border-emerald-500";
+}
+
+function scoreBgColor(score: number, max: number = 100): string {
+  const pct = max === 10 ? score * 10 : score;
+  if (pct < 40) return "bg-red-500/10";
+  if (pct <= 70) return "bg-amber-500/10";
+  return "bg-emerald-500/10";
+}
+
+/* ── Score Circle ────────────────────────────────────────────── */
+function ScoreCircle({ score }: { score: number }) {
+  return (
+    <div className={`flex h-20 w-20 items-center justify-center rounded-full border-4 ${scoreRingColor(score)} ${scoreBgColor(score)}`}>
+      <span className={`text-2xl font-bold ${scoreColor(score)}`}>{score}</span>
+    </div>
+  );
+}
+
+/* ── Dimension Card ──────────────────────────────────────────── */
+
+const DIMENSION_META: Record<string, { icon: React.ReactNode; label: string; emoji: string }> = {
+  scalability: { icon: <Zap className="h-4 w-4" />, label: "Scalability", emoji: "🔥" },
+  availability: { icon: <Activity className="h-4 w-4" />, label: "Failure & Availability", emoji: "💀" },
+  bottlenecks: { icon: <Target className="h-4 w-4" />, label: "Bottlenecks", emoji: "🐌" },
+  security: { icon: <Shield className="h-4 w-4" />, label: "Security", emoji: "🔒" },
+  completeness: { icon: <Layers className="h-4 w-4" />, label: "Design Completeness", emoji: "📐" },
+};
+
+function DimensionCard({ name, dimension }: { name: string; dimension: ReviewDimension }) {
+  const [expanded, setExpanded] = useState(true);
+  const meta = DIMENSION_META[name] ?? { icon: null, label: name, emoji: "" };
+
+  return (
+    <Card>
+      <button
+        className="flex w-full items-center justify-between px-4 py-3 text-left"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="flex items-center gap-2">
+          <span>{meta.emoji}</span>
+          {meta.icon}
+          <span className="text-sm font-semibold">{meta.label}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge className={`${scoreBgColor(dimension.score, 10)} ${scoreColor(dimension.score, 10)} border-0 font-bold`}>
+            {dimension.score}/10
+          </Badge>
+          {expanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+        </div>
+      </button>
+      {expanded && dimension.issues.length > 0 && (
+        <CardContent className="pt-0 pb-3">
+          <div className="space-y-2">
+            {dimension.issues.map((issue, i) => (
+              <IssueRow key={i} issue={issue} />
+            ))}
+          </div>
+        </CardContent>
+      )}
+      {expanded && dimension.issues.length === 0 && (
+        <CardContent className="pt-0 pb-3">
+          <p className="text-xs text-muted-foreground italic">No issues found — looks good! ✅</p>
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
+function IssueRow({ issue }: { issue: FeedbackItem }) {
+  return (
+    <div className={`rounded-lg border p-3 ${SEVERITY_STYLES[issue.severity] ?? ""}`}>
+      <div className="flex items-start gap-2">
+        <Badge className={`text-[10px] px-1.5 py-0 shrink-0 ${SEVERITY_BADGE[issue.severity] ?? ""}`}>
+          {issue.severity}
+        </Badge>
+        <div className="min-w-0">
+          <p className="text-sm font-medium">{issue.title}</p>
+          <p className="mt-1 text-xs opacity-80">{issue.description}</p>
+          {issue.affectedComponents && issue.affectedComponents.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {issue.affectedComponents.map((comp, j) => (
+                <Badge key={j} variant="outline" className="text-[10px] px-1.5 py-0">
+                  {comp}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── AI Review Tab Content ───────────────────────────────────── */
+
+function AIReviewContent({
+  review,
+  status,
+  error,
+  onRetry,
+  onOpenSettings,
+  hasBYOKey,
+}: {
+  review: AIReviewResponse | null;
+  status: AnalysisStatus;
+  error?: string;
+  onRetry?: () => void;
+  onOpenSettings?: () => void;
+  hasBYOKey: boolean;
+}) {
+  // No BYO key configured
+  if (!hasBYOKey && status === "idle") {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/10 text-3xl">
-          ✏️
+          <Settings className="h-8 w-8 text-violet-500" />
         </div>
         <div className="text-center">
-          <p className="text-sm font-medium">Ready to analyze</p>
+          <p className="text-sm font-medium">AI Review Available</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Click &quot;Analyze Design&quot; to extract your design sections
+            Add your Azure OpenAI API key in Settings to get an AI-powered 5-reviewer analysis of your design.
+          </p>
+        </div>
+        {onOpenSettings && (
+          <Button variant="outline" size="sm" onClick={onOpenSettings}>
+            <Settings className="mr-1.5 h-3.5 w-3.5" />
+            Open Settings
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  // Loading
+  if (status === "analyzing") {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
+        <Loader2 className="h-10 w-10 animate-spin text-violet-500" />
+        <div className="text-center">
+          <p className="text-sm font-medium">Analyzing your design…</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            5 AI reviewers are evaluating scalability, availability, bottlenecks, security, and completeness.
           </p>
         </div>
       </div>
     );
   }
 
+  // Error
+  if (status === "error") {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/10 text-3xl">
+          <AlertTriangle className="h-8 w-8 text-red-500" />
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-medium text-red-600 dark:text-red-400">Analysis Failed</p>
+          <p className="mt-1 text-xs text-muted-foreground max-w-xs">
+            {error ?? "An unexpected error occurred."}
+          </p>
+        </div>
+        {onRetry && (
+          <Button variant="outline" size="sm" onClick={onRetry}>
+            Retry Analysis
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  // Complete — show review
+  if (!review) return null;
+
+  return (
+    <ScrollArea className="h-full">
+      <div className="flex flex-col gap-3 p-4">
+        {/* Score Header */}
+        <Card>
+          <CardContent className="flex items-center gap-4 py-5">
+            <ScoreCircle score={review.score} />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="h-4 w-4 text-violet-500" />
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Overall Score
+                </span>
+              </div>
+              <p className="text-sm text-foreground">{review.summary}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 5 Dimension Cards */}
+        {(["scalability", "availability", "bottlenecks", "security", "completeness"] as const).map((dim) => (
+          <DimensionCard key={dim} name={dim} dimension={review[dim]} />
+        ))}
+
+        {/* Flow Analysis */}
+        {(review.flowAnalysis.criticalPath.length > 0 ||
+          review.flowAnalysis.missingEdges.length > 0 ||
+          review.flowAnalysis.sequenceGaps.length > 0) && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <ArrowRight className="h-4 w-4" />
+                Flow Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {review.flowAnalysis.criticalPath.length > 0 && (
+                <div>
+                  <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Critical Path
+                  </h4>
+                  <div className="space-y-1">
+                    {review.flowAnalysis.criticalPath.map((path, i) => (
+                      <div key={i} className="rounded-md bg-muted px-3 py-2 text-xs font-mono">
+                        {path}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {review.flowAnalysis.missingEdges.length > 0 && (
+                <div>
+                  <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Missing Edges
+                  </h4>
+                  <div className="space-y-1">
+                    {review.flowAnalysis.missingEdges.map((edge, i) => (
+                      <div key={i} className="flex items-start gap-2 rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 text-xs">
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500 mt-0.5" />
+                        {edge}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {review.flowAnalysis.sequenceGaps.length > 0 && (
+                <div>
+                  <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Sequence Gaps
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {review.flowAnalysis.sequenceGaps.map((gap, i) => (
+                      <Badge key={i} variant="outline" className="text-xs">
+                        Step #{gap} missing
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Follow-up Questions */}
+        {review.followUpQuestions.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <HelpCircle className="h-4 w-4" />
+                Follow-up Questions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ol className="list-decimal list-inside space-y-2">
+                {review.followUpQuestions.map((q, i) => (
+                  <li key={i} className="text-sm text-foreground">
+                    {q}
+                  </li>
+                ))}
+              </ol>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </ScrollArea>
+  );
+}
+
+/* ── Parse Tab Content (existing) ────────────────────────────── */
+
+function ParseTabContent({ diagram }: { diagram: ParsedDiagram }) {
   const { sections, hld } = diagram;
   const nodeMap = new Map(hld.nodes.map((n) => [n.id, n]));
 
@@ -100,7 +417,7 @@ export function FeedbackPanel({ diagram }: FeedbackPanelProps) {
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Components subsection */}
+            {/* Components */}
             {hld.nodes.length > 0 && (
               <div>
                 <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -127,7 +444,7 @@ export function FeedbackPanel({ diagram }: FeedbackPanelProps) {
               </div>
             )}
 
-            {/* Clusters subsection */}
+            {/* Clusters */}
             {hld.clusters.length > 0 && (
               <div>
                 <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -152,7 +469,7 @@ export function FeedbackPanel({ diagram }: FeedbackPanelProps) {
               </div>
             )}
 
-            {/* Connections subsection */}
+            {/* Connections */}
             {hld.edges.length > 0 && (
               <div>
                 <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -193,7 +510,7 @@ export function FeedbackPanel({ diagram }: FeedbackPanelProps) {
               </div>
             )}
 
-            {/* Annotations subsection */}
+            {/* Annotations */}
             {hld.annotations.length > 0 && (
               <div>
                 <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -232,7 +549,7 @@ export function FeedbackPanel({ diagram }: FeedbackPanelProps) {
           </CardContent>
         </Card>
 
-        {/* Raw JSON dump */}
+        {/* Raw JSON */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold">Raw JSON</CardTitle>
@@ -245,5 +562,77 @@ export function FeedbackPanel({ diagram }: FeedbackPanelProps) {
         </Card>
       </div>
     </ScrollArea>
+  );
+}
+
+/* ── Main FeedbackPanel ──────────────────────────────────────── */
+
+export function FeedbackPanel({
+  diagram,
+  aiReview,
+  aiStatus = "idle",
+  aiError,
+  onRetry,
+  onOpenSettings,
+}: FeedbackPanelProps) {
+  // Check if BYO key is configured
+  const hasBYOKey = (() => {
+    try {
+      const raw = localStorage.getItem("drawlint:byo-key");
+      if (!raw) return false;
+      const config = JSON.parse(raw) as { apiKey?: string };
+      return !!config.apiKey;
+    } catch {
+      return false;
+    }
+  })();
+
+  const defaultTab = aiReview || aiStatus === "analyzing" || aiStatus === "error" || hasBYOKey
+    ? "ai-review"
+    : "parse";
+
+  if (!diagram) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/10 text-3xl">
+          ✏️
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-medium">Ready to analyze</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Click &quot;Analyze Design&quot; to extract your design sections
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Tabs defaultValue={defaultTab} className="flex h-full flex-col">
+      <TabsList className="mx-4 mt-3 shrink-0 grid w-auto grid-cols-2">
+        <TabsTrigger value="ai-review" className="text-xs">
+          <Sparkles className="mr-1.5 h-3 w-3" />
+          AI Review
+        </TabsTrigger>
+        <TabsTrigger value="parse" className="text-xs">
+          Parse
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="ai-review" className="flex-1 overflow-hidden mt-0">
+        <AIReviewContent
+          review={aiReview ?? null}
+          status={aiStatus}
+          error={aiError}
+          onRetry={onRetry}
+          onOpenSettings={onOpenSettings}
+          hasBYOKey={hasBYOKey}
+        />
+      </TabsContent>
+
+      <TabsContent value="parse" className="flex-1 overflow-hidden mt-0">
+        <ParseTabContent diagram={diagram} />
+      </TabsContent>
+    </Tabs>
   );
 }
