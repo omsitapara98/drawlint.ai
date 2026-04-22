@@ -105,7 +105,7 @@ export function FeedbackPanel({ feedback, status, error }: FeedbackPanelProps) {
         <div className="text-center">
           <p className="text-sm font-medium">Ready to analyze</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Draw a system design on the canvas, then click Analyze
+            Your analysis will appear here
           </p>
         </div>
       </div>
