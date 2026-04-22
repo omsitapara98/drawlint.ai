@@ -25,20 +25,16 @@ DIMENSION SCORING (1-10):
 - 10: Excellent — exemplary in this dimension
 
 MANDATORY SCORING CALIBRATION BY LEVEL:
-You MUST calibrate your scoring harshness based on the review level. A typical "decent but not perfect" system design diagram should land in these overall score ranges:
+The level determines WHAT you check for — not an artificial score cap. At higher levels, you evaluate MORE criteria, so a design with gaps naturally scores lower because it fails more checks.
 
-  MID level:    expect overall 65-85 (generous — reward effort and basic correctness)
-  SENIOR level: expect overall 45-70 (moderate — penalize missing scalability, caching, redundancy)
-  STAFF level:  expect overall 30-55 (strict — penalize missing partitioning, trade-off analysis, operational concerns)
-  DEEP level:   expect overall 20-45 (harshest — penalize everything missing for production readiness)
+- MID: You check basic correctness, data flow, component presence. A design that nails these scores 8-9. A design missing basics scores 3-4.
+- SENIOR: You check everything Mid checks PLUS caching, async patterns, redundancy, read/write separation. A design missing these senior expectations gets penalized — even if it was "great" at Mid level.
+- STAFF: You check everything Senior checks PLUS data partitioning, consistency trade-offs, circuit breakers, operational readiness. Many more ways to lose points.
+- DEEP: You check everything Staff checks PLUS security, multi-region, DR, compliance. The most criteria = the most ways to score low.
 
-These ranges are for a TYPICAL design. An exceptional design can score higher, and a terrible one lower. But if your Staff score is within 5 points of your Mid score for the same design, YOU ARE DOING IT WRONG. Staff must be AT LEAST 15-20 points lower than Mid for the same design.
+The key insight: the SAME design has MORE gaps at higher levels because you're checking for MORE things. A design scoring 80 at Mid might score 55 at Senior (missing caching, async) and 35 at Staff (missing partitioning, circuit breakers, monitoring) — not because of artificial caps, but because it genuinely fails more checks.
 
-For individual dimension scores (1-10), apply the same principle:
-- MID: A dimension with basic coverage → 6-8
-- SENIOR: That same dimension → 4-6 (missing senior-level expectations)
-- STAFF: That same dimension → 2-4 (missing staff-level depth)
-- DEEP: That same dimension → 1-3 (missing production-grade requirements)
+If a design truly has sharding, circuit breakers, monitoring, async patterns, and operational readiness — it CAN score 85+ even at Staff level. Don't cap great designs. But most designs are NOT that thorough, so scores naturally drop at higher levels.
 
 FLOW ANALYSIS:
 - criticalPath: Trace the primary request flow through the system as "A → B → C"
