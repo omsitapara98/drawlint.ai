@@ -21,7 +21,7 @@ export function getTextForElement(
   element: ExcalidrawElement,
   allElements: readonly ExcalidrawElement[],
 ): string {
-  // Excalidraw binds text to containers via boundElements / containerId
+  // 1. Check bound text (double-click binding via boundElements / containerId)
   const bound = (element as Record<string, unknown>).boundElements as
     | readonly { id: string; type: string }[]
     | null
@@ -37,7 +37,47 @@ export function getTextForElement(
       }
     }
   }
-  return "";
+
+  // 2. Fallback: find standalone text overlapping this shape's bounds.
+  //    Covers the case where a user placed a text element on top of a shape
+  //    without using Excalidraw's built-in text binding.
+  const raw = element as Record<string, unknown>;
+  const ex = element.x;
+  const ey = element.y;
+  const ew = (raw.width as number) ?? 0;
+  const eh = (raw.height as number) ?? 0;
+  if (ew === 0 || eh === 0) return "";
+
+  let bestText = "";
+  let bestArea = 0;
+
+  for (const el of allElements) {
+    if (el.type !== "text") continue;
+    if (el.isDeleted) continue;
+    // Skip text already bound to another container
+    const cid = (el as Record<string, unknown>).containerId as string | null | undefined;
+    if (cid) continue;
+
+    const tr = el as Record<string, unknown>;
+    const tx = el.x;
+    const ty = el.y;
+    const tw = (tr.width as number) ?? 0;
+    const th = (tr.height as number) ?? 0;
+
+    // Calculate overlap area between shape and text
+    const overlapX = Math.max(0, Math.min(ex + ew, tx + tw) - Math.max(ex, tx));
+    const overlapY = Math.max(0, Math.min(ey + eh, ty + th) - Math.max(ey, ty));
+    const overlapArea = overlapX * overlapY;
+    const textArea = tw * th;
+
+    // Text must overlap by at least 50% of its own area
+    if (textArea > 0 && overlapArea / textArea >= 0.5 && overlapArea > bestArea) {
+      bestArea = overlapArea;
+      bestText = ((tr.text as string) ?? "").trim();
+    }
+  }
+
+  return bestText;
 }
 
 export function classifyNode(
