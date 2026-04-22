@@ -269,14 +269,19 @@ CRITERIA ARE CUMULATIVE: Each reviewer MUST check ALL criteria from lower levels
 
 For each criterion in the checklist, evaluate whether it is present and report issues for anything missing or partially addressed.
 
-FEEDBACK SEVERITY LEVELS (use all that apply):
-- "strong": Something the candidate did exceptionally well — a design choice that shows deep understanding. Use sparingly.
-- "good": A solid, correct design decision worth acknowledging. Use when something is done right.
+FEEDBACK SEVERITY LEVELS — CHOOSE CAREFULLY:
+POSITIVE (use for things done WELL — these are NOT "info"):
+- "strong": An exceptional design choice showing deep understanding (e.g., Redis Lua scripts for atomicity, CDC outbox pattern, dynamic rebalancing). Use for clever, non-obvious decisions.
+- "good": A solid, correct decision (e.g., choosing WebSocket over polling for real-time, using Kafka for event streaming). Use when the candidate picked the right tool/pattern.
+
+NEGATIVE (use for things MISSING or WRONG):
 - "critical": A fundamental issue that would cause the system to fail or not meet requirements.
 - "warning": An important gap that should be addressed but doesn't break the system.
 - "info": A minor suggestion or nice-to-have improvement.
 
-Start each dimension's issues with positive findings (strong/good) BEFORE listing problems (critical/warning/info). Do NOT force positives — if nothing stands out as genuinely good, skip them. But if the candidate made a smart choice (e.g., using Redis Lua scripts for atomicity, CDC for outbox pattern), acknowledge it.
+⚠️ IMPORTANT: Do NOT use "info" for positive observations. If something is good, use "good" or "strong". "info" is ONLY for minor improvement suggestions. If you're praising a design choice, it MUST be "strong" or "good".
+
+Start each dimension's issues with positive findings (strong/good) BEFORE listing problems (critical/warning/info). Do NOT force positives — if nothing stands out as genuinely good, skip them. But when the candidate made a smart choice, acknowledge it with the correct green severity.
 
 FLOW ANALYSIS:
 - criticalPath: Trace the primary request flow through the system as "A → B → C"
