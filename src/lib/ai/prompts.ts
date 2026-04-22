@@ -281,6 +281,8 @@ NEGATIVE (use for things MISSING or WRONG):
 
 ⚠️ IMPORTANT: Do NOT use "info" for positive observations. If something is good, use "good" or "strong". "info" is ONLY for minor improvement suggestions. If you're praising a design choice, it MUST be "strong" or "good".
 
+The "issues" array contains BOTH positive and negative findings — despite the field name, it holds all feedback items including praise. A typical dimension might have: 2 "good" items + 1 "warning" item + 1 "info" item.
+
 Start each dimension's issues with positive findings (strong/good) BEFORE listing problems (critical/warning/info). Do NOT force positives — if nothing stands out as genuinely good, skip them. But when the candidate made a smart choice, acknowledge it with the correct green severity.
 
 FLOW ANALYSIS:
@@ -310,7 +312,7 @@ const DIMENSION_SCHEMA = `{
       {
         "severity": "strong" | "good" | "critical" | "warning" | "info",
         "title": "<short title>",
-        "description": "<detailed explanation with fix recommendation>"
+        "description": "<explanation — for strong/good: WHY this is a smart choice; for critical/warning/info: what's wrong and how to fix>"
       }
     ]
   }`;
