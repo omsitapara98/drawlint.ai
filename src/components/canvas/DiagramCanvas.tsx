@@ -47,7 +47,7 @@ export default function DiagramCanvas({
           elements: initialData ?? [],
           appState: {
             theme: excalidrawTheme,
-            zoom: { value: 0.3 as never },
+            zoom: { value: 0.46 as never },
             scrollX: 0,
             scrollY: 0,
           },
