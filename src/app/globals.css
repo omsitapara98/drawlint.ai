@@ -129,6 +129,18 @@
   }
 }
 
+/* Hide Excalidraw library button and library panel */
+.excalidraw .library-button,
+.excalidraw [data-testid="library-button"],
+.excalidraw .library-menu-items-container,
+.excalidraw .layer-ui__library,
+.excalidraw button[aria-label="Library"],
+.excalidraw .library-unit,
+.excalidraw .library-menu-browse-button,
+.excalidraw .publish-library-button {
+  display: none !important;
+}
+
 /* Smooth transitions for theme switching */
 * {
   transition-property: background-color, border-color, color;
