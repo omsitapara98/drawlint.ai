@@ -15,7 +15,6 @@ import {
   ChevronRight,
   Settings,
   Sparkles,
-  ArrowRight,
   HelpCircle,
   Zap,
   Activity,
@@ -386,66 +385,6 @@ function AIReviewContent({
           </Card>
         )}
 
-        {/* Flow Analysis */}
-        {(review.flowAnalysis.criticalPath.length > 0 ||
-          review.flowAnalysis.missingEdges.length > 0 ||
-          review.flowAnalysis.sequenceGaps.length > 0) && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <ArrowRight className="h-4 w-4" />
-                Flow Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {review.flowAnalysis.criticalPath.length > 0 && (
-                <div>
-                  <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Critical Path
-                  </h4>
-                  <div className="space-y-1">
-                    {review.flowAnalysis.criticalPath.map((path, i) => (
-                      <div key={i} className="rounded-md bg-muted px-3 py-2 text-xs font-mono">
-                        {path}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {review.flowAnalysis.missingEdges.length > 0 && (
-                <div>
-                  <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Missing Edges
-                  </h4>
-                  <div className="space-y-1">
-                    {review.flowAnalysis.missingEdges.map((edge, i) => (
-                      <div key={i} className="flex items-start gap-2 rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 text-xs">
-                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500 mt-0.5" />
-                        {edge}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {review.flowAnalysis.sequenceGaps.length > 0 && (
-                <div>
-                  <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Sequence Gaps
-                  </h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {review.flowAnalysis.sequenceGaps.map((gap, i) => (
-                      <Badge key={i} variant="outline" className="text-xs">
-                        Step #{gap} missing
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
         {/* Follow-up Questions */}
         {review.followUpQuestions.length > 0 && (

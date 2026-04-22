@@ -282,11 +282,6 @@ FEEDBACK — TWO SEPARATE SECTIONS PER DIMENSION:
 
 Do NOT force highlights — if nothing stands out as genuinely good, leave the array empty. But when the candidate made a smart choice, put it in highlights with "strong" or "good".
 
-FLOW ANALYSIS:
-- criticalPath: Trace the primary request flow through the system as "A → B → C"
-- missingEdges: Identify connections that should exist but don't (error paths, fallbacks, monitoring)
-- sequenceGaps: List sequence numbers that are missing from the numbered flow (e.g., if edges are numbered 1,2,4,5 then gap is [3])
-
 RULES:
 - Return ONLY valid JSON. No markdown fences, no explanation text outside the JSON.
 - Every issues array must have at least one item if there is a relevant finding; use empty array only if no issues exist.
@@ -332,11 +327,6 @@ Return a JSON object with this EXACT structure:
   "capacityReview": ${DIMENSION_SCHEMA},
   "apiReview": ${DIMENSION_SCHEMA},
   "hldReview": ${DIMENSION_SCHEMA},
-  "flowAnalysis": {
-    "criticalPath": ["A → B → C"],
-    "missingEdges": ["No error path from X to Y"],
-    "sequenceGaps": [3, 7]
-  },
 ${LEAD_REVIEWER_SCHEMA},
   "followUpQuestions": ["Question 1?", "Question 2?"]
 }`;

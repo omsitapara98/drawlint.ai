@@ -59,11 +59,6 @@ export interface AIReviewResponse {
   capacityReview: ReviewDimension;
   apiReview: ReviewDimension;
   hldReview: ReviewDimension;
-  flowAnalysis: {
-    criticalPath: string[];
-    missingEdges: string[];
-    sequenceGaps: number[];
-  };
   leadReviewer: LeadReviewer;
   followUpQuestions: string[];
 }

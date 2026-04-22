@@ -269,7 +269,6 @@ function validateLeadReviewer(raw: unknown): LeadReviewer {
 
 /** Validate and normalize the parsed AIReviewResponse. */
 function validateReview(raw: AIReviewResponse, level: ReviewLevel): AIReviewResponse {
-  const flowRaw = raw.flowAnalysis;
   return {
     level,
     summary: typeof raw.summary === "string" ? raw.summary : "",
@@ -279,26 +278,6 @@ function validateReview(raw: AIReviewResponse, level: ReviewLevel): AIReviewResp
     capacityReview: validateDimension(raw.capacityReview),
     apiReview: validateDimension(raw.apiReview),
     hldReview: validateDimension(raw.hldReview),
-    flowAnalysis: {
-      criticalPath:
-        typeof flowRaw === "object" &&
-        flowRaw !== null &&
-        Array.isArray(flowRaw.criticalPath)
-          ? flowRaw.criticalPath
-          : [],
-      missingEdges:
-        typeof flowRaw === "object" &&
-        flowRaw !== null &&
-        Array.isArray(flowRaw.missingEdges)
-          ? flowRaw.missingEdges
-          : [],
-      sequenceGaps:
-        typeof flowRaw === "object" &&
-        flowRaw !== null &&
-        Array.isArray(flowRaw.sequenceGaps)
-          ? flowRaw.sequenceGaps
-          : [],
-    },
     leadReviewer: validateLeadReviewer(raw.leadReviewer),
     followUpQuestions: Array.isArray(raw.followUpQuestions)
       ? raw.followUpQuestions
