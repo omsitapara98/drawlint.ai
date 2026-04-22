@@ -65,6 +65,15 @@ export interface GraphAnnotation {
   nearestNodeId: string;
 }
 
+export interface GraphCluster {
+  id: string;
+  label: string;
+  count: number;
+  memberIds: string[];
+  position: { x: number; y: number };
+  dimensions: { width: number; height: number };
+}
+
 export interface ParsedDiagram {
   sections: {
     functionalRequirements: string;
@@ -78,5 +87,6 @@ export interface ParsedDiagram {
     nodes: GraphNode[];
     edges: GraphEdge[];
     annotations: GraphAnnotation[];
+    clusters: GraphCluster[];
   };
 }

@@ -90,6 +90,9 @@ export function FeedbackPanel({ diagram }: FeedbackPanelProps) {
             </CardTitle>
             <p className="text-xs text-muted-foreground">
               {hld.nodes.length} component{hld.nodes.length !== 1 ? "s" : ""}
+              {hld.clusters.length > 0 && (
+                <> · {hld.clusters.length} cluster{hld.clusters.length !== 1 ? "s" : ""}</>
+              )}
               {" · "}
               {hld.edges.length} connection{hld.edges.length !== 1 ? "s" : ""}
               {" · "}
@@ -118,6 +121,31 @@ export function FeedbackPanel({ diagram }: FeedbackPanelProps) {
                       <span className="truncate">
                         {node.label || "(unlabeled)"}
                       </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Clusters subsection */}
+            {hld.clusters.length > 0 && (
+              <div>
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Clusters
+                </h4>
+                <div className="space-y-1.5">
+                  {hld.clusters.map((cluster) => (
+                    <div
+                      key={cluster.id}
+                      className="flex items-center gap-2 rounded-md border border-dashed px-2.5 py-1.5 text-sm"
+                    >
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
+                      >
+                        ×{cluster.count}
+                      </Badge>
+                      <span className="truncate">{cluster.label}</span>
                     </div>
                   ))}
                 </div>

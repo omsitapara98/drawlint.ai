@@ -4,6 +4,7 @@ import type {
   GraphNode,
   GraphEdge,
   GraphAnnotation,
+  GraphCluster,
 } from "@/types/diagram";
 import type { SectionContents } from "@/types/feedback";
 import { getTextForElement, classifyNode, SECTION_DEFS } from "./serializer";
@@ -314,6 +315,78 @@ function extractAnnotations(
   return annotations;
 }
 
+/* ── Pass 4: Cluster detection ──────────────────────────────── */
+
+// Detect container shapes that enclose 2+ other nodes.
+// The container becomes a cluster; enclosed nodes become members.
+function detectClusters(
+  nodes: GraphNode[],
+  active: readonly ExcalidrawElement[],
+): { clusters: GraphCluster[]; updatedNodes: GraphNode[] } {
+  const clusters: GraphCluster[] = [];
+  const clusteredNodeIds = new Set<string>();
+
+  // Find all HLD shapes that contain 2+ existing nodes within their bounds
+  for (const el of active) {
+    if (isTemplateElement(el.id)) continue;
+    if (!SHAPE_TYPES.has(el.type)) continue;
+    if (!inHLD(el.x, el.y)) continue;
+
+    const raw = el as Record<string, unknown>;
+    const cx = el.x;
+    const cy = el.y;
+    const cw = (raw.width as number) ?? 0;
+    const ch = (raw.height as number) ?? 0;
+
+    // Find nodes fully contained within this shape
+    const members = nodes.filter((n) => {
+      if (n.id === el.id) return false;
+      return (
+        n.position.x >= cx &&
+        n.position.y >= cy &&
+        n.position.x + n.dimensions.width <= cx + cw &&
+        n.position.y + n.dimensions.height <= cy + ch
+      );
+    });
+
+    if (members.length >= 2) {
+      const label = getTextForElement(el, active);
+      // Use the most common member label, or the container's own label
+      const memberLabels = members.map((m) => m.label).filter(Boolean);
+      const commonLabel = mostCommonString(memberLabels) || label || "(cluster)";
+
+      clusters.push({
+        id: el.id,
+        label: commonLabel,
+        count: members.length,
+        memberIds: members.map((m) => m.id),
+        position: { x: cx, y: cy },
+        dimensions: { width: cw, height: ch },
+      });
+
+      for (const m of members) clusteredNodeIds.add(m.id);
+    }
+  }
+
+  // Remove cluster container shapes from the nodes list (they're not components)
+  const clusterIds = new Set(clusters.map((c) => c.id));
+  const updatedNodes = nodes.filter((n) => !clusterIds.has(n.id));
+
+  return { clusters, updatedNodes };
+}
+
+function mostCommonString(arr: string[]): string {
+  if (arr.length === 0) return "";
+  const counts = new Map<string, number>();
+  for (const s of arr) counts.set(s, (counts.get(s) ?? 0) + 1);
+  let best = "";
+  let bestCount = 0;
+  for (const [s, c] of counts) {
+    if (c > bestCount) { best = s; bestCount = c; }
+  }
+  return best;
+}
+
 /* ── Main entry point ───────────────────────────────────────── */
 
 export function parseDiagram(
@@ -322,7 +395,11 @@ export function parseDiagram(
   const active = elements.filter((e) => !e.isDeleted);
 
   const sections = extractSections(active);
-  const { nodes, logicBoxes } = extractNodes(active);
+  const { nodes: rawNodes, logicBoxes } = extractNodes(active);
+
+  // Detect clusters (dotted boxes wrapping multiple instances)
+  const { clusters, updatedNodes: nodes } = detectClusters(rawNodes, active);
+
   const edges = extractEdges(active, nodes);
   const annotations = extractAnnotations(active, nodes);
 
@@ -351,6 +428,6 @@ export function parseDiagram(
 
   return {
     sections,
-    hld: { nodes, edges, annotations },
+    hld: { nodes, edges, annotations, clusters },
   };
 }
