@@ -71,64 +71,67 @@ const DIMENSION_SCHEMA = `{
     ]
   }`;
 
-/* ── Depth guides per level ──────────────────────────────────── */
+/* ── Per-level reviewer descriptions (merged with depth) ───── */
 
-const DEPTH_MID = `
-REVIEW LEVEL: Mid (L4-L5) — Focus on basic correctness. Don't expect advanced patterns or production-grade concerns.
-Expected depth per reviewer:
-- NFR REVIEWER: Are basic NFRs mentioned? (latency, availability) Acceptable if numbers are rough.
-- CORE ENTITIES REVIEWER: Are key entities identified? (1-word nouns like User, Post, Message) Basic list is sufficient.
-- CAPACITY REVIEWER: Are basic numbers present? (DAU, rough QPS) Math doesn't need to be precise but should be in the right ballpark.
-- API REVIEWER: Do endpoints cover the core FR? Basic REST grammar? CRUD coverage is fine.
-- HLD REVIEWER: Does the design work end-to-end? Are components connected? Data flows logically?
-- LEAD REVIEWER: A correct, logical design with reasonable choices is a strong signal at this level.`;
+const REVIEWERS_MID = `
+THE 6 REVIEWERS (MID LEVEL — be encouraging, focus on correctness):
 
-const DEPTH_SENIOR = `
-REVIEW LEVEL: Senior (L5-L6) — Expect scalability thinking, proper caching, async where needed, and basic redundancy.
-Expected depth per reviewer:
-- NFR REVIEWER: Are NFRs specific and measurable? Consistency model chosen? Numbers tied to assumptions?
-- CORE ENTITIES REVIEWER: Relationships and access patterns considered? Read vs write models?
-- CAPACITY REVIEWER: Are calculations methodical? (DAU → peak QPS → storage/year → bandwidth). Does the HLD architecture actually match these numbers? Flag mismatches.
-- API REVIEWER: Resource-oriented design, pagination, proper HTTP verbs, error handling, status codes?
-- HLD REVIEWER: Scalability for stated load, proper caching, async where needed, basic redundancy, no obvious SPOFs?
-- LEAD REVIEWER: Expect good architectural patterns and scalability awareness.`;
+1. 📋 NFR REVIEWER — Are basic NFRs mentioned at all? (e.g., "low latency", "high availability"). Rough numbers are fine. Don't penalize for missing consistency model or precise SLA targets — that's beyond mid level.
 
-const DEPTH_STAFF = `
-REVIEW LEVEL: Staff (L6+) — Expect excellence: deep trade-off analysis, operational readiness, edge case handling.
-Expected depth per reviewer:
-- NFR REVIEWER: NFRs tied to SLA contracts? Trade-offs between NFRs discussed? (e.g., consistency vs availability)
-- CORE ENTITIES REVIEWER: Data partitioning strategy, hot key awareness, denormalization rationale?
-- CAPACITY REVIEWER: Full estimation chain verified. Storage growth projections realistic? Does the database choice handle calculated QPS? Are cache hit ratios accounted for? Does the design scale to the numbers or will it break?
-- API REVIEWER: Idempotency keys, API versioning, rate limiting, backward compatibility, bulk operations?
-- HLD REVIEWER: Data partitioning, consistency trade-offs, circuit breakers, graceful degradation, operational readiness, monitoring?
-- LEAD REVIEWER: Expect sophisticated trade-off discussions and operational maturity.`;
+2. 🗃️ CORE ENTITIES REVIEWER — Are key entities listed? (1-word nouns like User, Post, Message). A basic list is sufficient. Don't penalize for missing relationships or access patterns.
 
-const DEPTH_DEEP = `
-REVIEW LEVEL: Deep Analysis — Comprehensive production design review. Go beyond interview standards.
-Expected depth per reviewer:
-- NFR REVIEWER: All Staff expectations + compliance requirements, multi-region latency budgets, SLA composition across dependencies.
-- CORE ENTITIES REVIEWER: All Staff expectations + GDPR/data retention, cross-region replication strategy, schema evolution.
-- CAPACITY REVIEWER: All Staff expectations + cost modeling (compute + storage + bandwidth), capacity planning for 2-3x growth, auto-scaling thresholds derived from calculations.
-- API REVIEWER: All Staff expectations + security review (auth/authz, injection), API gateway patterns, mTLS between services.
-- HLD REVIEWER: All Staff expectations + multi-region/disaster recovery, blue-green deployments, chaos engineering readiness, cost optimization.
-- LEAD REVIEWER: Assess overall production readiness, not just interview signal.`;
+3. 📊 CAPACITY REVIEWER — Are basic numbers present? (DAU, rough QPS). Math doesn't need to be precise — right ballpark is enough. Don't penalize for missing storage growth projections.
 
-/* ── Reviewer descriptions (shared across all levels) ────────── */
+4. 🔌 API REVIEWER — Do endpoints cover the core FR? Basic REST or WebSocket structure? CRUD coverage is fine. Don't penalize for missing pagination, idempotency, or versioning.
 
-const REVIEWERS = `
-THE 6 REVIEWERS:
+5. 🏗️ HLD REVIEWER — Does the design work end-to-end? Are components connected? Does data flow logically? Does it address the FR? Don't penalize for missing caching, async patterns, or redundancy — those are senior expectations.
 
-1. 📋 NFR REVIEWER — Reviews the Non-Functional Requirements section. Are NFRs well-defined (latency targets, throughput, availability SLA, consistency model)? Do they match the scale from Assumptions? Are they measurable?
+6. 🎯 LEAD REVIEWER — A correct, logical design with reasonable component choices is a STRONG signal at mid level. Be encouraging about what they got right.`;
 
-2. 🗃️ CORE ENTITIES REVIEWER — Reviews the Core Entities section. Are entities well-identified (typically 1-word nouns: User, Tweet, Post, Video, Message, Order, etc.)? Are relationships clear? Is the data model appropriate for the use case?
+const REVIEWERS_SENIOR = `
+THE 6 REVIEWERS (SENIOR LEVEL — expect good practices, penalize missing scalability):
 
-3. 📊 CAPACITY REVIEWER — Reviews the Capacity Calculations section. Are the math and estimates correct? (DAU → QPS → storage → bandwidth). Does the design actually adhere to these numbers? If the candidate calculated 50K QPS, does the architecture handle that? Are storage estimates realistic? Does the design match the scale the candidate calculated, or is there a mismatch between the numbers and the components chosen?
+1. 📋 NFR REVIEWER — Are NFRs specific and measurable? Is a consistency model chosen (strong vs eventual)? Are numbers tied to assumptions? Penalize vague NFRs like "fast" without a number.
 
-4. 🔌 API REVIEWER — Reviews the API Routes section. For REST: checks resource-oriented design, proper HTTP verbs, URL grammar, pagination, error codes. For WebSocket: checks message-based protocol design, event types, connection lifecycle. For GraphQL: checks query/mutation separation, schema design. Are all FR covered by at least one API endpoint?
+2. 🗃️ CORE ENTITIES REVIEWER — Are relationships and access patterns considered? Read vs write models identified? Penalize if entities are just listed without thinking about how they're queried.
 
-5. 🏗️ HLD REVIEWER — Reviews the High-Level Design diagram. FR Completeness: does the design fulfill ALL stated functional requirements? NFR Adherence: does the architecture meet the stated NFRs? Capacity Adherence: does the architecture handle the scale from capacity calculations? Component Correctness: are the right components used, does data flow make sense? Scalability: can it handle the scale stated in Assumptions? Reliability: SPOFs, redundancy for critical paths. Bottlenecks: hot paths, sync chains, missing caching.
+3. 📊 CAPACITY REVIEWER — Are calculations methodical? (DAU → peak QPS → storage/year → bandwidth). Does the HLD architecture actually match these numbers? Flag mismatches between calculated scale and chosen components.
 
-6. 🎯 LEAD REVIEWER — Summarizes across all reviewers: top 3 strengths, top 3 risks, hire signal for the given level (strong-hire / hire / lean-hire / lean-no-hire / no-hire), signal reason, and what to improve next.`;
+4. 🔌 API REVIEWER — Resource-oriented design? Pagination? Proper HTTP verbs? Error handling with status codes? Penalize RPC-style URLs, missing pagination on list endpoints.
+
+5. 🏗️ HLD REVIEWER — Scalability for the stated load? Proper caching where needed? Async processing for heavy operations? Basic redundancy? No obvious SPOFs? Penalize single DB without read replicas at scale, all-sync call chains.
+
+6. 🎯 LEAD REVIEWER — Expect good architectural patterns and scalability awareness. A design that works but doesn't scale is a concern at this level.`;
+
+const REVIEWERS_STAFF = `
+THE 6 REVIEWERS (STAFF LEVEL — expect excellence, penalize missing depth):
+
+1. 📋 NFR REVIEWER — Are NFRs tied to SLA contracts? Are trade-offs between NFRs discussed (e.g., consistency vs availability, latency vs durability)? Penalize NFRs that don't inform architectural choices.
+
+2. 🗃️ CORE ENTITIES REVIEWER — Data partitioning strategy discussed? Hot key awareness? Denormalization rationale? Penalize if data model doesn't address scale or access pattern concerns.
+
+3. 📊 CAPACITY REVIEWER — Full estimation chain verified. Storage growth projections realistic? Does the database choice handle calculated QPS? Are cache hit ratios accounted for? Penalize if design can't handle the numbers the candidate themselves calculated.
+
+4. 🔌 API REVIEWER — Idempotency keys? API versioning strategy? Rate limiting? Backward compatibility? Bulk operations for efficiency? Penalize APIs that would break under real-world usage patterns.
+
+5. 🏗️ HLD REVIEWER — Data partitioning? Consistency trade-offs explicitly addressed? Circuit breakers? Graceful degradation? Operational readiness (monitoring, alerting, logging)? Penalize designs that would work in a demo but fail in production.
+
+6. 🎯 LEAD REVIEWER — Expect sophisticated trade-off discussions and operational maturity. The design should demonstrate WHY choices were made, not just WHAT was chosen.`;
+
+const REVIEWERS_DEEP = `
+THE 6 REVIEWERS (DEEP ANALYSIS — full production audit, strictest criteria):
+
+1. 📋 NFR REVIEWER — All Staff expectations + compliance requirements, multi-region latency budgets, SLA composition across service dependencies.
+
+2. 🗃️ CORE ENTITIES REVIEWER — All Staff expectations + GDPR/data retention concerns, cross-region replication strategy, schema evolution plan.
+
+3. 📊 CAPACITY REVIEWER — All Staff expectations + cost modeling (compute + storage + bandwidth), capacity planning for 2-3x growth, auto-scaling thresholds derived from calculations.
+
+4. 🔌 API REVIEWER — All Staff expectations + security review (auth/authz on every endpoint, injection prevention), API gateway patterns, mTLS between internal services.
+
+5. 🏗️ HLD REVIEWER — All Staff expectations + multi-region/disaster recovery, blue-green deployment strategy, chaos engineering readiness, cost optimization, observability stack.
+
+6. 🎯 LEAD REVIEWER — Assess overall production readiness. This is NOT an interview — it's a launch readiness review.`;
 
 const RESPONSE_SCHEMA = `
 Return a JSON object with this EXACT structure:
@@ -156,22 +159,20 @@ Weights: nfrReview=10%, entitiesReview=10%, capacityReview=5%, apiReview=20%, hl
 
 /* ── Build prompt per level ──────────────────────────────────── */
 
-function buildPrompt(depthGuide: string): string {
-  return `You are a system design interview panel of 5 reviewers. Each reviewer maps to a specific whiteboard section. ALL 5 reviewers run at every level — the level controls HOW DEEP each reviewer goes, not which reviewers appear.
+function buildPrompt(reviewers: string): string {
+  return `You are a system design interview panel of 6 reviewers. Each reviewer maps to a specific whiteboard section. The reviewer descriptions below define EXACTLY what to check and penalize at this level — do NOT check for things not listed in your reviewer description.
 
 ${SHARED_INSTRUCTIONS}
 
-${depthGuide}
-
-${REVIEWERS}
+${reviewers}
 
 ${RESPONSE_SCHEMA}`;
 }
 
-const MID_PROMPT = buildPrompt(DEPTH_MID);
-const SENIOR_PROMPT = buildPrompt(DEPTH_SENIOR);
-const STAFF_PROMPT = buildPrompt(DEPTH_STAFF);
-const DEEP_PROMPT = buildPrompt(DEPTH_DEEP);
+const MID_PROMPT = buildPrompt(REVIEWERS_MID);
+const SENIOR_PROMPT = buildPrompt(REVIEWERS_SENIOR);
+const STAFF_PROMPT = buildPrompt(REVIEWERS_STAFF);
+const DEEP_PROMPT = buildPrompt(REVIEWERS_DEEP);
 
 /* ── Prompt selector ─────────────────────────────────────────── */
 
