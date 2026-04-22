@@ -27,7 +27,7 @@ export default function Header({ onOpenSettings }: HeaderProps) {
         >
           How it works
         </a>
-        <Button variant="outline" size="sm" onClick={onOpenSettings}>
+        <Button variant="ghost" size="sm" className="text-zinc-300 hover:text-white hover:bg-zinc-800" onClick={onOpenSettings}>
           Settings
         </Button>
       </div>

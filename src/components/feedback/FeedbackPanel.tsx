@@ -50,7 +50,7 @@ function severityLabel(severity: FeedbackItem["severity"]): string {
 
 function FeedbackItemCard({ item }: { item: FeedbackItem }) {
   return (
-    <Card size="sm" className="gap-2">
+    <Card className="gap-2">
       <CardHeader className="flex-row items-center gap-2 pb-0">
         <Badge variant={severityVariant(item.severity)}>
           {severityLabel(item.severity)}

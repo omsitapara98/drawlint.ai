@@ -77,13 +77,15 @@ export default function Home() {
 
       {/* Split pane */}
       <div className="grid flex-1 grid-cols-1 overflow-hidden md:grid-cols-[1fr_400px]">
-        <div className="min-h-0">
+        <div className="relative min-h-0 h-full">
           <DiagramCanvas
             onChange={handleChange}
             initialData={initialData}
           />
         </div>
-        <FeedbackPanel feedback={feedback} status={status} error={error} />
+        <div className="h-full overflow-hidden">
+          <FeedbackPanel feedback={feedback} status={status} error={error} />
+        </div>
       </div>
 
       <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
