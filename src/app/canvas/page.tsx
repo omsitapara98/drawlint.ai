@@ -87,6 +87,7 @@ function CanvasPageInner() {
   const [aiReview, setAiReview] = useState<AIReviewResponse | null>(null);
   const [aiStatus, setAiStatus] = useState<AnalysisStatus>("idle");
   const [aiError, setAiError] = useState<string | undefined>();
+  const [viewModePolling, setViewModePolling] = useState(false);
   const [reviewLevel, setReviewLevel] = useState<ReviewLevel>("senior");
   const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT_W);
   const [selectedTopic, setSelectedTopic] = useState<TopicOption | null>(null);
@@ -106,6 +107,7 @@ function CanvasPageInner() {
   const resizingRef = useRef(false);
   const prevFingerprintRef = useRef("");
   const streamReaderRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
+  const activeStreamRef = useRef(false);
 
   useAutoSave(elements);
 
@@ -241,6 +243,7 @@ function CanvasPageInner() {
             userId: string;
             topicId: string;
             anonymousName?: string;
+            status: "submitted" | "reviewing" | "reviewed";
           };
           review: AIReviewResponse | null;
           author: { _id: string; name?: string } | null;
@@ -288,6 +291,10 @@ function CanvasPageInner() {
           setAiStatus("complete");
           const diagram = parseDiagram([] as ExcalidrawElement[]);
           setParsedDiagram(diagram);
+        } else if (metaData.design.status === "reviewing") {
+          // Review is in progress on the server — show analyzing state and start polling
+          setAiStatus("analyzing");
+          setViewModePolling(true);
         }
 
         // Fetch elements
@@ -301,7 +308,9 @@ function CanvasPageInner() {
 
         setSubmittedDesignId(viewDesignId!);
         setSubmitted(true);
-        setPanelOpen(true);
+        if (metaData.review || metaData.design.status === "reviewing") {
+          setPanelOpen(true);
+        }
         setPhase("draw");
       } catch {
         // Fall back to normal flow
@@ -312,6 +321,41 @@ function CanvasPageInner() {
 
     initViewMode();
   }, [viewDesignId, viewModeInitialized, topicsLoading, editDesignId, topics, session?.user?.id]);
+
+  /* ── Poll for review completion when reloading mid-review ───── */
+  useEffect(() => {
+    if (!viewModePolling || !viewDesignId || activeStreamRef.current) return;
+
+    const poll = setInterval(async () => {
+      // Skip if a live stream took over
+      if (activeStreamRef.current) return;
+      try {
+        const res = await fetch(`/api/designs/${viewDesignId}`);
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          design: { status: "submitted" | "reviewing" | "reviewed" };
+          review: AIReviewResponse | null;
+        };
+        if (data.review) {
+          setAiReview(data.review);
+          setAiStatus("complete");
+          setViewModePolling(false);
+          clearInterval(poll);
+        } else if (data.design.status !== "reviewing") {
+          // Server finished but no review saved — surface an error
+          setAiStatus("error");
+          setAiError("Review could not be completed. Please try re-submitting.");
+          setViewModePolling(false);
+          clearInterval(poll);
+        }
+        // else still reviewing — keep polling
+      } catch {
+        // Network error — keep polling, don't stop on transient failures
+      }
+    }, 3000);
+
+    return () => clearInterval(poll);
+  }, [viewModePolling, viewDesignId]);
 
   // Close topic dropdown on outside click
   useEffect(() => {
@@ -516,7 +560,9 @@ function CanvasPageInner() {
     setAiStatus("analyzing");
     setAiError(undefined);
     setAiReview(null);
+    setViewModePolling(false); // stop background polling if any
     startReviewerProgress();
+    activeStreamRef.current = true;
 
     // Read BYO key from localStorage
     let apiKey: string | undefined;
@@ -615,6 +661,7 @@ function CanvasPageInner() {
                 stopReviewerProgress("done");
                 setAiError("Design saved! Configure your Azure OpenAI key in Settings to get AI review.");
               }
+              activeStreamRef.current = false;
               setViewEditMode(false);
               break;
             case "error":
@@ -627,6 +674,7 @@ function CanvasPageInner() {
       setAiStatus("error");
       setAiError(err instanceof Error ? err.message : "An unexpected error occurred.");
       stopReviewerProgress("error");
+      activeStreamRef.current = false;
     }
   }, [selectedTopic, authStatus, router, elements, reviewLevel, anonymousMode, editDesignId, submittedDesignId, startReviewerProgress, stopReviewerProgress]);
 
@@ -987,7 +1035,7 @@ function CanvasPageInner() {
                       <X className="h-3 w-3" />
                       Delete
                     </button>
-                    {!panelOpen && aiReview && (
+                    {!panelOpen && (aiReview || aiStatus === "analyzing") && (
                       <button
                         onClick={() => setPanelOpen(true)}
                         className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90"
@@ -999,7 +1047,7 @@ function CanvasPageInner() {
                 )}
 
                 {/* Show Review toggle (non-owner view, normal flow, or view edit mode) */}
-                {!panelOpen && aiReview && !(viewDesignId && viewIsAuthor && !viewEditMode) && (
+                {!panelOpen && (aiReview || aiStatus === "analyzing") && !(viewDesignId && viewIsAuthor && !viewEditMode) && (
                   <button
                     onClick={() => setPanelOpen(true)}
                     className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90"
