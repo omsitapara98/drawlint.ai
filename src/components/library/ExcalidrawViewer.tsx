@@ -29,7 +29,11 @@ export default function ExcalidrawViewer({ elements }: ExcalidrawViewerProps) {
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
   const didScroll = useRef(false);
 
-  // Scroll to content once after API is available and component is mounted
+  // Load Excalidraw CSS + scroll to content once API is available
+  useEffect(() => {
+    import("@excalidraw/excalidraw/index.css" as string);
+  }, []);
+
   useEffect(() => {
     if (didScroll.current) return;
     const timer = setInterval(() => {
