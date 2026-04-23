@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { Header } from "@/components/layout";
 
 function Tip({ children }: { children: React.ReactNode }) {
   return (
@@ -12,23 +13,7 @@ function Tip({ children }: { children: React.ReactNode }) {
 export default function GuidePage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      {/* ── Nav ─────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b bg-background/80 px-6 backdrop-blur-sm">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white shadow-sm">
-            D
-          </div>
-          <span className="text-sm font-semibold tracking-tight">
-            DrawLint<span className="text-violet-500">.ai</span>
-          </span>
-        </Link>
-        <Link
-          href="/canvas"
-          className="inline-flex items-center rounded-lg px-2.5 h-7 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-        >
-          Start Drawing →
-        </Link>
-      </header>
+      <Header onOpenSettings={() => {}} />
 
       {/* ── Content ─────────────────────────────────────────── */}
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-16 sm:px-6">

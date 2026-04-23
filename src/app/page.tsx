@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Info } from "lucide-react";
+import { Header } from "@/components/layout";
 
 const steps = [
   {
@@ -49,37 +50,7 @@ const features = [
 export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      {/* ── Nav ─────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b bg-background/80 px-6 backdrop-blur-sm">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white shadow-sm">
-            D
-          </div>
-          <span className="text-sm font-semibold tracking-tight">
-            DrawLint<span className="text-violet-500">.ai</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Link
-            href="/library"
-            className="inline-flex items-center rounded-lg px-2.5 h-7 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-          >
-            Library
-          </Link>
-          <Link
-            href="/guide"
-            className="inline-flex items-center rounded-lg px-2.5 h-7 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-          >
-            Guide
-          </Link>
-          <Link
-            href="/canvas"
-            className="inline-flex items-center rounded-lg px-2.5 h-7 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-          >
-            Start Drawing →
-          </Link>
-        </div>
-      </header>
+      <Header onOpenSettings={() => {}} />
 
       {/* ── Hero ────────────────────────────────────────────── */}
       <section className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-24 text-center">

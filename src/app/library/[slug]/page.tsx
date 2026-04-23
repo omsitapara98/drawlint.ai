@@ -6,6 +6,7 @@ import { getReviewByDesignId } from "@/lib/db/reviews";
 import clientPromise from "@/lib/db/mongodb";
 import { ObjectId } from "mongodb";
 import { ArrowRight, ChevronRight, Inbox } from "lucide-react";
+import { Header } from "@/components/layout";
 
 const DB_NAME = "drawlint-db";
 
@@ -63,31 +64,7 @@ export default async function TopicDesignsPage({ params }: PageProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      {/* Nav */}
-      <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b bg-background/80 px-6 backdrop-blur-sm">
-        <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white shadow-sm">
-            D
-          </div>
-          <span className="text-sm font-semibold tracking-tight">
-            DrawLint<span className="text-violet-500">.ai</span>
-          </span>
-        </Link>
-        <div className="flex items-center gap-1">
-          <Link
-            href="/library"
-            className="inline-flex items-center rounded-lg px-2.5 h-7 text-[0.8rem] font-medium text-foreground hover:bg-muted transition-all"
-          >
-            Library
-          </Link>
-          <Link
-            href="/canvas"
-            className="inline-flex items-center rounded-lg px-2.5 h-7 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-          >
-            Start Drawing →
-          </Link>
-        </div>
-      </header>
+      <Header onOpenSettings={() => {}} />
 
       {/* Breadcrumb */}
       <div className="mx-auto w-full max-w-5xl px-4 pt-6">
