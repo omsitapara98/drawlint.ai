@@ -878,21 +878,31 @@ export default function CanvasPage() {
                 </>
               )}
 
-              {/* Anonymous toggle — only in draw/edit modes, not view */}
+              {/* Posting as label — only in draw/edit modes, not view */}
               {!viewDesignId && authStatus === "authenticated" && (
                 <>
                   <span className="text-xs text-muted-foreground shrink-0">·</span>
+                  <span className="text-xs text-muted-foreground shrink-0">posting as:</span>
                   <button
                     onClick={handleToggleAnonymous}
-                    className={`inline-flex h-5 items-center gap-1 rounded-full px-2 text-[0.65rem] font-medium transition-colors shrink-0 ${
+                    className={`inline-flex h-5 items-center gap-1 rounded-full px-2 text-[0.65rem] font-semibold transition-colors shrink-0 border ${
                       anonymousMode
-                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
-                        : "bg-muted text-muted-foreground hover:text-foreground"
+                        ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800"
+                        : "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-800"
                     }`}
-                    title={anonymousMode ? `Posting anonymously as: ${pseudonym ?? "…"}` : "Click to post anonymously"}
+                    title={anonymousMode ? "Click to post as yourself" : "Click to post anonymously"}
                   >
-                    <EyeOff className="h-3 w-3" />
-                    {anonymousMode ? (pseudonym ?? "…") : (session?.user?.name ?? "You")}
+                    {anonymousMode ? (
+                      <>
+                        <EyeOff className="h-2.5 w-2.5" />
+                        {pseudonym ?? "…"}
+                      </>
+                    ) : (
+                      <>
+                        <span className="h-2.5 w-2.5 rounded-full bg-violet-500 inline-block" />
+                        {session?.user?.name ?? "You"}
+                      </>
+                    )}
                   </button>
                 </>
               )}
