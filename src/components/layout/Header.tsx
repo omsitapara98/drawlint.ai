@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Settings } from "lucide-react";
@@ -13,14 +14,14 @@ export default function Header({ onOpenSettings }: HeaderProps) {
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 sticky top-0 z-50">
-      <div className="flex items-center gap-2.5">
+      <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-sm font-bold shadow-sm">
           D
         </div>
         <span className="text-sm font-semibold tracking-tight">
           DrawLint<span className="text-violet-500">.ai</span>
         </span>
-      </div>
+      </Link>
 
       <div className="flex items-center gap-1">
         <Button
