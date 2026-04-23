@@ -292,9 +292,17 @@ function CanvasPageInner() {
           const diagram = parseDiagram([] as ExcalidrawElement[]);
           setParsedDiagram(diagram);
         } else if (metaData.design.status === "reviewing") {
-          // Review is in progress on the server — show analyzing state and start polling
+          // Review is in progress on the server — show spinning state and start polling
           setAiStatus("analyzing");
           setViewModePolling(true);
+          setReviewerProgress({
+            nfrReview: "analyzing",
+            entitiesReview: "analyzing",
+            capacityReview: "analyzing",
+            apiReview: "analyzing",
+            hldReview: "analyzing",
+            leadReviewer: "analyzing",
+          });
         }
 
         // Fetch elements
