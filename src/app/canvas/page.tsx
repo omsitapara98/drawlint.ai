@@ -801,8 +801,9 @@ export default function CanvasPage() {
         {/* ── Phase: Drawing Canvas ───────────────────────────── */}
         {phase === "draw" && (
           <>
-            {/* Info bar: topic + level + Change */}
+            {/* Info bar: topic + level + actions (all controls here, nothing floating on canvas) */}
             <div className="flex h-10 items-center border-b bg-muted/50 px-4 gap-3 shrink-0 min-w-0">
+              {/* Left: topic + level info */}
               <span className="text-xs shrink-0">📋</span>
               <span className="text-xs font-medium truncate min-w-0">{selectedTopic?.name}</span>
               <span className="text-xs text-muted-foreground shrink-0">·</span>
@@ -816,7 +817,7 @@ export default function CanvasPage() {
                   <span className="text-xs text-muted-foreground shrink-0">by {viewAuthorName}</span>
                 </>
               )}
-              {!viewDesignId && (
+              {!viewDesignId && !submitted && (
                 <>
                   <span className="text-xs text-muted-foreground shrink-0">·</span>
                   <button
@@ -827,104 +828,84 @@ export default function CanvasPage() {
                   </button>
                 </>
               )}
+
+              {/* Right: action buttons */}
+              <div className="ml-auto flex items-center gap-2 shrink-0">
+                {/* Drawing mode: New Board + Submit */}
+                {!submitted && !viewDesignId && (
+                  <>
+                    <button
+                      onClick={handleNewBoard}
+                      className="inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      New
+                    </button>
+                    <button
+                      onClick={handleSubmitDesign}
+                      disabled={!hasDrawnShapes || aiStatus === "analyzing"}
+                      className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                    >
+                      <Send className="h-3 w-3" />
+                      {editDesignId ? "Re-submit" : "Submit"}
+                    </button>
+                  </>
+                )}
+
+                {/* Post-submit mode: Edit unlocks canvas directly */}
+                {submitted && !viewDesignId && (
+                  <button
+                    onClick={() => setSubmitted(false)}
+                    className="inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Edit
+                  </button>
+                )}
+
+                {/* View mode: Edit + Delete (owner only) */}
+                {viewDesignId && viewIsAuthor && (
+                  <>
+                    <button
+                      onClick={() => {
+                        router.push(`/canvas?edit=${viewDesignId}&topic=${selectedTopic?.slug ?? ""}`);
+                      }}
+                      className="inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Edit
+                    </button>
+                    <button
+                      className="inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/50 transition-colors"
+                      onClick={async () => {
+                        if (!confirm("Delete this design?")) return;
+                        try {
+                          await fetch(`/api/designs/${viewDesignId}`, { method: "DELETE" });
+                          router.push(selectedTopic ? `/library/${selectedTopic.slug}` : "/library");
+                        } catch { /* noop */ }
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                      Delete
+                    </button>
+                  </>
+                )}
+
+                {/* Show Review toggle (when panel is closed and review exists) */}
+                {!panelOpen && aiReview && (
+                  <button
+                    onClick={() => setPanelOpen(true)}
+                    className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90"
+                  >
+                    Show Review
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Full-width Excalidraw canvas */}
+            {/* Full-width Excalidraw canvas — NO floating controls */}
             <div className="relative flex-1 min-h-0">
               <DiagramCanvas key={canvasKey} onChange={handleChange} initialData={initialData} readOnly={submitted || !!viewDesignId} />
-
-              {/* Floating top-right controls */}
-              {!panelOpen && !submitted && !viewDesignId && (
-                <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 rounded-full text-xs"
-                    onClick={handleNewBoard}
-                  >
-                    <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                    New Board
-                  </Button>
-
-                  <Button
-                    onClick={handleSubmitDesign}
-                    disabled={!hasDrawnShapes || aiStatus === "analyzing"}
-                    className="h-9 rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-4 text-sm text-white shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:shadow-none disabled:translate-y-0"
-                  >
-                    <Send className="mr-1.5 h-3.5 w-3.5" />
-                    {editDesignId ? "Re-submit Design" : "Submit Design"}
-                  </Button>
-                </div>
-              )}
-
-              {/* View mode controls (for owner: Edit + Delete, toggle review panel) */}
-              {!panelOpen && viewDesignId && (
-                <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
-                  {viewIsAuthor && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-9 rounded-full text-xs"
-                        onClick={() => {
-                          router.push(`/canvas?edit=${viewDesignId}&topic=${selectedTopic?.slug ?? ""}`);
-                        }}
-                      >
-                        <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-9 rounded-full text-xs text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
-                        onClick={async () => {
-                          if (!confirm("Delete this design?")) return;
-                          try {
-                            await fetch(`/api/designs/${viewDesignId}`, { method: "DELETE" });
-                            router.push(selectedTopic ? `/library/${selectedTopic.slug}` : "/library");
-                          } catch { /* noop */ }
-                        }}
-                      >
-                        <X className="mr-1.5 h-3.5 w-3.5" />
-                        Delete
-                      </Button>
-                    </>
-                  )}
-                  {aiReview && (
-                    <Button
-                      onClick={() => setPanelOpen(true)}
-                      className="h-9 rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-4 text-sm text-white shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5"
-                    >
-                      <Send className="mr-1.5 h-3.5 w-3.5" />
-                      Show Review
-                    </Button>
-                  )}
-                </div>
-              )}
-
-              {/* Edit & Re-submit controls when canvas is locked (non-view mode) */}
-              {!panelOpen && submitted && !viewDesignId && (
-                <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 rounded-full text-xs"
-                    onClick={() => setSubmitted(false)}
-                  >
-                    <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                    Edit &amp; Re-submit
-                  </Button>
-                  {aiReview && (
-                    <Button
-                      onClick={() => setPanelOpen(true)}
-                      className="h-9 rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-4 text-sm text-white shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5"
-                    >
-                      <Send className="mr-1.5 h-3.5 w-3.5" />
-                      Show Review
-                    </Button>
-                  )}
-                </div>
-              )}
 
               {/* Floating Feedback Panel — slides in from right */}
               <div
