@@ -11,6 +11,44 @@ interface AnalyzeOptions {
   level?: ReviewLevel;
 }
 
+/** Detect whether the endpoint is a Foundry /v1/ endpoint or classic Azure OpenAI. */
+function isFoundryEndpoint(endpoint: string): boolean {
+  return /\/v1(\/|$)/.test(endpoint);
+}
+
+/** Build the request URL and headers based on endpoint type. */
+function buildRequest(endpoint: string, deployment: string, apiKey: string): {
+  url: string;
+  headers: Record<string, string>;
+  extraBody: Record<string, string>;
+} {
+  const cleanEndpoint = endpoint.replace(/\/+$/, "");
+
+  if (isFoundryEndpoint(cleanEndpoint)) {
+    const url = cleanEndpoint.endsWith("/chat/completions")
+      ? cleanEndpoint
+      : `${cleanEndpoint}/chat/completions`;
+    return {
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      extraBody: { model: deployment },
+    };
+  }
+
+  const apiVersion = "2025-01-01-preview";
+  return {
+    url: `${cleanEndpoint}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`,
+    headers: {
+      "Content-Type": "application/json",
+      "api-key": apiKey,
+    },
+    extraBody: {},
+  };
+}
+
 export class AzureOpenAIError extends Error {
   constructor(
     message: string,
@@ -35,7 +73,6 @@ export async function analyzeDesign(
   const endpoint = options?.endpoint ?? process.env.AZURE_OPENAI_ENDPOINT ?? "";
   const deployment = options?.deployment ?? process.env.AZURE_OPENAI_DEPLOYMENT ?? "";
   const level: ReviewLevel = options?.level ?? "senior";
-  const apiVersion = "2025-01-01-preview";
 
   if (!apiKey) {
     throw new AzureOpenAIError(
@@ -61,9 +98,10 @@ export async function analyzeDesign(
 
   const formattedDiagram = formatDiagramForAnalysis(diagram, level);
 
-  const url = `${endpoint.replace(/\/+$/, "")}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
+  const { url, headers, extraBody } = buildRequest(endpoint, deployment, apiKey);
 
   const body = {
+    ...extraBody,
     messages: [
       { role: "system", content: getReviewPrompt(level) },
       { role: "user", content: formattedDiagram },
@@ -77,10 +115,7 @@ export async function analyzeDesign(
   try {
     response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "api-key": apiKey,
-      },
+      headers,
       body: JSON.stringify(body),
     });
   } catch (err) {
@@ -318,7 +353,6 @@ export async function analyzeDesignMultiCall(
   const endpoint = options?.endpoint ?? process.env.AZURE_OPENAI_ENDPOINT ?? "";
   const deployment = options?.deployment ?? process.env.AZURE_OPENAI_DEPLOYMENT ?? "";
   const level: ReviewLevel = options?.level ?? "senior";
-  const apiVersion = "2025-01-01-preview";
 
   if (!apiKey) {
     throw new AzureOpenAIError("No Azure OpenAI API key configured.", 400, "missing_api_key");
@@ -330,11 +364,12 @@ export async function analyzeDesignMultiCall(
     throw new AzureOpenAIError("No Azure OpenAI deployment configured.", 400, "missing_deployment");
   }
 
-  const url = `${endpoint.replace(/\/+$/, "")}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
+  const { url, headers, extraBody } = buildRequest(endpoint, deployment, apiKey);
 
   /** Make a single API call and parse the JSON response. */
   async function callReviewer(systemPrompt: string, userContent: string): Promise<unknown> {
     const body = {
+      ...extraBody,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
@@ -348,7 +383,7 @@ export async function analyzeDesignMultiCall(
     try {
       response = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "api-key": apiKey },
+        headers,
         body: JSON.stringify(body),
       });
     } catch (err) {
