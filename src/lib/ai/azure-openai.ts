@@ -69,7 +69,7 @@ export async function analyzeDesign(
       { role: "user", content: formattedDiagram },
     ],
     temperature: 0.3,
-    max_tokens: 4096,
+    max_completion_tokens: 4096,
     response_format: { type: "json_object" },
   };
 
@@ -340,7 +340,7 @@ export async function analyzeDesignMultiCall(
         { role: "user", content: userContent },
       ],
       temperature: 0.3,
-      max_tokens: 2048,
+      max_completion_tokens: 2048,
       response_format: { type: "json_object" },
     };
 
