@@ -1,5 +1,5 @@
 import type { ParsedDiagram } from "@/types/diagram";
-import type { AIReviewResponse, ReviewDimension, ReviewHighlight, FeedbackItem, ReviewLevel, LeadReviewer } from "@/types/feedback";
+import type { AIReviewResponse, ReviewDimension, ReviewHighlight, FeedbackItem, ReviewLevel, LeadReviewer, ReviewerKey } from "@/types/feedback";
 import { getReviewerPrompt, getLeadReviewerPrompt } from "./prompts";
 import type { ReviewerSection } from "./prompts";
 import { formatSectionForReview } from "./format-prompt";
@@ -9,6 +9,12 @@ interface AnalyzeOptions {
   endpoint?: string;
   deployment?: string;
   level?: ReviewLevel;
+  /** AbortSignal — aborts all in-flight Azure OpenAI calls when triggered. */
+  signal?: AbortSignal;
+  /** Called as each section completes (before all sections finish). */
+  onSectionComplete?: (key: ReviewerKey, data: ReviewDimension) => void;
+  /** Called immediately before the lead reviewer call starts. */
+  onLeadStarted?: () => void;
 }
 
 export class AzureOpenAIError extends Error {
@@ -142,6 +148,14 @@ function validateLeadReviewer(raw: unknown): LeadReviewer {
 
 const REVIEWER_SECTIONS: ReviewerSection[] = ["nfr", "entities", "capacity", "api", "hld"];
 
+const SECTION_TO_KEY: Record<ReviewerSection, Exclude<ReviewerKey, "leadReviewer">> = {
+  nfr: "nfrReview",
+  entities: "entitiesReview",
+  capacity: "capacityReview",
+  api: "apiReview",
+  hld: "hldReview",
+};
+
 const SECTION_DISPLAY_NAME: Record<ReviewerSection, string> = {
   nfr: "NFR",
   entities: "Entities",
@@ -197,6 +211,7 @@ export async function analyzeDesign(
         method: "POST",
         headers,
         body: JSON.stringify(body),
+        signal: options?.signal,
       });
     } catch (err) {
       throw new AzureOpenAIError(
@@ -231,23 +246,21 @@ export async function analyzeDesign(
     }
   }
 
-  // Step 1: Fire 5 section reviewer calls in parallel
-  const sectionResults = await Promise.all(
+  // Step 1: Fire 5 section reviewer calls in parallel, emitting each as it resolves
+  const dimensions: Record<string, ReviewDimension> = {};
+  await Promise.all(
     REVIEWER_SECTIONS.map(async (section) => {
       const systemPrompt = getReviewerPrompt(section, level);
       const userContent = formatSectionForReview(diagram, section, level);
       const result = await callReviewer(systemPrompt, userContent);
-      return { section, result };
+      const dimension = validateDimension(result);
+      dimensions[section] = dimension;
+      options?.onSectionComplete?.(SECTION_TO_KEY[section], dimension);
     }),
   );
 
-  // Validate each section result into a ReviewDimension
-  const dimensions: Record<string, ReviewDimension> = {};
-  for (const { section, result } of sectionResults) {
-    dimensions[section] = validateDimension(result);
-  }
-
   // Step 2: Build lead reviewer input from section results
+  options?.onLeadStarted?.();
   const leadUserContent = buildLeadReviewerInput(diagram, dimensions, level);
   const leadSystemPrompt = getLeadReviewerPrompt(level);
   const leadResult = await callReviewer(leadSystemPrompt, leadUserContent) as Record<string, unknown>;

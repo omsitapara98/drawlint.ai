@@ -14,6 +14,12 @@ import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 const DB_NAME = "drawlint-db";
 
+const NDJSON_HEADERS = {
+  "Content-Type": "application/x-ndjson",
+  "Cache-Control": "no-cache, no-transform",
+  "X-Content-Type-Options": "nosniff",
+};
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ designId: string }> },
@@ -224,40 +230,81 @@ export async function PUT(
   const endpoint = body.endpoint || process.env.AZURE_OPENAI_ENDPOINT;
   const deployment = body.deployment || process.env.AZURE_OPENAI_DEPLOYMENT;
 
-  if (apiKey && endpoint && deployment) {
-    try {
-      const aiResult = await analyzeDesign(diagram, {
-        apiKey,
-        endpoint,
-        deployment,
-        level: reviewLevel,
-      });
+  const encoder = new TextEncoder();
 
-      const review = await createReview({
-        designId,
-        version,
-        level: aiResult.level,
-        summary: aiResult.summary,
-        nfrReview: aiResult.nfrReview,
-        entitiesReview: aiResult.entitiesReview,
-        capacityReview: aiResult.capacityReview,
-        apiReview: aiResult.apiReview,
-        hldReview: aiResult.hldReview,
-        leadReviewer: aiResult.leadReviewer,
-        followUpQuestions: aiResult.followUpQuestions,
-      });
-
-      await updateDesignStatus(designId, "reviewed");
-
-      const updatedDesign = await getDesignById(designId);
-      return NextResponse.json({ design: updatedDesign, review });
-    } catch (err) {
-      console.error("AI review failed during update:", err);
-    }
+  if (!apiKey || !endpoint || !deployment) {
+    await updateDesignStatus(designId, "submitted");
+    const updatedDesign = await getDesignById(designId);
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoder.encode(JSON.stringify({ type: "design", designId, version }) + "\n"));
+        controller.enqueue(encoder.encode(JSON.stringify({ type: "complete", review: null, design: updatedDesign }) + "\n"));
+        controller.close();
+      },
+    });
+    return new Response(stream, { headers: NDJSON_HEADERS });
   }
 
-  // No AI keys or review failed
-  await updateDesignStatus(designId, "submitted");
-  const updatedDesign = await getDesignById(designId);
-  return NextResponse.json({ design: updatedDesign, review: null });
+  // AI path — create AbortController tied to client disconnect
+  const abortController = new AbortController();
+  request.signal.addEventListener("abort", () => abortController.abort(), { once: true });
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const enqueue = (data: object) => {
+        if (abortController.signal.aborted) return;
+        try { controller.enqueue(encoder.encode(JSON.stringify(data) + "\n")); } catch { /* closed */ }
+      };
+
+      enqueue({ type: "design", designId, version });
+
+      try {
+        const aiResult = await analyzeDesign(diagram, {
+          apiKey,
+          endpoint,
+          deployment,
+          level: reviewLevel,
+          signal: abortController.signal,
+          onSectionComplete: (key, data) => {
+            enqueue({ type: "section", section: key, data });
+          },
+          onLeadStarted: () => {
+            enqueue({ type: "lead-started" });
+          },
+        });
+
+        await createReview({
+          designId,
+          version,
+          level: aiResult.level,
+          summary: aiResult.summary,
+          nfrReview: aiResult.nfrReview,
+          entitiesReview: aiResult.entitiesReview,
+          capacityReview: aiResult.capacityReview,
+          apiReview: aiResult.apiReview,
+          hldReview: aiResult.hldReview,
+          leadReviewer: aiResult.leadReviewer,
+          followUpQuestions: aiResult.followUpQuestions,
+        });
+
+        await updateDesignStatus(designId, "reviewed");
+        const updatedDesign = await getDesignById(designId);
+
+        enqueue({ type: "complete", review: aiResult, design: updatedDesign });
+      } catch (err) {
+        if (!abortController.signal.aborted) {
+          console.error("AI review failed during update:", err);
+          enqueue({ type: "error", message: err instanceof Error ? err.message : "AI review failed" });
+        }
+        await updateDesignStatus(designId, "submitted").catch(console.error);
+      } finally {
+        try { controller.close(); } catch { /* already closed */ }
+      }
+    },
+    cancel() {
+      abortController.abort();
+    },
+  });
+
+  return new Response(stream, { headers: NDJSON_HEADERS });
 }

@@ -104,7 +104,7 @@ function CanvasPageInner() {
   });
   const resizingRef = useRef(false);
   const prevFingerprintRef = useRef("");
-  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const streamReaderRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
 
   useAutoSave(elements);
 
@@ -455,51 +455,29 @@ function CanvasPageInner() {
     ["rectangle", "diamond", "ellipse", "arrow", "line"].includes(el.type),
   );
 
-  // Clean up progress interval on unmount
+  // Cancel any in-progress stream on unmount
   useEffect(() => {
     return () => {
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+      streamReaderRef.current?.cancel();
     };
   }, []);
 
-  /** Start simulated per-reviewer progress during submission. */
+  /** Start per-reviewer progress at submission time.
+   * All 5 sections go to "analyzing" immediately (they run in parallel on the server).
+   * leadReviewer starts "pending" and transitions to "analyzing" via the "lead-started" stream event.
+   * Sections flip to "done" individually as each stream "section" event arrives. */
   const startReviewerProgress = useCallback(() => {
-    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-    const allPending: ReviewerProgress = {
-      nfrReview: "pending", entitiesReview: "pending", capacityReview: "pending",
-      apiReview: "pending", hldReview: "pending", leadReviewer: "pending",
-    };
-    setReviewerProgress(allPending);
-
-    const sections: ReviewerKey[] = ["nfrReview", "entitiesReview", "capacityReview", "apiReview", "hldReview"];
-    for (let i = sections.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [sections[i], sections[j]] = [sections[j], sections[i]];
-    }
-    const order: ReviewerKey[] = [...sections, "leadReviewer"];
-    let step = 0;
-
-    progressIntervalRef.current = setInterval(() => {
-      if (step < order.length) {
-        const key = order[step];
-        setReviewerProgress((prev) => ({ ...prev, [key]: "analyzing" }));
-        if (step > 0) {
-          const prevKey = order[step - 1];
-          setReviewerProgress((prev) => ({ ...prev, [prevKey]: "done" }));
-        }
-        step++;
-      } else {
-        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-    }, 2000);
+    setReviewerProgress({
+      nfrReview: "analyzing",
+      entitiesReview: "analyzing",
+      capacityReview: "analyzing",
+      apiReview: "analyzing",
+      hldReview: "analyzing",
+      leadReviewer: "pending",
+    });
   }, []);
 
   const stopReviewerProgress = useCallback((final: "done" | "error") => {
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
-    }
     setReviewerProgress({
       nfrReview: final, entitiesReview: final, capacityReview: final,
       apiReview: final, hldReview: final, leadReviewer: final,
@@ -579,24 +557,71 @@ function CanvasPageInner() {
         throw new Error(data.error ?? `Submission failed (${res.status})`);
       }
 
-      const data = (await res.json()) as {
-        design: { _id: string };
-        review: AIReviewResponse | null;
-      };
+      if (!res.body) throw new Error("No response body");
 
-      setSubmittedDesignId(data.design._id);
-      setSubmitted(true);
+      // Consume the NDJSON stream — each line is a JSON event
+      const reader = res.body.getReader();
+      streamReaderRef.current = reader;
+      const decoder = new TextDecoder();
+      let buffer = "";
 
-      if (data.review) {
-        setAiReview(data.review);
-        setAiStatus("complete");
-        stopReviewerProgress("done");
-      } else {
-        // Design saved without AI review (no BYO key)
-        setAiStatus("complete");
-        stopReviewerProgress("done");
-        setAiError("Design saved! Configure your Azure OpenAI key in Settings to get AI review.");
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          let event: {
+            type: string;
+            designId?: string;
+            version?: number;
+            section?: ReviewerKey;
+            data?: unknown;
+            review?: AIReviewResponse | null;
+            design?: { _id: string };
+            message?: string;
+          };
+          try {
+            event = JSON.parse(trimmed) as typeof event;
+          } catch {
+            console.warn("NDJSON parse error:", trimmed);
+            continue;
+          }
+
+          switch (event.type) {
+            case "design":
+              if (event.designId) setSubmittedDesignId(event.designId);
+              setSubmitted(true);
+              break;
+            case "section":
+              if (event.section) {
+                setReviewerProgress((prev) => ({ ...prev, [event.section!]: "done" }));
+              }
+              break;
+            case "lead-started":
+              setReviewerProgress((prev) => ({ ...prev, leadReviewer: "analyzing" }));
+              break;
+            case "complete":
+              if (event.review) {
+                setAiReview(event.review);
+                setAiStatus("complete");
+                stopReviewerProgress("done");
+              } else {
+                setAiStatus("complete");
+                stopReviewerProgress("done");
+                setAiError("Design saved! Configure your Azure OpenAI key in Settings to get AI review.");
+              }
+              break;
+            case "error":
+              throw new Error(event.message ?? "AI review failed");
+          }
+        }
       }
+      streamReaderRef.current = null;
     } catch (err) {
       setAiStatus("error");
       setAiError(err instanceof Error ? err.message : "An unexpected error occurred.");
@@ -911,15 +936,19 @@ function CanvasPageInner() {
 
               {/* Right: action buttons */}
               <div className="ml-auto flex items-center gap-2 shrink-0">
-                {/* Drawing mode: Submit */}
+                {/* Drawing mode: Submit / Re-submit */}
                 {!submitted && !viewDesignId && (
                   <button
                     onClick={handleSubmitDesign}
                     disabled={!hasDrawnShapes || aiStatus === "analyzing"}
                     className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
-                    <Send className="h-3 w-3" />
-                    {editDesignId ? "Re-submit" : "Submit"}
+                    {aiStatus === "analyzing" ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Send className="h-3 w-3" />
+                    )}
+                    {aiStatus === "analyzing" ? "Analyzing…" : (editDesignId ? "Re-submit" : "Submit")}
                   </button>
                 )}
 
