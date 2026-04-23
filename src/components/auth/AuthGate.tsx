@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const DISMISS_KEY = "drawlint:auth-gate-dismissed";
 
@@ -42,6 +43,16 @@ export default function AuthGate() {
         </div>
 
         <div className="flex flex-col gap-3">
+          <Link
+            href="/signin"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background text-sm font-medium transition-colors hover:bg-muted dark:border-input dark:bg-input/30 dark:hover:bg-input/50"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Sign in with Email
+          </Link>
+
           <Button
             className="h-10 w-full gap-2 bg-white text-black border hover:bg-gray-50 dark:bg-white dark:text-black dark:hover:bg-gray-100"
             onClick={() => signIn("google", { callbackUrl: "/canvas" })}
