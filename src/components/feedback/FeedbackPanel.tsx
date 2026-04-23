@@ -692,6 +692,28 @@ export function FeedbackPanel({
     ? "ai-review"
     : "parse";
 
+  // Show errors even when diagram is null (e.g., validation failures)
+  if (aiStatus === "error" && aiError) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/10 text-3xl">
+          ⚠️
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-medium text-red-600 dark:text-red-400">Submission Failed</p>
+          <p className="mt-2 text-xs text-muted-foreground max-w-xs">
+            {aiError}
+          </p>
+        </div>
+        {onRetry && (
+          <Button variant="outline" size="sm" onClick={onRetry}>
+            Retry
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   if (!diagram) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
@@ -699,9 +721,9 @@ export function FeedbackPanel({
           ✏️
         </div>
         <div className="text-center">
-          <p className="text-sm font-medium">Ready to analyze</p>
+          <p className="text-sm font-medium">Draw your design</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Click &quot;Analyze Design&quot; to extract your design sections
+            Fill in the template sections and draw your HLD, then click Submit
           </p>
         </div>
       </div>
