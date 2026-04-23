@@ -597,18 +597,18 @@ export default function CanvasPage() {
         {phase === "draw" && (
           <>
             {/* Info bar: topic + level + Change */}
-            <div className="flex h-10 items-center border-b bg-muted/50 px-4 gap-3 shrink-0">
-              <span className="text-xs">📋</span>
-              <span className="text-xs font-medium">{selectedTopic?.name}</span>
-              <span className="text-xs text-muted-foreground">·</span>
-              <span className="text-xs">🎯</span>
-              <span className="inline-flex h-5 items-center rounded-full bg-violet-100 px-2 text-[0.65rem] font-semibold text-violet-700 dark:bg-violet-900/50 dark:text-violet-300">
+            <div className="flex h-10 items-center border-b bg-muted/50 px-4 gap-3 shrink-0 min-w-0">
+              <span className="text-xs shrink-0">📋</span>
+              <span className="text-xs font-medium truncate min-w-0">{selectedTopic?.name}</span>
+              <span className="text-xs text-muted-foreground shrink-0">·</span>
+              <span className="text-xs shrink-0">🎯</span>
+              <span className="inline-flex h-5 items-center rounded-full bg-violet-100 px-2 text-[0.65rem] font-semibold text-violet-700 dark:bg-violet-900/50 dark:text-violet-300 shrink-0">
                 {levelLabel(reviewLevel)}
               </span>
-              <span className="text-xs text-muted-foreground">·</span>
+              <span className="text-xs text-muted-foreground shrink-0">·</span>
               <button
                 onClick={handleChangeTopicLevel}
-                className="text-xs font-medium text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 transition-colors"
+                className="text-xs font-medium text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 transition-colors shrink-0"
               >
                 Change
               </button>
