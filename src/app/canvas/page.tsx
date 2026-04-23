@@ -135,6 +135,10 @@ export default function CanvasPage() {
   }, []);
 
   const handleTopicCreate = useCallback(async () => {
+    if (authStatus !== "authenticated") {
+      router.push("/signin");
+      return;
+    }
     const name = topicSearch.trim();
     if (!name) return;
     setCreatingTopic(true);
@@ -515,18 +519,28 @@ export default function CanvasPage() {
                                 </p>
                               )}
                               {topicSearch.trim() && !exactTopicMatch && (
-                                <button
-                                  onClick={handleTopicCreate}
-                                  disabled={creatingTopic}
-                                  className="flex w-full items-center gap-1.5 border-t px-3 py-2 text-left text-sm font-medium text-violet-600 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-900/30 transition-colors disabled:opacity-50"
-                                >
-                                  {creatingTopic ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  ) : (
+                                authStatus === "authenticated" ? (
+                                  <button
+                                    onClick={handleTopicCreate}
+                                    disabled={creatingTopic}
+                                    className="flex w-full items-center gap-1.5 border-t px-3 py-2 text-left text-sm font-medium text-violet-600 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-900/30 transition-colors disabled:opacity-50"
+                                  >
+                                    {creatingTopic ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <Plus className="h-3.5 w-3.5" />
+                                    )}
+                                    Create &quot;{topicSearch.trim()}&quot;
+                                  </button>
+                                ) : (
+                                  <Link
+                                    href="/signin"
+                                    className="flex w-full items-center gap-1.5 border-t px-3 py-2 text-left text-sm font-medium text-violet-600 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-900/30 transition-colors"
+                                  >
                                     <Plus className="h-3.5 w-3.5" />
-                                  )}
-                                  Create &quot;{topicSearch.trim()}&quot;
-                                </button>
+                                    Sign in to create topics
+                                  </Link>
+                                )
                               )}
                             </div>
                           )}
@@ -566,6 +580,15 @@ export default function CanvasPage() {
                 Start Drawing
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
+
+              {authStatus !== "authenticated" && (
+                <p className="text-center text-xs text-muted-foreground">
+                  <Link href="/signin" className="text-violet-500 hover:underline">
+                    Sign in
+                  </Link>
+                  {" "}to submit designs and create topics
+                </p>
+              )}
             </div>
           </div>
         )}
