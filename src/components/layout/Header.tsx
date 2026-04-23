@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useTheme } from "next-themes";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { SignInButton, UserMenu } from "@/components/auth";
 import { Moon, Sun, Settings } from "lucide-react";
 
 interface HeaderProps {
@@ -11,6 +13,7 @@ interface HeaderProps {
 
 export default function Header({ onOpenSettings }: HeaderProps) {
   const { theme, setTheme } = useTheme();
+  const { data: session, status } = useSession();
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 sticky top-0 z-50">
@@ -43,6 +46,9 @@ export default function Header({ onOpenSettings }: HeaderProps) {
         >
           <Settings className="h-4 w-4" />
         </Button>
+        {status !== "loading" && (
+          session ? <UserMenu session={session} /> : <SignInButton />
+        )}
       </div>
     </header>
   );

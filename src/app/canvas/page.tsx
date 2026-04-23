@@ -7,6 +7,7 @@ import { DiagramCanvas } from "@/components/canvas";
 import { FeedbackPanel } from "@/components/feedback";
 import { Header } from "@/components/layout";
 import { SettingsModal } from "@/components/settings";
+import { AuthGate } from "@/components/auth";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks";
 import { loadDiagram, clearDiagram } from "@/lib/storage";
@@ -339,8 +340,9 @@ export default function CanvasPage() {
       </div>
 
       {/* Main canvas — hidden on mobile */}
-      <div className="hidden md:flex h-screen flex-col">
+      <div className="hidden md:flex h-screen flex-col relative">
       <Header onOpenSettings={() => setSettingsOpen(true)} />
+      <AuthGate />
 
       {/* Full-width Excalidraw canvas */}
       <div className="relative flex-1 min-h-0">
