@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
@@ -26,23 +26,32 @@ interface ExcalidrawViewerProps {
 
 export default function ExcalidrawViewer({ elements }: ExcalidrawViewerProps) {
   const { resolvedTheme } = useTheme();
+  const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
+  const didScroll = useRef(false);
 
-  const handleMount = useCallback((api: ExcalidrawImperativeAPI) => {
-    setTimeout(() => {
-      api.scrollToContent(undefined, { fitToContent: true });
-    }, 100);
+  // Scroll to content once after API is available and component is mounted
+  useEffect(() => {
+    if (didScroll.current) return;
+    const timer = setInterval(() => {
+      if (apiRef.current) {
+        apiRef.current.scrollToContent(undefined, { fitToContent: true });
+        didScroll.current = true;
+        clearInterval(timer);
+      }
+    }, 300);
+    return () => clearInterval(timer);
   }, []);
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <ExcalidrawWrapper
         initialData={{
-          elements: elements as any,
+          elements: elements as never,
           appState: {
             viewBackgroundColor: resolvedTheme === "dark" ? "#1e1e1e" : "#ffffff",
           },
         }}
-        excalidrawAPI={handleMount}
+        excalidrawAPI={(api: ExcalidrawImperativeAPI) => { apiRef.current = api; }}
         viewModeEnabled={true}
         zenModeEnabled={true}
         theme={resolvedTheme === "dark" ? "dark" : "light"}
