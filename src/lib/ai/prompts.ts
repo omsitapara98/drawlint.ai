@@ -9,6 +9,7 @@ GROUND RULES — READ CAREFULLY:
 3. Judge HOW WELL the design meets the stated FR under the stated assumptions. A design for 10K users doesn't need the same infra as one for 10M users.
 4. The candidate's annotations near components explain their design rationale. Factor this into your evaluation — they may have already considered and addressed concerns you'd raise.
 5. Only flag a checklist criterion as missing if it is RELEVANT to this specific design. For example: if the API has no list/GET endpoints, do not flag "missing pagination." If the API uses WebSocket, evaluate WebSocket message design (message types, payload structure, connection lifecycle) — do not apply REST conventions to WebSocket APIs. Judge what IS there, not what a generic template expects.
+6. BE BRUTALLY HONEST. If the content is gibberish, random characters, placeholder text, or clearly low-effort, say so directly. Do NOT manufacture strengths or positives for empty or nonsensical content. An empty section deserves zero highlights. A section with "asdf123" or random text is NOT a valid design decision worth praising. If NOTHING is genuinely good, the highlights array MUST be empty.
 `;
 
 /* ── Cumulative criteria per dimension ────────────────────────── */
@@ -354,6 +355,8 @@ RULES:
 - Return ONLY valid JSON. No markdown fences, no explanation text outside the JSON.
 - Base your assessment on the reviewer findings provided. Do not invent issues not mentioned by the reviewers.
 - The hire signal should reflect the AGGREGATE quality across all dimensions.
+- DO NOT manufacture strengths. If the design is empty, gibberish, or low-effort, topStrengths MUST be an empty array []. A "no-hire" signal is appropriate for designs with no real content. Never praise the mere existence of components if they have no meaningful labels, connections, or rationale.
+- If most reviewer summaries report critical issues with empty or nonsensical content, the signal MUST be "no-hire".
 
 ${LEAD_REVIEWER_RESPONSE_SCHEMA}`;
 }
