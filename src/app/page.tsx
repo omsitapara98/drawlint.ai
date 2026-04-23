@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 import { DiagramCanvas } from "@/components/canvas";
@@ -33,6 +33,24 @@ function loadBYOConfig(): BYOConfig | null {
   }
 }
 
+/* ── Panel resize constants ───────────────────────────────────── */
+
+const PANEL_MIN_W = 320;
+const PANEL_DEFAULT_W = 420;
+const PANEL_STORAGE_KEY = "drawlint:panel-width";
+
+function loadPanelWidth(): number {
+  try {
+    const raw = localStorage.getItem(PANEL_STORAGE_KEY);
+    if (!raw) return PANEL_DEFAULT_W;
+    const w = parseInt(raw, 10);
+    if (Number.isNaN(w)) return PANEL_DEFAULT_W;
+    return Math.max(PANEL_MIN_W, w);
+  } catch {
+    return PANEL_DEFAULT_W;
+  }
+}
+
 export default function Home() {
   const [elements, setElements] = useState<ExcalidrawElement[]>([]);
   const [initialData, setInitialData] = useState<ExcalidrawElement[] | null>(
@@ -47,6 +65,9 @@ export default function Home() {
   const [aiError, setAiError] = useState<string | undefined>();
   const [reviewLevel, setReviewLevel] = useState<ReviewLevel>("senior");
   const [reviewMode, setReviewMode] = useState<ReviewMode>("single");
+  const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT_W);
+  const resizingRef = useRef(false);
+  const prevFingerprintRef = useRef("");
 
   useAutoSave(elements);
 
@@ -62,6 +83,41 @@ export default function Home() {
     }
   }, []);
 
+  // Load panel width from localStorage
+  useEffect(() => {
+    setPanelWidth(loadPanelWidth());
+  }, []);
+
+  // Clear AI cache when review level or mode changes
+  useEffect(() => {
+    setAiReview(null);
+    setAiStatus("idle");
+    setAiError(undefined);
+  }, [reviewLevel, reviewMode]);
+
+  // Track element changes — clear cache when diagram shapes are added/removed
+  const elementFingerprint = useMemo(() => {
+    return elements
+      .filter(
+        (el) =>
+          !el.isDeleted &&
+          ["rectangle", "diamond", "ellipse", "arrow", "line", "text"].includes(el.type),
+      )
+      .map((el) => el.id)
+      .sort()
+      .join(",");
+  }, [elements]);
+
+  useEffect(() => {
+    const prev = prevFingerprintRef.current;
+    prevFingerprintRef.current = elementFingerprint;
+    if (prev !== "" && prev !== elementFingerprint) {
+      setAiReview(null);
+      setAiStatus("idle");
+      setAiError(undefined);
+    }
+  }, [elementFingerprint]);
+
   const handleChange = useCallback((els: readonly ExcalidrawElement[]) => {
     setElements(els as ExcalidrawElement[]);
   }, []);
@@ -71,56 +127,108 @@ export default function Home() {
     ["rectangle", "diamond", "ellipse", "arrow", "line"].includes(el.type),
   );
 
+  /** Shared helper — fires the actual AI API call. */
+  const fireAiAnalysis = useCallback(
+    async (diagram: ParsedDiagram) => {
+      const config = loadBYOConfig();
+      if (!config) {
+        setAiStatus("idle");
+        setAiReview(null);
+        setAiError(undefined);
+        return;
+      }
+
+      setAiStatus("analyzing");
+      setAiError(undefined);
+      setAiReview(null);
+
+      try {
+        const res = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            diagram,
+            apiKey: config.apiKey,
+            endpoint: config.endpoint,
+            deployment: config.deployment,
+            level: reviewLevel,
+            mode: reviewMode,
+          }),
+        });
+
+        if (!res.ok) {
+          const data = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(data.error ?? `Analysis failed (${res.status})`);
+        }
+
+        const data = (await res.json()) as AIReviewResponse;
+        setAiReview(data);
+        setAiStatus("complete");
+      } catch (err) {
+        setAiStatus("error");
+        setAiError(
+          err instanceof Error ? err.message : "An unexpected error occurred.",
+        );
+      }
+    },
+    [reviewLevel, reviewMode],
+  );
+
+  /** Opens panel — shows cached AI results when available, otherwise fires analysis. */
   const handleAnalyze = useCallback(async () => {
-    // 1. Parse diagram locally
     const diagram = parseDiagram(elements);
     setParsedDiagram(diagram);
     setPanelOpen(true);
 
-    // 2. Check for BYO key
-    const config = loadBYOConfig();
-    if (!config) {
-      // No BYO key — show local parse only
-      setAiStatus("idle");
-      setAiReview(null);
-      setAiError(undefined);
-      return;
-    }
+    // Show cached results if available — no new API call
+    if (aiReview) return;
 
-    // 3. Send to AI
-    setAiStatus("analyzing");
-    setAiError(undefined);
-    setAiReview(null);
+    await fireAiAnalysis(diagram);
+  }, [elements, aiReview, fireAiAnalysis]);
 
-    try {
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          diagram,
-          apiKey: config.apiKey,
-          endpoint: config.endpoint,
-          deployment: config.deployment,
-          level: reviewLevel,
-          mode: reviewMode,
-        }),
-      });
+  /** Always fires a fresh API call (Re-analyze / Retry). */
+  const handleReAnalyze = useCallback(async () => {
+    const diagram = parseDiagram(elements);
+    setParsedDiagram(diagram);
+    await fireAiAnalysis(diagram);
+  }, [elements, fireAiAnalysis]);
 
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? `Analysis failed (${res.status})`);
-      }
+  /** Drag-to-resize the side panel. */
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      resizingRef.current = true;
+      const startX = e.clientX;
+      const startW = panelWidth;
 
-      const data = (await res.json()) as AIReviewResponse;
-      setAiReview(data);
-      setAiStatus("complete");
-    } catch (err) {
-      setAiStatus("error");
-      setAiError(
-        err instanceof Error ? err.message : "An unexpected error occurred.",
-      );
-    }
-  }, [elements, reviewLevel, reviewMode]);
+      const onMove = (ev: MouseEvent) => {
+        if (!resizingRef.current) return;
+        const maxW = Math.floor(window.innerWidth * 0.6);
+        const delta = startX - ev.clientX; // dragging left = wider
+        const newW = Math.min(maxW, Math.max(PANEL_MIN_W, startW + delta));
+        setPanelWidth(newW);
+      };
+
+      const onUp = () => {
+        resizingRef.current = false;
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        // Persist final width
+        setPanelWidth((w) => {
+          try {
+            localStorage.setItem(PANEL_STORAGE_KEY, String(w));
+          } catch {
+            /* noop */
+          }
+          return w;
+        });
+      };
+
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    },
+    [panelWidth],
+  );
 
   const handleNewBoard = useCallback(() => {
     clearDiagram();
@@ -211,10 +319,16 @@ export default function Home() {
 
         {/* Floating Feedback Panel — slides in from right */}
         <div
-          className={`absolute top-0 right-0 z-40 h-full w-full max-w-md transition-transform duration-300 ease-in-out ${
+          style={{ width: panelWidth }}
+          className={`absolute top-0 right-0 z-40 h-full transition-transform duration-300 ease-in-out ${
             panelOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
+          {/* Resize drag handle */}
+          <div
+            onMouseDown={handleResizeStart}
+            className="absolute left-0 top-0 z-50 h-full w-1.5 cursor-col-resize hover:bg-violet-400/40 active:bg-violet-500/50 transition-colors"
+          />
           <div className="flex h-full flex-col border-l bg-background/95 backdrop-blur-md shadow-2xl">
             {/* Panel header */}
             <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
@@ -228,7 +342,7 @@ export default function Home() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleAnalyze}
+                  onClick={handleReAnalyze}
                   disabled={!hasDrawnShapes || aiStatus === "analyzing"}
                   className="text-xs"
                 >
@@ -253,7 +367,7 @@ export default function Home() {
                 aiReview={aiReview}
                 aiStatus={aiStatus}
                 aiError={aiError}
-                onRetry={handleAnalyze}
+                onRetry={handleReAnalyze}
                 onOpenSettings={() => setSettingsOpen(true)}
               />
             </div>
