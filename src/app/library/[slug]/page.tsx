@@ -141,7 +141,7 @@ export default async function TopicDesignsPage({ params }: PageProps) {
               return (
                 <Link
                   key={design._id.toString()}
-                  href={`/library/${slug}/${design._id.toString()}`}
+                  href={`/canvas?view=${design._id.toString()}`}
                   className="group rounded-xl border bg-card p-5 text-card-foreground transition-all hover:border-violet-300 hover:shadow-md dark:hover:border-violet-700"
                 >
                   <div className="flex items-center gap-3">

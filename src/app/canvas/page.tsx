@@ -58,6 +58,12 @@ export default function CanvasPage() {
   const editTopicSlug = searchParams.get("topic");
   const [editModeInitialized, setEditModeInitialized] = useState(false);
 
+  /* ── View mode (from library) ──────────────────────────────── */
+  const viewDesignId = searchParams.get("view");
+  const [viewModeInitialized, setViewModeInitialized] = useState(false);
+  const [viewIsAuthor, setViewIsAuthor] = useState(false);
+  const [viewAuthorName, setViewAuthorName] = useState<string | null>(null);
+
   /* ── Phase gate ──────────────────────────────────────────────── */
   const [phase, setPhase] = useState<"select" | "draw">("select");
 
@@ -170,6 +176,87 @@ export default function CanvasPage() {
 
     initEditMode();
   }, [editDesignId, editTopicSlug, editModeInitialized, topics, topicsLoading]);
+
+  /* ── View mode: load design in read-only + show review ─────── */
+  useEffect(() => {
+    if (!viewDesignId || viewModeInitialized || topicsLoading) return;
+    // Don't initialize view mode if we're in edit mode
+    if (editDesignId) return;
+
+    async function initViewMode() {
+      try {
+        // Fetch design metadata (includes review, author, topic)
+        const metaRes = await fetch(`/api/designs/${viewDesignId}`);
+        if (!metaRes.ok) return;
+        const metaData = (await metaRes.json()) as {
+          design: {
+            _id: string;
+            reviewLevel?: string;
+            userId: string;
+            topicId: string;
+          };
+          review: AIReviewResponse | null;
+          author: { _id: string; name?: string } | null;
+          topic: { _id: string; name: string; slug: string } | null;
+        };
+
+        // Set topic from design metadata
+        if (metaData.topic) {
+          const matchedTopic = topics.find((t) => t._id === metaData.topic!._id.toString());
+          if (matchedTopic) {
+            setSelectedTopic(matchedTopic);
+          } else {
+            // Topic not in our list yet, create a minimal TopicOption
+            setSelectedTopic({
+              _id: metaData.topic._id.toString(),
+              name: metaData.topic.name,
+              slug: metaData.topic.slug,
+              submissionCount: 0,
+            });
+          }
+        }
+
+        if (metaData.design.reviewLevel) {
+          setReviewLevel(metaData.design.reviewLevel as ReviewLevel);
+        }
+
+        // Check if current user is the author
+        if (session?.user?.id && session.user.id === metaData.design.userId.toString()) {
+          setViewIsAuthor(true);
+        }
+
+        setViewAuthorName(metaData.author?.name ? String(metaData.author.name) : "Anonymous");
+
+        // Load review into panel
+        if (metaData.review) {
+          setAiReview(metaData.review);
+          setAiStatus("complete");
+          const diagram = parseDiagram([] as ExcalidrawElement[]);
+          setParsedDiagram(diagram);
+        }
+
+        // Fetch elements
+        const elRes = await fetch(`/api/designs/${viewDesignId}/elements`);
+        if (elRes.ok) {
+          const elData = (await elRes.json()) as { elements: ExcalidrawElement[] };
+          setElements(elData.elements);
+          setInitialData(elData.elements);
+          setCanvasKey((k) => k + 1);
+        }
+
+        setSubmittedDesignId(viewDesignId!);
+        setSubmitted(true);
+        setPanelOpen(true);
+        setPhase("draw");
+      } catch {
+        // Fall back to normal flow
+      } finally {
+        setViewModeInitialized(true);
+      }
+    }
+
+    initViewMode();
+  }, [viewDesignId, viewModeInitialized, topicsLoading, editDesignId, topics, session?.user?.id]);
 
   // Close topic dropdown on outside click
   useEffect(() => {
@@ -395,11 +482,15 @@ export default function CanvasPage() {
     } catch { /* noop */ }
 
     try {
-      const res = await fetch("/api/designs", {
-        method: "POST",
+      const isUpdate = !!editDesignId;
+      const url = isUpdate ? `/api/designs/${editDesignId}` : "/api/designs";
+      const method = isUpdate ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          topicId: selectedTopic._id,
+          ...(isUpdate ? {} : { topicId: selectedTopic._id }),
           elements: elements as unknown[],
           reviewLevel,
           apiKey,
@@ -714,21 +805,31 @@ export default function CanvasPage() {
               <span className="inline-flex h-5 items-center rounded-full bg-violet-100 px-2 text-[0.65rem] font-semibold text-violet-700 dark:bg-violet-900/50 dark:text-violet-300 shrink-0">
                 {levelLabel(reviewLevel)}
               </span>
-              <span className="text-xs text-muted-foreground shrink-0">·</span>
-              <button
-                onClick={handleChangeTopicLevel}
-                className="text-xs font-medium text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 transition-colors shrink-0"
-              >
-                Change
-              </button>
+              {viewDesignId && viewAuthorName && (
+                <>
+                  <span className="text-xs text-muted-foreground shrink-0">·</span>
+                  <span className="text-xs text-muted-foreground shrink-0">by {viewAuthorName}</span>
+                </>
+              )}
+              {!viewDesignId && (
+                <>
+                  <span className="text-xs text-muted-foreground shrink-0">·</span>
+                  <button
+                    onClick={handleChangeTopicLevel}
+                    className="text-xs font-medium text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 transition-colors shrink-0"
+                  >
+                    Change
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Full-width Excalidraw canvas */}
             <div className="relative flex-1 min-h-0">
-              <DiagramCanvas key={canvasKey} onChange={handleChange} initialData={initialData} readOnly={submitted} />
+              <DiagramCanvas key={canvasKey} onChange={handleChange} initialData={initialData} readOnly={submitted || !!viewDesignId} />
 
               {/* Floating top-right controls */}
-              {!panelOpen && !submitted && (
+              {!panelOpen && !submitted && !viewDesignId && (
                 <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
                   <Button
                     variant="outline"
@@ -751,8 +852,53 @@ export default function CanvasPage() {
                 </div>
               )}
 
-              {/* Edit & Re-submit controls when canvas is locked */}
-              {!panelOpen && submitted && (
+              {/* View mode controls (for owner: Edit + Delete, for all: Library link) */}
+              {!panelOpen && viewDesignId && (
+                <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+                  {viewIsAuthor && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 rounded-full text-xs"
+                        onClick={() => {
+                          router.push(`/canvas?edit=${viewDesignId}&topic=${selectedTopic?.slug ?? ""}`);
+                        }}
+                      >
+                        <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 rounded-full text-xs text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                        onClick={async () => {
+                          if (!confirm("Delete this design?")) return;
+                          try {
+                            await fetch(`/api/designs/${viewDesignId}`, { method: "DELETE" });
+                            router.push(selectedTopic ? `/library/${selectedTopic.slug}` : "/library");
+                          } catch { /* noop */ }
+                        }}
+                      >
+                        <X className="mr-1.5 h-3.5 w-3.5" />
+                        Delete
+                      </Button>
+                    </>
+                  )}
+                  {selectedTopic && (
+                    <Link
+                      href={`/library/${selectedTopic.slug}`}
+                      className="inline-flex h-9 items-center rounded-full bg-emerald-600 px-4 text-sm font-medium text-white shadow-lg transition-all hover:bg-emerald-700"
+                    >
+                      <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                      View in Library
+                    </Link>
+                  )}
+                </div>
+              )}
+
+              {/* Edit & Re-submit controls when canvas is locked (non-view mode) */}
+              {!panelOpen && submitted && !viewDesignId && (
                 <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
                   <Button
                     variant="outline"
@@ -765,7 +911,7 @@ export default function CanvasPage() {
                   </Button>
                   {submittedDesignId && selectedTopic && (
                     <Link
-                      href={`/library/${selectedTopic.slug}/${submittedDesignId}`}
+                      href={`/library/${selectedTopic.slug}`}
                       className="inline-flex h-9 items-center rounded-full bg-emerald-600 px-4 text-sm font-medium text-white shadow-lg transition-all hover:bg-emerald-700"
                     >
                       <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
@@ -824,7 +970,7 @@ export default function CanvasPage() {
                   {submittedDesignId && selectedTopic && aiStatus === "complete" && (
                     <div className="shrink-0 border-b bg-emerald-50 px-4 py-2 dark:bg-emerald-950/30">
                       <Link
-                        href={`/library/${selectedTopic.slug}/${submittedDesignId}`}
+                        href={`/library/${selectedTopic.slug}`}
                         className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
                       >
                         <ExternalLink className="h-3 w-3" />

@@ -109,6 +109,19 @@ export async function updateDesignStatus(
   );
 }
 
+/** Update a design's blob reference and reset status for re-review. */
+export async function updateDesignBlob(
+  designId: string,
+  blobUrl: string,
+  blobKey: string,
+): Promise<void> {
+  const col = await collection();
+  await col.updateOne(
+    { _id: new ObjectId(designId) },
+    { $set: { blobUrl, blobKey, status: "reviewing" as const, updatedAt: new Date() } },
+  );
+}
+
 /** Delete a design by ID. */
 export async function deleteDesign(designId: string): Promise<void> {
   const col = await collection();
