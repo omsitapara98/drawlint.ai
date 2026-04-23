@@ -836,7 +836,7 @@ export default function CanvasPage() {
                   <span className="text-xs text-muted-foreground shrink-0">by {viewAuthorName}</span>
                 </>
               )}
-              {!viewDesignId && !submitted && (
+              {!viewDesignId && !submitted && !editDesignId && (
                 <>
                   <span className="text-xs text-muted-foreground shrink-0">·</span>
                   <button
@@ -853,13 +853,15 @@ export default function CanvasPage() {
                 {/* Drawing mode: New Board + Submit */}
                 {!submitted && !viewDesignId && (
                   <>
-                    <button
-                      onClick={handleNewBoard}
-                      className="inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
-                    >
-                      <RotateCcw className="h-3 w-3" />
-                      New
-                    </button>
+                    {!editDesignId && (
+                      <button
+                        onClick={handleNewBoard}
+                        className="inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        New
+                      </button>
+                    )}
                     <button
                       onClick={handleSubmitDesign}
                       disabled={!hasDrawnShapes || aiStatus === "analyzing"}
