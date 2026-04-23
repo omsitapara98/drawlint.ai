@@ -12,7 +12,7 @@ import { SettingsModal } from "@/components/settings";
 import { AuthGate } from "@/components/auth";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks";
-import { loadDiagram, clearDiagram } from "@/lib/storage";
+import { loadDiagram } from "@/lib/storage";
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
@@ -594,21 +594,6 @@ export default function CanvasPage() {
     [panelWidth],
   );
 
-  const handleNewBoard = useCallback(() => {
-    clearDiagram();
-    const template = createWhiteboardTemplate() as ExcalidrawElement[];
-    setElements(template);
-    setInitialData(template);
-    setCanvasKey((k) => k + 1);
-    setPanelOpen(false);
-    setParsedDiagram(null);
-    setAiReview(null);
-    setAiStatus("idle");
-    setAiError(undefined);
-    setSubmittedDesignId(null);
-    setSubmitted(false);
-  }, []);
-
   if (initialData === null) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -850,27 +835,16 @@ export default function CanvasPage() {
 
               {/* Right: action buttons */}
               <div className="ml-auto flex items-center gap-2 shrink-0">
-                {/* Drawing mode: New Board + Submit */}
+                {/* Drawing mode: Submit */}
                 {!submitted && !viewDesignId && (
-                  <>
-                    {!editDesignId && (
-                      <button
-                        onClick={handleNewBoard}
-                        className="inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
-                      >
-                        <RotateCcw className="h-3 w-3" />
-                        New
-                      </button>
-                    )}
-                    <button
-                      onClick={handleSubmitDesign}
-                      disabled={!hasDrawnShapes || aiStatus === "analyzing"}
-                      className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                    >
-                      <Send className="h-3 w-3" />
-                      {editDesignId ? "Re-submit" : "Submit"}
-                    </button>
-                  </>
+                  <button
+                    onClick={handleSubmitDesign}
+                    disabled={!hasDrawnShapes || aiStatus === "analyzing"}
+                    className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    <Send className="h-3 w-3" />
+                    {editDesignId ? "Re-submit" : "Submit"}
+                  </button>
                 )}
 
                 {/* Post-submit mode: Edit unlocks canvas directly */}
