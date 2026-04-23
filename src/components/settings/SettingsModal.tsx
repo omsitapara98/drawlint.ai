@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Shield, ChevronDown, ChevronRight } from "lucide-react";
 
 const STORAGE_KEY = "drawlint:byo-key";
 
@@ -44,6 +45,7 @@ export default function SettingsModal({
   const deploymentRef = useRef<HTMLInputElement>(null);
 
   const [configured, setConfigured] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   // Populate form when dialog opens
   useEffect(() => {
@@ -95,25 +97,61 @@ export default function SettingsModal({
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
-          {/* Appearance hint */}
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">Appearance</h4>
-            <p className="text-xs text-muted-foreground">Toggle dark mode from the header</p>
+          {/* Privacy notice */}
+          <div className="flex items-start gap-2.5 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950/40">
+            <Shield className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+            <p className="text-xs leading-relaxed text-blue-800 dark:text-blue-300">
+              Your API key stays in your browser. It&apos;s sent directly to
+              Azure OpenAI over HTTPS and is never stored on our servers.
+            </p>
+          </div>
+
+          {/* Collapsible setup guide */}
+          <div>
+            <button
+              type="button"
+              className="flex w-full items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setGuideOpen((v) => !v)}
+            >
+              {guideOpen ? (
+                <ChevronDown className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronRight className="h-3.5 w-3.5" />
+              )}
+              How to get an Azure OpenAI key
+            </button>
+            {guideOpen && (
+              <ol className="mt-2 ml-5 list-decimal space-y-1 text-xs text-muted-foreground">
+                <li>
+                  Go to{" "}
+                  <a
+                    href="https://portal.azure.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-foreground"
+                  >
+                    portal.azure.com
+                  </a>{" "}
+                  → Create an <strong>Azure OpenAI</strong> resource
+                </li>
+                <li>
+                  Deploy a model (e.g.&nbsp;<code className="text-[11px] bg-muted px-1 rounded">gpt-4o</code>) in Azure AI Foundry
+                </li>
+                <li>Copy the <strong>Endpoint URL</strong> and <strong>API Key</strong> from the resource</li>
+                <li>Paste them below</li>
+              </ol>
+            )}
           </div>
 
           <Separator />
 
-          <div className="text-xs">
-            {configured ? (
+          {configured && (
+            <div className="text-xs">
               <span className="text-green-600 dark:text-green-400">
                 ✓ BYO key configured
               </span>
-            ) : (
-              <span className="text-muted-foreground">
-                Using free trial (limited analyses remaining)
-              </span>
-            )}
-          </div>
+            </div>
+          )}
 
           <label className="flex flex-col gap-1">
             <span className="text-xs font-medium">API Key</span>
