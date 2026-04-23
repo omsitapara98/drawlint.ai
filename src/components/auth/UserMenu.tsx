@@ -3,14 +3,15 @@
 import { useState, useRef, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import type { Session } from "next-auth";
 
 interface UserMenuProps {
   session: Session;
+  onOpenSettings?: () => void;
 }
 
-export default function UserMenu({ session }: UserMenuProps) {
+export default function UserMenu({ session, onOpenSettings }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const user = session.user;
@@ -58,6 +59,17 @@ export default function UserMenu({ session }: UserMenuProps) {
               {user?.email}
             </p>
           </div>
+          {onOpenSettings && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-2 text-xs"
+              onClick={() => { onOpenSettings(); setOpen(false); }}
+            >
+              <Settings className="h-3.5 w-3.5" />
+              API Settings
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
