@@ -50,7 +50,7 @@ const features = [
 export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Header onOpenSettings={() => {}} />
+      <Header />
 
       {/* ── Hero ────────────────────────────────────────────── */}
       <section className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-24 text-center">

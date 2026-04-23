@@ -13,7 +13,7 @@ export default async function LibraryPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Header onOpenSettings={() => {}} />
+      <Header />
 
       {/* Hero */}
       <section className="border-b px-4 py-16 text-center">

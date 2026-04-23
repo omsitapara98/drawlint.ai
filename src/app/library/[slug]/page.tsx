@@ -64,7 +64,7 @@ export default async function TopicDesignsPage({ params }: PageProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Header onOpenSettings={() => {}} />
+      <Header />
 
       {/* Breadcrumb */}
       <div className="mx-auto w-full max-w-5xl px-4 pt-6">

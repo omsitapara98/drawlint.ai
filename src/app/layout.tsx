@@ -31,9 +31,9 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="h-full">
+      <body className="h-full" suppressHydrationWarning>
         <SessionProvider>
-          <ThemeProvider attribute="class" defaultTheme="light" storageKey="drawlint-theme">
+          <ThemeProvider attribute="class" defaultTheme="light" storageKey="drawlint-theme" enableSystem={false} disableTransitionOnChange>
             {children}
           </ThemeProvider>
         </SessionProvider>

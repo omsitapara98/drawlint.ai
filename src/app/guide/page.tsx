@@ -13,7 +13,7 @@ function Tip({ children }: { children: React.ReactNode }) {
 export default function GuidePage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Header onOpenSettings={() => {}} />
+      <Header />
 
       {/* ── Content ─────────────────────────────────────────── */}
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-16 sm:px-6">
