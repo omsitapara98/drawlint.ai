@@ -65,7 +65,9 @@ export default function CanvasPage() {
   const [viewAuthorName, setViewAuthorName] = useState<string | null>(null);
 
   /* ── Phase gate ──────────────────────────────────────────────── */
-  const [phase, setPhase] = useState<"select" | "draw">("select");
+  const [phase, setPhase] = useState<"select" | "draw">(
+    editDesignId || viewDesignId ? "draw" : "select",
+  );
 
   /* ── Topic gate state ───────────────────────────────────────── */
   const [topics, setTopics] = useState<TopicOption[]>([]);
@@ -349,6 +351,9 @@ export default function CanvasPage() {
 
   /* ── Canvas data loading ────────────────────────────────────── */
   useEffect(() => {
+    // In view/edit mode, initialData is set by the view/edit useEffect — skip default loading
+    if (viewDesignId || editDesignId) return;
+
     const saved = loadDiagram();
     if (saved && saved.length > 0) {
       setElements(saved);
@@ -358,7 +363,7 @@ export default function CanvasPage() {
       setElements(template);
       setInitialData(template);
     }
-  }, []);
+  }, [viewDesignId, editDesignId]);
 
   useEffect(() => {
     setPanelWidth(loadPanelWidth());
