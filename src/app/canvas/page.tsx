@@ -857,7 +857,7 @@ export default function CanvasPage() {
                 </div>
               )}
 
-              {/* View mode controls (for owner: Edit + Delete, for all: Library link) */}
+              {/* View mode controls (for owner: Edit + Delete, toggle review panel) */}
               {!panelOpen && viewDesignId && (
                 <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
                   {viewIsAuthor && (
@@ -890,14 +890,14 @@ export default function CanvasPage() {
                       </Button>
                     </>
                   )}
-                  {selectedTopic && (
-                    <Link
-                      href={`/library/${selectedTopic.slug}`}
-                      className="inline-flex h-9 items-center rounded-full bg-emerald-600 px-4 text-sm font-medium text-white shadow-lg transition-all hover:bg-emerald-700"
+                  {aiReview && (
+                    <Button
+                      onClick={() => setPanelOpen(true)}
+                      className="h-9 rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-4 text-sm text-white shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5"
                     >
-                      <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                      View in Library
-                    </Link>
+                      <Send className="mr-1.5 h-3.5 w-3.5" />
+                      Show Review
+                    </Button>
                   )}
                 </div>
               )}
@@ -914,14 +914,14 @@ export default function CanvasPage() {
                     <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
                     Edit &amp; Re-submit
                   </Button>
-                  {submittedDesignId && selectedTopic && (
-                    <Link
-                      href={`/library/${selectedTopic.slug}`}
-                      className="inline-flex h-9 items-center rounded-full bg-emerald-600 px-4 text-sm font-medium text-white shadow-lg transition-all hover:bg-emerald-700"
+                  {aiReview && (
+                    <Button
+                      onClick={() => setPanelOpen(true)}
+                      className="h-9 rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-4 text-sm text-white shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5"
                     >
-                      <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                      View in Library
-                    </Link>
+                      <Send className="mr-1.5 h-3.5 w-3.5" />
+                      Show Review
+                    </Button>
                   )}
                 </div>
               )}
@@ -970,19 +970,6 @@ export default function CanvasPage() {
                       </Button>
                     </div>
                   </div>
-
-                  {/* "View in Library" link after successful submission */}
-                  {submittedDesignId && selectedTopic && aiStatus === "complete" && (
-                    <div className="shrink-0 border-b bg-emerald-50 px-4 py-2 dark:bg-emerald-950/30">
-                      <Link
-                        href={`/library/${selectedTopic.slug}`}
-                        className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                        View in Library →
-                      </Link>
-                    </div>
-                  )}
 
                   {/* Panel content */}
                   <div className="flex-1 overflow-hidden">
