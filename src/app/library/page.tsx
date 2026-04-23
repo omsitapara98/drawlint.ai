@@ -4,6 +4,8 @@ import { ArrowRight, BookOpen } from "lucide-react";
 import { Header } from "@/components/layout";
 import { SearchableTopicGrid } from "@/components/library/SearchableTopicGrid";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "System Design Library — DrawLint.ai",
   description: "Browse peer-reviewed system designs from the community.",
