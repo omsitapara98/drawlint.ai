@@ -142,6 +142,9 @@ export default function CanvasPage() {
 
     async function initEditMode() {
       try {
+        // Ensure canvas is editable in edit mode
+        setSubmitted(false);
+
         // Find the matching topic from fetched topics
         if (editTopicSlug) {
           const matchedTopic = topics.find((t) => t.slug === editTopicSlug);
@@ -868,7 +871,7 @@ export default function CanvasPage() {
                   <>
                     <button
                       onClick={() => {
-                        router.push(`/canvas?edit=${viewDesignId}&topic=${selectedTopic?.slug ?? ""}`);
+                        window.location.href = `/canvas?edit=${viewDesignId}&topic=${selectedTopic?.slug ?? ""}`;
                       }}
                       className="inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
                     >
