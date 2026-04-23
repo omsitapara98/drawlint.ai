@@ -8,7 +8,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { DiagramCanvas } from "@/components/canvas";
 import { FeedbackPanel } from "@/components/feedback";
 import { Header } from "@/components/layout";
-import { SettingsModal } from "@/components/settings";
 import { AuthGate } from "@/components/auth";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks";
@@ -81,7 +80,6 @@ export default function CanvasPage() {
   /* ── Canvas state ───────────────────────────────────────────── */
   const [elements, setElements] = useState<ExcalidrawElement[]>([]);
   const [initialData, setInitialData] = useState<ExcalidrawElement[] | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [canvasKey, setCanvasKey] = useState(0);
   const [parsedDiagram, setParsedDiagram] = useState<ParsedDiagram | null>(null);
@@ -112,14 +110,23 @@ export default function CanvasPage() {
 
   /* ── Check BYO key configuration ───────────────────────────── */
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("drawlint:byo-key");
-      if (raw) {
-        const cfg = JSON.parse(raw) as { apiKey?: string };
-        setByoKeyConfigured(!!cfg.apiKey);
-      }
-    } catch { /* noop */ }
-  }, [settingsOpen]); // re-check when settings modal closes
+    function checkKey() {
+      try {
+        const raw = localStorage.getItem("drawlint:byo-key");
+        if (raw) {
+          const cfg = JSON.parse(raw) as { apiKey?: string };
+          setByoKeyConfigured(!!cfg.apiKey);
+        } else {
+          setByoKeyConfigured(false);
+        }
+      } catch { /* noop */ }
+    }
+    checkKey();
+    window.addEventListener("storage", checkKey);
+    // Also poll every 2s to catch same-tab changes
+    const interval = setInterval(checkKey, 2000);
+    return () => { window.removeEventListener("storage", checkKey); clearInterval(interval); };
+  }, []);
 
   /* ── Load anonymous mode preference from localStorage ──────── */
   useEffect(() => {
@@ -675,7 +682,7 @@ export default function CanvasPage() {
 
       {/* Main layout — hidden on mobile */}
       <div className="hidden md:flex h-screen flex-col relative">
-        <Header onOpenSettings={() => setSettingsOpen(true)} />
+        <Header />
         <AuthGate />
 
         {/* ── Phase: Topic + Level Selection Gate ──────────────── */}
@@ -827,11 +834,7 @@ export default function CanvasPage() {
 
               {!byoKeyConfigured && (
                 <p className="text-center text-xs text-muted-foreground">
-                  ⚙️ Configure your Azure OpenAI key in{" "}
-                  <button onClick={() => setSettingsOpen(true)} className="text-violet-500 hover:underline">
-                    Settings
-                  </button>
-                  {" "}before submitting
+                  ⚙️ Configure your Azure OpenAI key in your profile menu (top-right) before submitting
                 </p>
               )}
 
@@ -1030,7 +1033,7 @@ export default function CanvasPage() {
                       aiError={aiError}
                       reviewerProgress={reviewerProgress}
                       onRetry={handleRetrySubmit}
-                      onOpenSettings={() => setSettingsOpen(true)}
+                      onOpenSettings={() => {}}
                     />
                   </div>
                 </div>
@@ -1047,7 +1050,6 @@ export default function CanvasPage() {
           </>
         )}
 
-        <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
       </div>
     </>
   );
