@@ -30,6 +30,7 @@ export interface Design {
   status: "submitted" | "reviewing" | "reviewed";
   forkedFrom?: ObjectId;
   reviewLevel: ReviewLevel;
+  anonymousName?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -72,6 +73,7 @@ export interface SubmitDesignInput {
   elements: unknown[];
   reviewLevel?: ReviewLevel;
   forkedFrom?: string;
+  anonymous?: boolean;
   apiKey?: string;
   endpoint?: string;
   deployment?: string;

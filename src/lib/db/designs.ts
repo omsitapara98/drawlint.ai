@@ -72,6 +72,7 @@ export async function createDesign(input: {
   reviewLevel: ReviewLevel;
   version: number;
   forkedFrom?: string;
+  anonymousName?: string;
 }): Promise<Design> {
   const col = await collection();
   const now = new Date();
@@ -91,6 +92,9 @@ export async function createDesign(input: {
 
   if (input.forkedFrom) {
     doc.forkedFrom = new ObjectId(input.forkedFrom);
+  }
+  if (input.anonymousName) {
+    doc.anonymousName = input.anonymousName;
   }
 
   await col.insertOne(doc);

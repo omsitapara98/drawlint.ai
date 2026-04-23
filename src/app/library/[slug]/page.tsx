@@ -138,6 +138,9 @@ export default async function TopicDesignsPage({ params }: PageProps) {
                 year: "numeric",
               });
 
+              const displayName = design.anonymousName ?? String(author?.name ?? "Anonymous");
+              const showAvatar = !design.anonymousName && !!author?.image;
+
               return (
                 <Link
                   key={design._id.toString()}
@@ -146,20 +149,20 @@ export default async function TopicDesignsPage({ params }: PageProps) {
                 >
                   <div className="flex items-center gap-3">
                     {/* Avatar */}
-                    {author?.image ? (
+                    {showAvatar ? (
                       <img
-                        src={author.image as string}
-                        alt={String(author.name ?? "User")}
+                        src={author!.image as string}
+                        alt={displayName}
                         className="h-8 w-8 rounded-full object-cover"
                       />
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-violet-700 dark:bg-violet-900 dark:text-violet-300">
-                        {String(author?.name ?? "?").charAt(0).toUpperCase()}
+                        {displayName.charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">
-                        {String(author?.name ?? "Anonymous")}
+                        {displayName}
                       </p>
                       <p className="text-xs text-muted-foreground">{date}</p>
                     </div>

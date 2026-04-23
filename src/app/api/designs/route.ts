@@ -53,6 +53,30 @@ export async function POST(request: Request) {
 
   const userId = session.user.id;
 
+  // Resolve pseudonym if posting anonymously
+  let anonymousName: string | undefined;
+  if (body.anonymous) {
+    const { ObjectId: OId } = await import("mongodb");
+    const mongoClient = await (await import("@/lib/db/mongodb")).default;
+    const usersCol = mongoClient.db("drawlint-db").collection("users");
+    const user = await usersCol.findOne(
+      { _id: new OId(userId) },
+      { projection: { pseudonym: 1 } },
+    );
+    if (user?.pseudonym) {
+      anonymousName = user.pseudonym as string;
+    } else {
+      // Generate + persist
+      const ADJECTIVES = ["Swift","Brave","Curious","Clever","Bold","Calm","Keen","Wise","Noble","Bright","Agile","Steady","Quick","Sharp","Silent","Fierce","Gentle","Witty","Daring","Nimble"];
+      const ANIMALS = ["Panda","Eagle","Fox","Wolf","Owl","Bear","Hawk","Lion","Tiger","Falcon","Lynx","Raven","Cobra","Otter","Shark","Phoenix","Dragon","Panther","Jaguar","Viper"];
+      const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+      const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+      const num = Math.floor(Math.random() * 90) + 10;
+      anonymousName = `${adj} ${animal} ${num}`;
+      await usersCol.updateOne({ _id: new OId(userId) }, { $set: { pseudonym: anonymousName } });
+    }
+  }
+
   // 1. Determine version
   const latestVersion = await getLatestVersion(body.topicId, userId);
   const version = latestVersion + 1;
@@ -87,6 +111,7 @@ export async function POST(request: Request) {
     reviewLevel,
     version,
     forkedFrom: body.forkedFrom,
+    anonymousName,
   });
 
   // 5. Attempt AI review using BYO key from client (fall back to env vars)

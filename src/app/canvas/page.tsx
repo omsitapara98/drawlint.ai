@@ -16,7 +16,7 @@ import { loadDiagram } from "@/lib/storage";
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
-import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink } from "lucide-react";
+import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff } from "lucide-react";
 import Link from "next/link";
 
 /* ── Topic gate types ─────────────────────────────────────────── */
@@ -94,6 +94,8 @@ export default function CanvasPage() {
   const [submittedDesignId, setSubmittedDesignId] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [byoKeyConfigured, setByoKeyConfigured] = useState(false);
+  const [anonymousMode, setAnonymousMode] = useState(false);
+  const [pseudonym, setPseudonym] = useState<string | null>(null);
   const [reviewerProgress, setReviewerProgress] = useState<ReviewerProgress>({
     nfrReview: "pending",
     entitiesReview: "pending",
@@ -118,6 +120,38 @@ export default function CanvasPage() {
       }
     } catch { /* noop */ }
   }, [settingsOpen]); // re-check when settings modal closes
+
+  /* ── Load anonymous mode preference from localStorage ──────── */
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("drawlint:anonymous-mode");
+      if (raw === "true") setAnonymousMode(true);
+    } catch { /* noop */ }
+  }, []);
+
+  /* ── Fetch pseudonym when anonymous mode is toggled on ──────── */
+  useEffect(() => {
+    if (!anonymousMode || pseudonym) return;
+    if (authStatus !== "authenticated") return;
+    async function fetchPseudonym() {
+      try {
+        const res = await fetch("/api/auth/pseudonym");
+        if (res.ok) {
+          const data = (await res.json()) as { pseudonym: string };
+          setPseudonym(data.pseudonym);
+        }
+      } catch { /* noop */ }
+    }
+    fetchPseudonym();
+  }, [anonymousMode, pseudonym, authStatus]);
+
+  const handleToggleAnonymous = useCallback(() => {
+    setAnonymousMode((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("drawlint:anonymous-mode", String(next)); } catch { /* noop */ }
+      return next;
+    });
+  }, []);
 
   /* ── Fetch topics for the gate ──────────────────────────────── */
   useEffect(() => {
@@ -199,6 +233,7 @@ export default function CanvasPage() {
             reviewLevel?: string;
             userId: string;
             topicId: string;
+            anonymousName?: string;
           };
           review: AIReviewResponse | null;
           author: { _id: string; name?: string } | null;
@@ -226,11 +261,20 @@ export default function CanvasPage() {
         }
 
         // Check if current user is the author
-        if (session?.user?.id && session.user.id === metaData.design.userId.toString()) {
+        const isOwner = !!(session?.user?.id && session.user.id === metaData.design.userId.toString());
+        if (isOwner) {
           setViewIsAuthor(true);
         }
 
-        setViewAuthorName(metaData.author?.name ? String(metaData.author.name) : "Anonymous");
+        // Display name: anonymous designs show pseudonym, unless viewer is the owner
+        if (metaData.design.anonymousName && !isOwner) {
+          setViewAuthorName(metaData.design.anonymousName);
+        } else if (metaData.design.anonymousName && isOwner) {
+          const realName = metaData.author?.name ? String(metaData.author.name) : "You";
+          setViewAuthorName(`${realName} (Posted as ${metaData.design.anonymousName})`);
+        } else {
+          setViewAuthorName(metaData.author?.name ? String(metaData.author.name) : "Anonymous");
+        }
 
         // Load review into panel
         if (metaData.review) {
@@ -517,6 +561,7 @@ export default function CanvasPage() {
           ...(isUpdate ? {} : { topicId: selectedTopic._id }),
           elements: elements as unknown[],
           reviewLevel,
+          anonymous: anonymousMode,
           apiKey,
           endpoint,
           deployment,
@@ -551,7 +596,7 @@ export default function CanvasPage() {
       setAiError(err instanceof Error ? err.message : "An unexpected error occurred.");
       stopReviewerProgress("error");
     }
-  }, [selectedTopic, authStatus, router, elements, reviewLevel, startReviewerProgress, stopReviewerProgress]);
+  }, [selectedTopic, authStatus, router, elements, reviewLevel, anonymousMode, startReviewerProgress, stopReviewerProgress]);
 
   /** Retry a failed submission. */
   const handleRetrySubmit = useCallback(async () => {
@@ -829,6 +874,25 @@ export default function CanvasPage() {
                     className="text-xs font-medium text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 transition-colors shrink-0"
                   >
                     Change
+                  </button>
+                </>
+              )}
+
+              {/* Anonymous toggle — only in draw/edit modes, not view */}
+              {!viewDesignId && authStatus === "authenticated" && (
+                <>
+                  <span className="text-xs text-muted-foreground shrink-0">·</span>
+                  <button
+                    onClick={handleToggleAnonymous}
+                    className={`inline-flex h-5 items-center gap-1 rounded-full px-2 text-[0.65rem] font-medium transition-colors shrink-0 ${
+                      anonymousMode
+                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                    title={anonymousMode ? `Posting as: ${pseudonym ?? "…"}` : "Post anonymously"}
+                  >
+                    <EyeOff className="h-3 w-3" />
+                    {anonymousMode ? (pseudonym ?? "Anon") : "Anon"}
                   </button>
                 </>
               )}

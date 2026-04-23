@@ -126,6 +126,7 @@ export async function PUT(
   let body: {
     elements?: unknown[];
     reviewLevel?: ReviewLevel;
+    anonymous?: boolean;
     apiKey?: string;
     endpoint?: string;
     deployment?: string;
@@ -151,6 +152,28 @@ export async function PUT(
   const userId = session.user.id;
   const version = design.version + 1;
 
+  // Resolve anonymous name if toggled on
+  const client = await clientPromise;
+  const db = client.db(DB_NAME);
+  let anonymousName: string | undefined;
+  if (body.anonymous) {
+    const user = await db.collection("users").findOne(
+      { _id: new ObjectId(userId) },
+      { projection: { pseudonym: 1 } },
+    );
+    if (user?.pseudonym) {
+      anonymousName = user.pseudonym as string;
+    } else {
+      const ADJECTIVES = ["Swift","Brave","Curious","Clever","Bold","Calm","Keen","Wise","Noble","Bright","Agile","Steady","Quick","Sharp","Silent","Fierce","Gentle","Witty","Daring","Nimble"];
+      const ANIMALS = ["Panda","Eagle","Fox","Wolf","Owl","Bear","Hawk","Lion","Tiger","Falcon","Lynx","Raven","Cobra","Otter","Shark","Phoenix","Dragon","Panther","Jaguar","Viper"];
+      const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+      const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+      const num = Math.floor(Math.random() * 90) + 10;
+      anonymousName = `${adj} ${animal} ${num}`;
+      await db.collection("users").updateOne({ _id: new ObjectId(userId) }, { $set: { pseudonym: anonymousName } });
+    }
+  }
+
   // 1. Delete old blob
   try {
     await deleteBlob(design.blobKey);
@@ -175,11 +198,19 @@ export async function PUT(
 
   // 3. Update design document
   await updateDesignBlob(designId, blobUrl, blobKey);
-  // Also bump version + reviewLevel
+  // Also bump version + reviewLevel + anonymousName
   const col = (await clientPromise).db(DB_NAME).collection("designs");
+  const updateFields: Record<string, unknown> = { version, reviewLevel, updatedAt: new Date() };
+  if (anonymousName) {
+    updateFields.anonymousName = anonymousName;
+  } else if (body.anonymous === false) {
+    // Explicitly remove anonymousName when toggling off
+  }
   await col.updateOne(
     { _id: new ObjectId(designId) },
-    { $set: { version, reviewLevel, updatedAt: new Date() } },
+    anonymousName
+      ? { $set: updateFields }
+      : { $set: updateFields, $unset: { anonymousName: "" } },
   );
 
   // 4. Delete old review
