@@ -21,7 +21,7 @@ function generatePseudonym(): string {
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
   const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
   const num = Math.floor(Math.random() * 90) + 10; // 10–99
-  return `${adj} ${animal} ${num}`;
+  return `${adj}${animal}${num}`;
 }
 
 export async function GET() {
