@@ -109,6 +109,7 @@ export default function CanvasPage() {
   useAutoSave(elements);
 
   /* ── Check BYO key configuration ───────────────────────────── */
+  /* ── Check BYO key configuration (once on mount + when tab regains focus) */
   useEffect(() => {
     function checkKey() {
       try {
@@ -122,10 +123,8 @@ export default function CanvasPage() {
       } catch { /* noop */ }
     }
     checkKey();
-    window.addEventListener("storage", checkKey);
-    // Also poll every 2s to catch same-tab changes
-    const interval = setInterval(checkKey, 2000);
-    return () => { window.removeEventListener("storage", checkKey); clearInterval(interval); };
+    window.addEventListener("focus", checkKey);
+    return () => window.removeEventListener("focus", checkKey);
   }, []);
 
   /* ── Load anonymous mode preference from localStorage ──────── */
