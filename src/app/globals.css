@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -307,9 +306,14 @@ html.disable-transitions * {
 
 /* ── Reduced motion support ────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *:not(.animate-spin),
+  *:not(.animate-spin)::before,
+  *:not(.animate-spin)::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+
+  *, *::before, *::after {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
