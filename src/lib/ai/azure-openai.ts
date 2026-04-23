@@ -174,7 +174,9 @@ export async function analyzeDesign(
   }
 
   const apiVersion = "2025-01-01-preview";
-  const url = `${endpoint.replace(/\/+$/, "")}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
+  // Extract base URL: strip any path after the host (users may paste full URLs from Azure portal)
+  const baseUrl = endpoint.replace(/\/+$/, "").replace(/\/openai\/.*$/, "");
+  const url = `${baseUrl}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
   const headers: Record<string, string> = { "Content-Type": "application/json", "api-key": apiKey };
 
   /** Make a single API call and parse the JSON response. */
