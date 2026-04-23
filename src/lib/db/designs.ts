@@ -1,7 +1,6 @@
 import { ObjectId } from "mongodb";
 import clientPromise from "./mongodb";
 import type { Design } from "@/types/library";
-import type { ParsedDiagram } from "@/types/diagram";
 import type { ReviewLevel } from "@/types/feedback";
 
 const DB_NAME = "drawlint-db";
@@ -18,11 +17,20 @@ export async function getDesignsByTopic(
   limit = 50,
 ): Promise<Design[]> {
   const col = await collection();
-  return col
-    .find({ topicId: new ObjectId(topicId) })
-    .sort({ createdAt: -1 })
-    .limit(limit)
-    .toArray();
+  try {
+    return await col
+      .find({ topicId: new ObjectId(topicId) })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .toArray();
+  } catch {
+    const docs = await col
+      .find({ topicId: new ObjectId(topicId) })
+      .limit(limit)
+      .toArray();
+    docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return docs;
+  }
 }
 
 /** List designs by a specific user, newest first. */
@@ -31,11 +39,20 @@ export async function getDesignsByUser(
   limit = 50,
 ): Promise<Design[]> {
   const col = await collection();
-  return col
-    .find({ userId: new ObjectId(userId) })
-    .sort({ createdAt: -1 })
-    .limit(limit)
-    .toArray();
+  try {
+    return await col
+      .find({ userId: new ObjectId(userId) })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .toArray();
+  } catch {
+    const docs = await col
+      .find({ userId: new ObjectId(userId) })
+      .limit(limit)
+      .toArray();
+    docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return docs;
+  }
 }
 
 /** Get a single design by its ID. */
@@ -52,7 +69,6 @@ export async function createDesign(input: {
   userId: string;
   blobUrl: string;
   blobKey: string;
-  parsedDiagram: ParsedDiagram;
   reviewLevel: ReviewLevel;
   version: number;
   forkedFrom?: string;
@@ -67,7 +83,6 @@ export async function createDesign(input: {
     version: input.version,
     blobUrl: input.blobUrl,
     blobKey: input.blobKey,
-    parsedDiagram: input.parsedDiagram,
     status: "reviewing",
     reviewLevel: input.reviewLevel,
     createdAt: now,
@@ -106,14 +121,24 @@ export async function getLatestVersion(
   userId: string,
 ): Promise<number> {
   const col = await collection();
-  const latest = await col
-    .find({
-      topicId: new ObjectId(topicId),
-      userId: new ObjectId(userId),
-    })
-    .sort({ version: -1 })
-    .limit(1)
-    .toArray();
-
-  return latest.length > 0 ? latest[0].version : 0;
+  try {
+    const latest = await col
+      .find({
+        topicId: new ObjectId(topicId),
+        userId: new ObjectId(userId),
+      })
+      .sort({ version: -1 })
+      .limit(1)
+      .toArray();
+    return latest.length > 0 ? latest[0].version : 0;
+  } catch {
+    const docs = await col
+      .find({
+        topicId: new ObjectId(topicId),
+        userId: new ObjectId(userId),
+      })
+      .toArray();
+    if (docs.length === 0) return 0;
+    return Math.max(...docs.map((d) => d.version));
+  }
 }

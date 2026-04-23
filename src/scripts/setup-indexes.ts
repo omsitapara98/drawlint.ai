@@ -1,0 +1,50 @@
+/**
+ * Setup script: create required Cosmos DB MongoDB API indexes.
+ * Run with: npx tsx src/scripts/setup-indexes.ts
+ *
+ * Idempotent — Cosmos DB silently skips duplicate index creation.
+ */
+
+import { MongoClient } from "mongodb";
+
+async function main() {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    console.error("MONGODB_URI environment variable is not set.");
+    process.exit(1);
+  }
+
+  const client = new MongoClient(uri);
+  try {
+    await client.connect();
+    const db = client.db("drawlint-db");
+
+    // ── Topics ──────────────────────────────────────────────────
+    const topics = db.collection("topics");
+    await topics.createIndex({ slug: 1 }, { unique: true });
+    await topics.createIndex({ submissionCount: -1 });
+    await topics.createIndex({ createdAt: -1 });
+    console.log("✓ topics indexes created");
+
+    // ── Designs ─────────────────────────────────────────────────
+    const designs = db.collection("designs");
+    await designs.createIndex({ topicId: 1, createdAt: -1 });
+    await designs.createIndex({ userId: 1, createdAt: -1 });
+    await designs.createIndex({ topicId: 1, userId: 1, version: -1 });
+    console.log("✓ designs indexes created");
+
+    // ── Reviews ─────────────────────────────────────────────────
+    const reviews = db.collection("reviews");
+    await reviews.createIndex({ designId: 1, version: -1 });
+    console.log("✓ reviews indexes created");
+
+    console.log("Index setup complete.");
+  } finally {
+    await client.close();
+  }
+}
+
+main().catch((err) => {
+  console.error("Setup script failed:", err);
+  process.exit(1);
+});

@@ -9,8 +9,10 @@ import {
 import { createReview } from "@/lib/db/reviews";
 import { incrementSubmissionCount } from "@/lib/db/topics";
 import { analyzeDesign } from "@/lib/ai";
+import { parseDiagram } from "@/lib/diagram";
 import type { SubmitDesignInput } from "@/types/library";
 import type { ReviewLevel } from "@/types/feedback";
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 const VALID_LEVELS: ReviewLevel[] = ["mid", "senior", "staff", "deep"];
 
@@ -43,12 +45,6 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  if (!body.parsedDiagram || typeof body.parsedDiagram !== "object") {
-    return NextResponse.json(
-      { error: "parsedDiagram is required." },
-      { status: 400 },
-    );
-  }
 
   const reviewLevel: ReviewLevel =
     body.reviewLevel && VALID_LEVELS.includes(body.reviewLevel)
@@ -62,7 +58,6 @@ export async function POST(request: Request) {
   const version = latestVersion + 1;
 
   // 2. Upload elements to blob storage
-  // Generate a temporary ObjectId string for the blob path
   const { ObjectId } = await import("mongodb");
   const designId = new ObjectId().toString();
 
@@ -80,33 +75,35 @@ export async function POST(request: Request) {
     );
   }
 
-  // 3. Create design doc in Cosmos (status: "reviewing")
+  // 3. Parse diagram from elements (not stored, used only for AI review)
+  const diagram = parseDiagram(body.elements as ExcalidrawElement[]);
+
+  // 4. Create design doc in Cosmos (no parsedDiagram stored)
   const design = await createDesign({
     topicId: body.topicId,
     userId,
     blobUrl,
     blobKey,
-    parsedDiagram: body.parsedDiagram,
     reviewLevel,
     version,
     forkedFrom: body.forkedFrom,
   });
 
-  // 4. Attempt AI review using platform env vars
-  const apiKey = process.env.AZURE_OPENAI_API_KEY;
-  const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-  const deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
+  // 5. Attempt AI review using BYO key from client (fall back to env vars)
+  const apiKey = body.apiKey || process.env.AZURE_OPENAI_API_KEY;
+  const endpoint = body.endpoint || process.env.AZURE_OPENAI_ENDPOINT;
+  const deployment = body.deployment || process.env.AZURE_OPENAI_DEPLOYMENT;
 
   if (apiKey && endpoint && deployment) {
     try {
-      const aiResult = await analyzeDesign(body.parsedDiagram, {
+      const aiResult = await analyzeDesign(diagram, {
         apiKey,
         endpoint,
         deployment,
         level: reviewLevel,
       });
 
-      // 5. Save review to Cosmos
+      // 6. Save review to Cosmos
       const review = await createReview({
         designId: design._id.toString(),
         version,
@@ -121,11 +118,11 @@ export async function POST(request: Request) {
         followUpQuestions: aiResult.followUpQuestions,
       });
 
-      // 6. Update design status to "reviewed"
+      // 7. Update design status to "reviewed"
       await updateDesignStatus(design._id.toString(), "reviewed");
       design.status = "reviewed";
 
-      // 7. Increment topic submission count
+      // 8. Increment topic submission count
       await incrementSubmissionCount(body.topicId);
 
       return NextResponse.json({ design, review }, { status: 201 });

@@ -21,7 +21,20 @@ export async function getTopics(
     sort === "popular"
       ? { submissionCount: -1 }
       : { createdAt: -1 };
-  return col.find().sort(sortField).limit(limit).toArray();
+
+  try {
+    return await col.find().sort(sortField).limit(limit).toArray();
+  } catch {
+    // Fallback: Cosmos DB may lack indexes for server-side sort — sort in JS
+    const docs = await col.find().limit(limit).toArray();
+    const key = sort === "popular" ? "submissionCount" : "createdAt";
+    docs.sort((a, b) => {
+      const av = a[key] instanceof Date ? (a[key] as Date).getTime() : (a[key] as number);
+      const bv = b[key] instanceof Date ? (b[key] as Date).getTime() : (b[key] as number);
+      return bv - av;
+    });
+    return docs;
+  }
 }
 
 /** Find a topic by its URL slug. */

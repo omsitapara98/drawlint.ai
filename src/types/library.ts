@@ -1,5 +1,4 @@
 import type { ObjectId } from "mongodb";
-import type { ParsedDiagram } from "./diagram";
 import type {
   ReviewLevel,
   ReviewDimension,
@@ -28,7 +27,6 @@ export interface Design {
   version: number;
   blobUrl: string;
   blobKey: string;
-  parsedDiagram: ParsedDiagram;
   status: "submitted" | "reviewing" | "reviewed";
   forkedFrom?: ObjectId;
   reviewLevel: ReviewLevel;
@@ -72,7 +70,9 @@ export interface CreateTopicInput {
 export interface SubmitDesignInput {
   topicId: string;
   elements: unknown[];
-  parsedDiagram: ParsedDiagram;
   reviewLevel?: ReviewLevel;
   forkedFrom?: string;
+  apiKey?: string;
+  endpoint?: string;
+  deployment?: string;
 }

@@ -78,6 +78,8 @@ export default function CanvasPage() {
   const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT_W);
   const [selectedTopic, setSelectedTopic] = useState<TopicOption | null>(null);
   const [submittedDesignId, setSubmittedDesignId] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [byoKeyConfigured, setByoKeyConfigured] = useState(false);
   const [reviewerProgress, setReviewerProgress] = useState<ReviewerProgress>({
     nfrReview: "pending",
     entitiesReview: "pending",
@@ -91,6 +93,17 @@ export default function CanvasPage() {
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useAutoSave(elements);
+
+  /* ── Check BYO key configuration ───────────────────────────── */
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("drawlint:byo-key");
+      if (raw) {
+        const cfg = JSON.parse(raw) as { apiKey?: string };
+        setByoKeyConfigured(!!cfg.apiKey);
+      }
+    } catch { /* noop */ }
+  }, [settingsOpen]); // re-check when settings modal closes
 
   /* ── Fetch topics for the gate ──────────────────────────────── */
   useEffect(() => {
@@ -175,6 +188,16 @@ export default function CanvasPage() {
 
   const handleStartDrawing = useCallback(() => {
     if (!selectedTopic || !reviewLevel) return;
+    // Always start with a fresh canvas
+    const template = createWhiteboardTemplate() as ExcalidrawElement[];
+    setElements(template);
+    setInitialData(template);
+    setCanvasKey((k) => k + 1);
+    setSubmitted(false);
+    setAiReview(null);
+    setAiStatus("idle");
+    setAiError(undefined);
+    setSubmittedDesignId(null);
     setPhase("draw");
   }, [selectedTopic, reviewLevel]);
 
@@ -185,6 +208,7 @@ export default function CanvasPage() {
     setAiStatus("idle");
     setAiError(undefined);
     setSubmittedDesignId(null);
+    setSubmitted(false);
   }, []);
 
   /* ── Canvas data loading ────────────────────────────────────── */
@@ -307,6 +331,20 @@ export default function CanvasPage() {
     setSubmittedDesignId(null);
     startReviewerProgress();
 
+    // Read BYO key from localStorage
+    let apiKey: string | undefined;
+    let endpoint: string | undefined;
+    let deployment: string | undefined;
+    try {
+      const raw = localStorage.getItem("drawlint:byo-key");
+      if (raw) {
+        const cfg = JSON.parse(raw) as { apiKey?: string; endpoint?: string; deployment?: string };
+        apiKey = cfg.apiKey || undefined;
+        endpoint = cfg.endpoint || undefined;
+        deployment = cfg.deployment || undefined;
+      }
+    } catch { /* noop */ }
+
     try {
       const res = await fetch("/api/designs", {
         method: "POST",
@@ -314,8 +352,10 @@ export default function CanvasPage() {
         body: JSON.stringify({
           topicId: selectedTopic._id,
           elements: elements as unknown[],
-          parsedDiagram: diagram,
           reviewLevel,
+          apiKey,
+          endpoint,
+          deployment,
         }),
       });
 
@@ -326,13 +366,22 @@ export default function CanvasPage() {
 
       const data = (await res.json()) as {
         design: { _id: string };
-        review: AIReviewResponse;
+        review: AIReviewResponse | null;
       };
 
       setSubmittedDesignId(data.design._id);
-      setAiReview(data.review);
-      setAiStatus("complete");
-      stopReviewerProgress("done");
+      setSubmitted(true);
+
+      if (data.review) {
+        setAiReview(data.review);
+        setAiStatus("complete");
+        stopReviewerProgress("done");
+      } else {
+        // Design saved without AI review (no BYO key)
+        setAiStatus("complete");
+        stopReviewerProgress("done");
+        setAiError("Design saved! Configure your Azure OpenAI key in Settings to get AI review.");
+      }
     } catch (err) {
       setAiStatus("error");
       setAiError(err instanceof Error ? err.message : "An unexpected error occurred.");
@@ -393,6 +442,7 @@ export default function CanvasPage() {
     setAiStatus("idle");
     setAiError(undefined);
     setSubmittedDesignId(null);
+    setSubmitted(false);
   }, []);
 
   if (initialData === null) {
@@ -581,6 +631,16 @@ export default function CanvasPage() {
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
 
+              {!byoKeyConfigured && (
+                <p className="text-center text-xs text-muted-foreground">
+                  ⚙️ Configure your Azure OpenAI key in{" "}
+                  <button onClick={() => setSettingsOpen(true)} className="text-violet-500 hover:underline">
+                    Settings
+                  </button>
+                  {" "}before submitting
+                </p>
+              )}
+
               {authStatus !== "authenticated" && (
                 <p className="text-center text-xs text-muted-foreground">
                   <Link href="/signin" className="text-violet-500 hover:underline">
@@ -616,10 +676,10 @@ export default function CanvasPage() {
 
             {/* Full-width Excalidraw canvas */}
             <div className="relative flex-1 min-h-0">
-              <DiagramCanvas key={canvasKey} onChange={handleChange} initialData={initialData} />
+              <DiagramCanvas key={canvasKey} onChange={handleChange} initialData={initialData} readOnly={submitted} />
 
               {/* Floating top-right controls */}
-              {!panelOpen && (
+              {!panelOpen && !submitted && (
                 <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
                   <Button
                     variant="outline"
@@ -639,6 +699,30 @@ export default function CanvasPage() {
                     <Send className="mr-1.5 h-3.5 w-3.5" />
                     Submit Design
                   </Button>
+                </div>
+              )}
+
+              {/* Edit & Re-submit controls when canvas is locked */}
+              {!panelOpen && submitted && (
+                <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 rounded-full text-xs"
+                    onClick={() => setSubmitted(false)}
+                  >
+                    <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                    Edit &amp; Re-submit
+                  </Button>
+                  {submittedDesignId && selectedTopic && (
+                    <Link
+                      href={`/library/${selectedTopic.slug}/${submittedDesignId}`}
+                      className="inline-flex h-9 items-center rounded-full bg-emerald-600 px-4 text-sm font-medium text-white shadow-lg transition-all hover:bg-emerald-700"
+                    >
+                      <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                      View in Library
+                    </Link>
+                  )}
                 </div>
               )}
 

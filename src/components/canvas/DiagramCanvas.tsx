@@ -23,11 +23,13 @@ const ExcalidrawWrapper = dynamic(
 interface DiagramCanvasProps {
   onChange?: (elements: readonly ExcalidrawElement[]) => void;
   initialData?: ExcalidrawElement[];
+  readOnly?: boolean;
 }
 
 export default function DiagramCanvas({
   onChange,
   initialData,
+  readOnly,
 }: DiagramCanvasProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -43,6 +45,7 @@ export default function DiagramCanvas({
     <div className="relative w-full h-full">
       <ExcalidrawWrapper
         theme={excalidrawTheme}
+        viewModeEnabled={readOnly}
         initialData={{
           elements: initialData ?? [],
           appState: {

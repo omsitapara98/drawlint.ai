@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
-import type { ParsedDiagram } from "@/types/diagram";
 import type { ReviewLevel } from "@/types/feedback";
 
 interface SubmitDialogProps {
@@ -22,7 +21,6 @@ interface SubmitDialogProps {
   topicSlug: string;
   topicName: string;
   elements: unknown[];
-  parsedDiagram: ParsedDiagram;
 }
 
 type SubmitStep = "confirm" | "uploading" | "analyzing" | "done" | "error";
@@ -36,7 +34,6 @@ export default function SubmitDialog({
   topicSlug,
   topicName,
   elements,
-  parsedDiagram,
 }: SubmitDialogProps) {
   const router = useRouter();
   const [step, setStep] = useState<SubmitStep>("confirm");
@@ -48,6 +45,20 @@ export default function SubmitDialog({
     setStep("uploading");
     setError(null);
 
+    // Read BYO key from localStorage
+    let apiKey: string | undefined;
+    let endpoint: string | undefined;
+    let deployment: string | undefined;
+    try {
+      const raw = localStorage.getItem("drawlint:byo-key");
+      if (raw) {
+        const cfg = JSON.parse(raw) as { apiKey?: string; endpoint?: string; deployment?: string };
+        apiKey = cfg.apiKey || undefined;
+        endpoint = cfg.endpoint || undefined;
+        deployment = cfg.deployment || undefined;
+      }
+    } catch { /* noop */ }
+
     try {
       setStep("analyzing");
       const res = await fetch("/api/designs", {
@@ -56,8 +67,10 @@ export default function SubmitDialog({
         body: JSON.stringify({
           topicId,
           elements,
-          parsedDiagram,
           reviewLevel,
+          apiKey,
+          endpoint,
+          deployment,
         }),
       });
 
@@ -81,7 +94,7 @@ export default function SubmitDialog({
       setStep("error");
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
     }
-  }, [topicId, topicSlug, elements, parsedDiagram, reviewLevel, router]);
+  }, [topicId, topicSlug, elements, reviewLevel, router]);
 
   const handleRetry = useCallback(() => {
     setStep("confirm");
