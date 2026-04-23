@@ -7,31 +7,9 @@ import clientPromise from "@/lib/db/mongodb";
 import { ObjectId } from "mongodb";
 import { ArrowRight, ChevronRight, Inbox } from "lucide-react";
 import { Header } from "@/components/layout";
+import { FilterableDesignGrid } from "@/components/library/FilterableDesignGrid";
 
 const DB_NAME = "drawlint-db";
-
-const SIGNAL_STYLES: Record<string, string> = {
-  "strong-hire": "bg-emerald-500 text-white",
-  hire: "bg-emerald-400 text-white",
-  "lean-hire": "bg-yellow-400 text-yellow-900",
-  "lean-no-hire": "bg-orange-400 text-white",
-  "no-hire": "bg-red-500 text-white",
-};
-
-const SIGNAL_LABELS: Record<string, string> = {
-  "strong-hire": "Strong Hire",
-  hire: "Hire",
-  "lean-hire": "Lean Hire",
-  "lean-no-hire": "Lean No Hire",
-  "no-hire": "No Hire",
-};
-
-const LEVEL_COLORS: Record<string, string> = {
-  mid: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  senior: "bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200",
-  staff: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-  deep: "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200",
-};
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -73,7 +51,7 @@ export default async function TopicDesignsPage({ params }: PageProps) {
             Library
           </Link>
           <ChevronRight className="h-3 w-3" />
-          <span className="text-foreground font-medium">{topic.name}</span>
+          <span className="text-foreground font-medium rounded-full bg-card/60 dark:bg-card/40 px-2 py-0.5 backdrop-blur-sm">{topic.name}</span>
         </nav>
       </div>
 
@@ -91,7 +69,7 @@ export default async function TopicDesignsPage({ params }: PageProps) {
       {/* Designs */}
       <section className="mx-auto w-full max-w-5xl px-4 pb-12">
         {enriched.length === 0 ? (
-          <div className="flex flex-col items-center gap-4 rounded-xl border bg-card py-16 text-center">
+          <div className="flex flex-col items-center gap-4 rounded-xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 shadow-md shadow-black/[0.04] dark:shadow-none py-16 text-center">
             <Inbox className="h-12 w-12 text-muted-foreground/40" />
             <div>
               <p className="text-sm font-medium">No designs submitted yet</p>
@@ -106,78 +84,17 @@ export default async function TopicDesignsPage({ params }: PageProps) {
             </Link>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {enriched.map(({ design, author, review }) => {
-              const signal = review?.leadReviewer?.signal;
-              const date = new Date(design.createdAt).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              });
-
-              const displayName = design.anonymousName ?? String(author?.name ?? "Anonymous");
-              const showAvatar = !design.anonymousName && !!author?.image;
-
-              return (
-                <Link
-                  key={design._id.toString()}
-                  href={`/canvas?view=${design._id.toString()}`}
-                  className="group rounded-xl border bg-card p-5 text-card-foreground transition-all hover:border-violet-300 hover:shadow-md dark:hover:border-violet-700"
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Avatar */}
-                    {showAvatar ? (
-                      <img
-                        src={author!.image as string}
-                        alt={displayName}
-                        className="h-8 w-8 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-violet-700 dark:bg-violet-900 dark:text-violet-300">
-                        {displayName.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
-                        {displayName}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{date}</p>
-                    </div>
-                  </div>
-
-                  {/* Badges */}
-                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[0.65rem] font-medium ${
-                        LEVEL_COLORS[design.reviewLevel] ?? ""
-                      }`}
-                    >
-                      {design.reviewLevel.charAt(0).toUpperCase() + design.reviewLevel.slice(1)}
-                    </span>
-                    {signal && (
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[0.65rem] font-medium ${
-                          SIGNAL_STYLES[signal] ?? ""
-                        }`}
-                      >
-                        {SIGNAL_LABELS[signal] ?? signal}
-                      </span>
-                    )}
-                    {design.status !== "reviewed" && (
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[0.65rem] font-medium text-muted-foreground">
-                        {design.status}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="mt-3 flex items-center gap-1 text-xs font-medium text-violet-600 dark:text-violet-400">
-                    View Design
-                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+          <FilterableDesignGrid
+            designs={enriched.map(({ design, author, review }) => ({
+              designId: design._id.toString(),
+              displayName: design.anonymousName ?? String(author?.name ?? "Anonymous"),
+              avatarUrl: !design.anonymousName && author?.image ? String(author.image) : null,
+              reviewLevel: design.reviewLevel,
+              signal: review?.leadReviewer?.signal ?? null,
+              status: design.status,
+              date: new Date(design.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+            }))}
+          />
         )}
       </section>
     </div>

@@ -10,8 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Shield, ChevronDown, ChevronRight } from "lucide-react";
+import { Shield, ChevronDown } from "lucide-react";
 
 const STORAGE_KEY = "drawlint:byo-key";
 
@@ -83,7 +82,7 @@ export default function SettingsModal({
   }, []);
 
   const inputClass =
-    "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
+    "w-full rounded-lg border border-border/50 dark:border-white/[0.08] bg-card/50 dark:bg-white/5 backdrop-blur-sm px-3 py-2 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:shadow-[0_0_12px_oklch(0.72_0.25_285_/_15%)] transition-all";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -98,9 +97,9 @@ export default function SettingsModal({
 
         <div className="flex flex-col gap-4">
           {/* Privacy notice */}
-          <div className="flex items-start gap-2.5 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950/40">
-            <Shield className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
-            <p className="text-xs leading-relaxed text-blue-800 dark:text-blue-300">
+          <div className="flex items-start gap-2.5 rounded-md border border-primary/20 dark:border-primary/15 bg-primary/5 dark:bg-primary/10 backdrop-blur-sm p-3">
+            <Shield className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <p className="text-xs leading-relaxed text-foreground/70 dark:text-foreground/60">
               Your API key stays in your browser. It&apos;s sent directly to
               Azure OpenAI over HTTPS and is never stored on our servers.
             </p>
@@ -113,11 +112,7 @@ export default function SettingsModal({
               className="flex w-full items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setGuideOpen((v) => !v)}
             >
-              {guideOpen ? (
-                <ChevronDown className="h-3.5 w-3.5" />
-              ) : (
-                <ChevronRight className="h-3.5 w-3.5" />
-              )}
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${guideOpen ? "rotate-0" : "-rotate-90"}`} />
               How to get an Azure OpenAI key
             </button>
             {guideOpen && (
@@ -143,11 +138,11 @@ export default function SettingsModal({
             )}
           </div>
 
-          <Separator />
+          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
           {configured && (
-            <div className="text-xs">
-              <span className="text-green-600 dark:text-green-400">
+            <div className="text-xs animate-glow-pulse">
+              <span className="text-emerald-500 dark:text-emerald-400">
                 ✓ BYO key configured
               </span>
             </div>

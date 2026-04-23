@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -47,7 +47,7 @@ function loadPanelWidth(): number {
 
 const LEVELS: ReviewLevel[] = ["mid", "senior", "staff", "deep"];
 
-export default function CanvasPage() {
+function CanvasPageInner() {
   const { data: session, status: authStatus } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1051,5 +1051,13 @@ export default function CanvasPage() {
 
       </div>
     </>
+  );
+}
+
+export default function CanvasPage() {
+  return (
+    <Suspense fallback={null}>
+      <CanvasPageInner />
+    </Suspense>
   );
 }

@@ -109,14 +109,14 @@ export default function TopicSelector({ onChange }: TopicSelectorProps) {
   }, [onChange]);
 
   return (
-    <div className="flex h-10 items-center border-b bg-background/80 backdrop-blur-sm px-4 gap-3">
+    <div className="flex h-10 items-center border-b border-border/40 dark:border-white/[0.06] bg-card/60 dark:bg-card/40 backdrop-blur-xl px-4 gap-3">
       <span className="text-xs font-medium text-muted-foreground shrink-0">Topic:</span>
 
       <div ref={containerRef} className="relative max-w-xs flex-1">
         {selected ? (
           <button
             onClick={handleClear}
-            className="flex h-7 items-center gap-1.5 rounded-md border bg-violet-50 px-2.5 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-100 dark:bg-violet-900/50 dark:text-violet-300 dark:hover:bg-violet-900"
+            className="flex h-7 items-center gap-1.5 rounded-md border border-primary/20 dark:border-primary/15 bg-primary/10 dark:bg-primary/15 px-2.5 text-xs font-medium text-primary backdrop-blur-sm transition-colors hover:bg-primary/15 dark:hover:bg-primary/20"
           >
             {selected.name}
             <span className="text-[0.6rem] text-violet-500">✕</span>
@@ -124,7 +124,7 @@ export default function TopicSelector({ onChange }: TopicSelectorProps) {
         ) : (
           <>
             <div
-              className="flex h-7 items-center rounded-md border bg-background px-2.5 cursor-pointer"
+              className="flex h-7 items-center rounded-md border border-border/50 dark:border-white/[0.08] bg-card/50 dark:bg-white/5 backdrop-blur-sm px-2.5 cursor-pointer"
               onClick={() => {
                 setOpen(true);
                 setTimeout(() => inputRef.current?.focus(), 0);
@@ -148,7 +148,7 @@ export default function TopicSelector({ onChange }: TopicSelectorProps) {
             </div>
 
             {open && (
-              <div className="absolute top-full left-0 z-50 mt-1 w-full min-w-[240px] rounded-lg border bg-popover shadow-lg">
+              <div className="absolute top-full left-0 z-50 mt-1 w-full min-w-[240px] rounded-lg border border-border/50 dark:border-white/[0.08] bg-card/90 dark:bg-card/80 backdrop-blur-xl shadow-xl dark:shadow-[0_0_30px_oklch(0_0_0_/30%)]">
                 {loading ? (
                   <div className="flex items-center justify-center py-4">
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -159,7 +159,7 @@ export default function TopicSelector({ onChange }: TopicSelectorProps) {
                       <button
                         key={t._id}
                         onClick={() => handleSelect(t)}
-                        className="flex w-full items-center justify-between px-3 py-1.5 text-left text-xs hover:bg-muted transition-colors"
+                        className="flex w-full items-center justify-between px-3 py-1.5 text-left text-xs hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
                       >
                         <span className="font-medium">{t.name}</span>
                         <span className="text-[0.65rem] text-muted-foreground">
@@ -176,7 +176,7 @@ export default function TopicSelector({ onChange }: TopicSelectorProps) {
                       <button
                         onClick={handleCreate}
                         disabled={creating}
-                        className="flex w-full items-center gap-1.5 border-t px-3 py-2 text-left text-xs font-medium text-violet-600 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-900/30 transition-colors disabled:opacity-50"
+                        className="flex w-full items-center gap-1.5 border-t px-3 py-2 text-left text-xs font-medium text-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors disabled:opacity-50"
                       >
                         {creating ? (
                           <Loader2 className="h-3 w-3 animate-spin" />

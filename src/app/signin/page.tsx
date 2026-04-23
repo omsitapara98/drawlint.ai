@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
@@ -42,15 +43,20 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm space-y-8 text-center">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-violet-500/10 via-background to-cyan-500/5 dark:from-violet-500/15 dark:via-background dark:to-cyan-500/8 px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-sm space-y-8 text-center rounded-2xl border border-border/50 dark:border-white/[0.08] bg-card/80 dark:bg-card/60 backdrop-blur-xl p-8 shadow-xl dark:shadow-[0_0_40px_oklch(0_0_0_/_30%)]"
+      >
         {/* Logo */}
         <Link href="/" className="inline-flex flex-col items-center gap-3 hover:opacity-80 transition-opacity">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-2xl font-bold shadow-lg shadow-violet-500/25">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-2xl font-bold shadow-lg shadow-violet-500/25 shadow-[0_0_20px_oklch(0.72_0.25_285_/_30%)]">
             D
           </div>
           <span className="text-xl font-bold tracking-tight">
-            DrawLint<span className="text-violet-500">.ai</span>
+            DrawLint<span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">.ai</span>
           </span>
         </Link>
 
@@ -73,7 +79,7 @@ export default function SignInPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border bg-card/50 dark:bg-white/5 backdrop-blur-sm border-border/50 dark:border-white/[0.08] focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:shadow-[0_0_12px_oklch(0.72_0.25_285_/_15%)] px-3 py-2 text-sm outline-none transition-all"
             />
           </div>
 
@@ -87,18 +93,24 @@ export default function SignInPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Your password"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border bg-card/50 dark:bg-white/5 backdrop-blur-sm border-border/50 dark:border-white/[0.08] focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:shadow-[0_0_12px_oklch(0.72_0.25_285_/_15%)] px-3 py-2 text-sm outline-none transition-all"
             />
           </div>
 
           {error && (
-            <p className="text-sm text-red-500">{error}</p>
+            <motion.p
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-sm text-destructive"
+            >
+              {error}
+            </motion.p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="flex h-11 w-full items-center justify-center rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="flex h-11 w-full items-center justify-center rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-50 shadow-[0_0_20px_oklch(0.72_0.25_285_/_20%)] hover:shadow-[0_0_30px_oklch(0.72_0.25_285_/_35%)]"
           >
             {loading ? (
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -114,10 +126,10 @@ export default function SignInPage() {
         {/* Divider */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t" />
+            <div className="w-full bg-gradient-to-r from-transparent via-border to-transparent h-px" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
+            <span className="bg-card/80 dark:bg-card/60 px-2 text-muted-foreground">
               or continue with
             </span>
           </div>
@@ -126,7 +138,7 @@ export default function SignInPage() {
         <div className="flex flex-col gap-3">
           <button
             onClick={() => signIn("google", { callbackUrl: "/canvas" })}
-            className="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border bg-white text-sm font-medium text-black transition-colors hover:bg-gray-50 dark:bg-white dark:text-black dark:hover:bg-gray-100"
+            className="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border border-border/50 dark:border-white/[0.08] bg-card/50 dark:bg-white/5 backdrop-blur-sm text-sm font-medium transition-colors hover:border-primary/30"
           >
             <svg className="h-4.5 w-4.5" viewBox="0 0 24 24">
               <path
@@ -151,7 +163,7 @@ export default function SignInPage() {
 
           <button
             onClick={() => signIn("github", { callbackUrl: "/canvas" })}
-            className="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border bg-[#24292f] text-sm font-medium text-white transition-colors hover:bg-[#1b1f23]"
+            className="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border border-border/50 dark:border-white/[0.08] bg-[#24292f] text-sm font-medium text-white transition-all hover:bg-[#1b1f23] hover:shadow-[0_0_12px_oklch(0.72_0.25_285_/_15%)]"
           >
             <svg className="h-4.5 w-4.5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z" />
@@ -162,11 +174,11 @@ export default function SignInPage() {
 
         <p className="text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-violet-500 hover:underline">
+          <Link href="/signup" className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent hover:underline">
             Sign up
           </Link>
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }
