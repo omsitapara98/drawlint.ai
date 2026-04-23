@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ParsedDiagram, GraphNode } from "@/types/diagram";
-import type { AIReviewResponse, AnalysisStatus, FeedbackItem, ReviewHighlight, ReviewDimension, ReviewLevel } from "@/types/feedback";
+import type { AIReviewResponse, AnalysisStatus, FeedbackItem, ReviewHighlight, ReviewDimension, ReviewLevel, ReviewerProgress, ReviewerKey, ReviewerStatus } from "@/types/feedback";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,8 @@ import {
   CheckCircle2,
   AlertOctagon,
   TrendingUp,
+  XCircle,
+  Circle,
 } from "lucide-react";
 
 interface FeedbackPanelProps {
@@ -30,6 +32,7 @@ interface FeedbackPanelProps {
   aiReview?: AIReviewResponse | null;
   aiStatus?: AnalysisStatus;
   aiError?: string;
+  reviewerProgress?: ReviewerProgress;
   onRetry?: () => void;
   onOpenSettings?: () => void;
 }
@@ -204,12 +207,50 @@ function IssueRow({ issue }: { issue: FeedbackItem }) {
   );
 }
 
+/* ── Reviewer Progress Row ────────────────────────────────────── */
+
+const REVIEWER_ORDER: { key: ReviewerKey; label: string; emoji: string }[] = [
+  { key: "nfrReview", label: "NFR Review", emoji: "📋" },
+  { key: "entitiesReview", label: "Core Entities Review", emoji: "🗃️" },
+  { key: "capacityReview", label: "Capacity Review", emoji: "📊" },
+  { key: "apiReview", label: "API Review", emoji: "🔌" },
+  { key: "hldReview", label: "HLD Review", emoji: "🏗️" },
+  { key: "leadReviewer", label: "Lead Reviewer", emoji: "🎯" },
+];
+
+function ReviewerStatusIcon({ status }: { status: ReviewerStatus }) {
+  switch (status) {
+    case "analyzing":
+      return <Loader2 className="h-4 w-4 animate-spin text-violet-500" />;
+    case "done":
+      return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
+    case "error":
+      return <XCircle className="h-4 w-4 text-red-500" />;
+    default:
+      return <Circle className="h-4 w-4 text-muted-foreground/40" />;
+  }
+}
+
+function ReviewerStatusLabel({ status }: { status: ReviewerStatus }) {
+  switch (status) {
+    case "analyzing":
+      return <span className="text-xs text-violet-600 dark:text-violet-400">Analyzing…</span>;
+    case "done":
+      return <span className="text-xs text-emerald-600 dark:text-emerald-400">Done</span>;
+    case "error":
+      return <span className="text-xs text-red-600 dark:text-red-400">Failed</span>;
+    default:
+      return <span className="text-xs text-muted-foreground">Pending</span>;
+  }
+}
+
 /* ── AI Review Tab Content ───────────────────────────────────── */
 
 function AIReviewContent({
   review,
   status,
   error,
+  reviewerProgress,
   onRetry,
   onOpenSettings,
   hasBYOKey,
@@ -217,6 +258,7 @@ function AIReviewContent({
   review: AIReviewResponse | null;
   status: AnalysisStatus;
   error?: string;
+  reviewerProgress?: ReviewerProgress;
   onRetry?: () => void;
   onOpenSettings?: () => void;
   hasBYOKey: boolean;
@@ -244,17 +286,34 @@ function AIReviewContent({
     );
   }
 
-  // Loading
+  // Loading — per-reviewer progress
   if (status === "analyzing") {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
-        <Loader2 className="h-10 w-10 animate-spin text-violet-500" />
+      <div className="flex h-full flex-col items-center justify-center gap-5 p-8">
         <div className="text-center">
           <p className="text-sm font-medium">Analyzing your design…</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            AI reviewers are evaluating your design…
+            AI reviewers are evaluating your design
           </p>
         </div>
+        <Card className="w-full max-w-xs">
+          <CardContent className="py-3">
+            <div className="space-y-2">
+              {REVIEWER_ORDER.map(({ key, label, emoji }) => {
+                const s = reviewerProgress?.[key] ?? "pending";
+                return (
+                  <div key={key} className="flex items-center gap-2.5">
+                    <ReviewerStatusIcon status={s} />
+                    <span className="text-sm flex-1">
+                      {emoji} {label}
+                    </span>
+                    <ReviewerStatusLabel status={s} />
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -613,6 +672,7 @@ export function FeedbackPanel({
   aiReview,
   aiStatus = "idle",
   aiError,
+  reviewerProgress,
   onRetry,
   onOpenSettings,
 }: FeedbackPanelProps) {
@@ -665,6 +725,7 @@ export function FeedbackPanel({
           review={aiReview ?? null}
           status={aiStatus}
           error={aiError}
+          reviewerProgress={reviewerProgress}
           onRetry={onRetry}
           onOpenSettings={onOpenSettings}
           hasBYOKey={hasBYOKey}

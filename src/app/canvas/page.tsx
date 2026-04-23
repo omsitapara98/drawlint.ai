@@ -12,8 +12,9 @@ import { useAutoSave } from "@/hooks";
 import { loadDiagram, clearDiagram } from "@/lib/storage";
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
-import type { AIReviewResponse, AnalysisStatus, ReviewLevel } from "@/types/feedback";
-import { X, MessageSquareText, RotateCcw } from "lucide-react";
+import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
+import { X, MessageSquareText, RotateCcw, Monitor } from "lucide-react";
+import Link from "next/link";
 
 interface BYOConfig {
   apiKey: string;
@@ -65,8 +66,17 @@ export default function CanvasPage() {
   const [aiError, setAiError] = useState<string | undefined>();
   const [reviewLevel, setReviewLevel] = useState<ReviewLevel>("senior");
   const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT_W);
+  const [reviewerProgress, setReviewerProgress] = useState<ReviewerProgress>({
+    nfrReview: "pending",
+    entitiesReview: "pending",
+    capacityReview: "pending",
+    apiReview: "pending",
+    hldReview: "pending",
+    leadReviewer: "pending",
+  });
   const resizingRef = useRef(false);
   const prevFingerprintRef = useRef("");
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useAutoSave(elements);
 
@@ -126,6 +136,59 @@ export default function CanvasPage() {
     ["rectangle", "diamond", "ellipse", "arrow", "line"].includes(el.type),
   );
 
+  // Clean up progress interval on unmount
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    };
+  }, []);
+
+  /** Start simulated per-reviewer progress during analysis. */
+  const startReviewerProgress = useCallback(() => {
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    const allPending: ReviewerProgress = {
+      nfrReview: "pending", entitiesReview: "pending", capacityReview: "pending",
+      apiReview: "pending", hldReview: "pending", leadReviewer: "pending",
+    };
+    setReviewerProgress(allPending);
+
+    // Section reviewers first (shuffled), then lead last
+    const sections: ReviewerKey[] = ["nfrReview", "entitiesReview", "capacityReview", "apiReview", "hldReview"];
+    for (let i = sections.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [sections[i], sections[j]] = [sections[j], sections[i]];
+    }
+    const order: ReviewerKey[] = [...sections, "leadReviewer"];
+    let step = 0;
+
+    progressIntervalRef.current = setInterval(() => {
+      if (step < order.length) {
+        const key = order[step];
+        setReviewerProgress((prev) => ({ ...prev, [key]: "analyzing" }));
+        if (step > 0) {
+          const prevKey = order[step - 1];
+          setReviewerProgress((prev) => ({ ...prev, [prevKey]: "done" }));
+        }
+        step++;
+      } else {
+        // All have been set to analyzing, nothing left
+        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    }, 2000);
+  }, []);
+
+  const stopReviewerProgress = useCallback((final: "done" | "error") => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    setReviewerProgress({
+      nfrReview: final, entitiesReview: final, capacityReview: final,
+      apiReview: final, hldReview: final, leadReviewer: final,
+    });
+  }, []);
+
   /** Shared helper — fires the actual AI API call. */
   const fireAiAnalysis = useCallback(
     async (diagram: ParsedDiagram) => {
@@ -140,6 +203,7 @@ export default function CanvasPage() {
       setAiStatus("analyzing");
       setAiError(undefined);
       setAiReview(null);
+      startReviewerProgress();
 
       try {
         const res = await fetch("/api/analyze", {
@@ -162,14 +226,16 @@ export default function CanvasPage() {
         const data = (await res.json()) as AIReviewResponse;
         setAiReview(data);
         setAiStatus("complete");
+        stopReviewerProgress("done");
       } catch (err) {
         setAiStatus("error");
         setAiError(
           err instanceof Error ? err.message : "An unexpected error occurred.",
         );
+        stopReviewerProgress("error");
       }
     },
-    [reviewLevel],
+    [reviewLevel, startReviewerProgress, stopReviewerProgress],
   );
 
   /** Opens panel — shows cached AI results when available, otherwise fires analysis. */
@@ -250,7 +316,30 @@ export default function CanvasPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col">
+    <>
+      {/* Mobile guard — visible only on small screens */}
+      <div className="flex md:hidden h-screen flex-col items-center justify-center gap-6 px-6 text-center bg-background">
+        <span className="text-lg font-bold tracking-tight">
+          Draw<span className="text-violet-500">Lint</span>.ai
+        </span>
+        <Monitor className="h-16 w-16 text-violet-500" strokeWidth={1.5} />
+        <div className="space-y-2">
+          <h1 className="text-xl font-semibold">Desktop Experience Required</h1>
+          <p className="text-sm text-muted-foreground max-w-sm">
+            DrawLint.ai&apos;s whiteboard canvas requires a desktop browser for the
+            best experience. Please visit us on a laptop or desktop computer.
+          </p>
+        </div>
+        <Link
+          href="/"
+          className="inline-flex h-9 items-center rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-5 text-sm font-medium text-white shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5"
+        >
+          Back to Home
+        </Link>
+      </div>
+
+      {/* Main canvas — hidden on mobile */}
+      <div className="hidden md:flex h-screen flex-col">
       <Header onOpenSettings={() => setSettingsOpen(true)} />
 
       {/* Full-width Excalidraw canvas */}
@@ -348,6 +437,7 @@ export default function CanvasPage() {
                 aiReview={aiReview}
                 aiStatus={aiStatus}
                 aiError={aiError}
+                reviewerProgress={reviewerProgress}
                 onRetry={handleReAnalyze}
                 onOpenSettings={() => setSettingsOpen(true)}
               />
@@ -365,6 +455,7 @@ export default function CanvasPage() {
       </div>
 
       <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
-    </div>
+      </div>
+    </>
   );
 }

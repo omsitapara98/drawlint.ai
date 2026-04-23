@@ -21,6 +21,10 @@ export interface ReviewHighlight {
 
 export type AnalysisStatus = "idle" | "analyzing" | "complete" | "error";
 
+export type ReviewerStatus = "pending" | "analyzing" | "done" | "error";
+export type ReviewerKey = "nfrReview" | "entitiesReview" | "capacityReview" | "apiReview" | "hldReview" | "leadReviewer";
+export type ReviewerProgress = Record<ReviewerKey, ReviewerStatus>;
+
 export interface SectionContents {
   functionalRequirements: string;
   assumptions: string;
