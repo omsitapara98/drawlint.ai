@@ -62,6 +62,7 @@ function CanvasPageInner() {
   const [viewModeInitialized, setViewModeInitialized] = useState(false);
   const [viewIsAuthor, setViewIsAuthor] = useState(false);
   const [viewAuthorName, setViewAuthorName] = useState<string | null>(null);
+  const [viewEditMode, setViewEditMode] = useState(false);
 
   /* ── Phase gate ──────────────────────────────────────────────── */
   const [phase, setPhase] = useState<"select" | "draw">(
@@ -276,8 +277,7 @@ function CanvasPageInner() {
         if (metaData.design.anonymousName && !isOwner) {
           setViewAuthorName(metaData.design.anonymousName);
         } else if (metaData.design.anonymousName && isOwner) {
-          const realName = metaData.author?.name ? String(metaData.author.name) : "You";
-          setViewAuthorName(`${realName} (Posted as ${metaData.design.anonymousName})`);
+          setViewAuthorName(metaData.design.anonymousName);
         } else {
           setViewAuthorName(metaData.author?.name ? String(metaData.author.name) : "Anonymous");
         }
@@ -615,6 +615,7 @@ function CanvasPageInner() {
                 stopReviewerProgress("done");
                 setAiError("Design saved! Configure your Azure OpenAI key in Settings to get AI review.");
               }
+              setViewEditMode(false);
               break;
             case "error":
               throw new Error(event.message ?? "AI review failed");
@@ -937,7 +938,7 @@ function CanvasPageInner() {
               {/* Right: action buttons */}
               <div className="ml-auto flex items-center gap-2 shrink-0">
                 {/* Drawing mode: Submit / Re-submit */}
-                {!submitted && !viewDesignId && (
+                {((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode)) && (
                   <button
                     onClick={handleSubmitDesign}
                     disabled={!hasDrawnShapes || aiStatus === "analyzing"}
@@ -963,13 +964,11 @@ function CanvasPageInner() {
                   </button>
                 )}
 
-                {/* View mode: Edit + Delete (owner only) */}
-                {viewDesignId && viewIsAuthor && (
+                {/* View mode: Edit + Delete + AI Review (owner only, not in edit mode) */}
+                {viewDesignId && viewIsAuthor && !viewEditMode && (
                   <>
                     <button
-                      onClick={() => {
-                        window.location.href = `/canvas?edit=${viewDesignId}&topic=${selectedTopic?.slug ?? ""}`;
-                      }}
+                      onClick={() => setViewEditMode(true)}
                       className="inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
                     >
                       <RotateCcw className="h-3 w-3" />
@@ -988,16 +987,24 @@ function CanvasPageInner() {
                       <X className="h-3 w-3" />
                       Delete
                     </button>
+                    {!panelOpen && aiReview && (
+                      <button
+                        onClick={() => setPanelOpen(true)}
+                        className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90"
+                      >
+                        AI Review
+                      </button>
+                    )}
                   </>
                 )}
 
-                {/* Show Review toggle (when panel is closed and review exists) */}
-                {!panelOpen && aiReview && (
+                {/* Show Review toggle (non-owner view, normal flow, or view edit mode) */}
+                {!panelOpen && aiReview && !(viewDesignId && viewIsAuthor && !viewEditMode) && (
                   <button
                     onClick={() => setPanelOpen(true)}
                     className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90"
                   >
-                    Show Review
+                    {viewDesignId ? "AI Review" : "Show Review"}
                   </button>
                 )}
               </div>
@@ -1005,7 +1012,7 @@ function CanvasPageInner() {
 
             {/* Full-width Excalidraw canvas — NO floating controls */}
             <div className="relative flex-1 min-h-0">
-              <DiagramCanvas key={canvasKey} onChange={handleChange} initialData={initialData} readOnly={submitted || !!viewDesignId} />
+              <DiagramCanvas key={canvasKey} onChange={handleChange} initialData={initialData} readOnly={!!viewDesignId ? !viewEditMode : submitted} />
 
               {/* Floating Feedback Panel — slides in from right */}
               <div
