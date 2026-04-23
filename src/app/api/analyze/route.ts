@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import type { ParsedDiagram } from "@/types/diagram";
-import type { ReviewLevel, ReviewMode } from "@/types/feedback";
-import { analyzeDesign, analyzeDesignMultiCall, AzureOpenAIError } from "@/lib/ai";
+import type { ReviewLevel } from "@/types/feedback";
+import { analyzeDesign, AzureOpenAIError } from "@/lib/ai";
 
 const VALID_LEVELS: ReviewLevel[] = ["mid", "senior", "staff", "deep"];
-const VALID_MODES: ReviewMode[] = ["single", "multi"];
 
 interface AnalyzeRequestBody {
   diagram?: ParsedDiagram;
@@ -12,7 +11,6 @@ interface AnalyzeRequestBody {
   endpoint?: string;
   deployment?: string;
   level?: ReviewLevel;
-  mode?: ReviewMode;
 }
 
 export async function POST(request: Request) {
@@ -59,18 +57,13 @@ export async function POST(request: Request) {
 
   try {
     const level: ReviewLevel = body.level && VALID_LEVELS.includes(body.level) ? body.level : "senior";
-    const mode: ReviewMode = body.mode && VALID_MODES.includes(body.mode) ? body.mode : "single";
 
-    const opts = {
+    const review = await analyzeDesign(body.diagram, {
       apiKey: body.apiKey,
       endpoint: body.endpoint,
       deployment: body.deployment,
       level,
-    };
-
-    const review = mode === "multi"
-      ? await analyzeDesignMultiCall(body.diagram, opts)
-      : await analyzeDesign(body.diagram, opts);
+    });
 
     return NextResponse.json(review);
   } catch (err) {

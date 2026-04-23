@@ -35,10 +35,6 @@ export interface SectionContents {
 
 export type ReviewLevel = "mid" | "senior" | "staff" | "deep";
 
-/* ── Review Mode ─────────────────────────────────────────────── */
-
-export type ReviewMode = "single" | "multi";
-
 /* ── Multi-Reviewer AI Response Types ────────────────────────── */
 
 export interface ReviewDimension {

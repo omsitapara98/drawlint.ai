@@ -1,52 +1,14 @@
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, ReviewDimension, ReviewHighlight, FeedbackItem, ReviewLevel, LeadReviewer } from "@/types/feedback";
-import { getReviewPrompt, getReviewerPrompt, getLeadReviewerPrompt } from "./prompts";
+import { getReviewerPrompt, getLeadReviewerPrompt } from "./prompts";
 import type { ReviewerSection } from "./prompts";
-import { formatDiagramForAnalysis, formatSectionForReview } from "./format-prompt";
+import { formatSectionForReview } from "./format-prompt";
 
 interface AnalyzeOptions {
   apiKey?: string;
   endpoint?: string;
   deployment?: string;
   level?: ReviewLevel;
-}
-
-/** Detect whether the endpoint is a Foundry /v1/ endpoint or classic Azure OpenAI. */
-function isFoundryEndpoint(endpoint: string): boolean {
-  return /\/v1(\/|$)/.test(endpoint);
-}
-
-/** Build the request URL and headers based on endpoint type. */
-function buildRequest(endpoint: string, deployment: string, apiKey: string): {
-  url: string;
-  headers: Record<string, string>;
-  extraBody: Record<string, string>;
-} {
-  const cleanEndpoint = endpoint.replace(/\/+$/, "");
-
-  if (isFoundryEndpoint(cleanEndpoint)) {
-    const url = cleanEndpoint.endsWith("/chat/completions")
-      ? cleanEndpoint
-      : `${cleanEndpoint}/chat/completions`;
-    return {
-      url,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      extraBody: { model: deployment },
-    };
-  }
-
-  const apiVersion = "2025-01-01-preview";
-  return {
-    url: `${cleanEndpoint}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`,
-    headers: {
-      "Content-Type": "application/json",
-      "api-key": apiKey,
-    },
-    extraBody: {},
-  };
 }
 
 export class AzureOpenAIError extends Error {
@@ -58,131 +20,6 @@ export class AzureOpenAIError extends Error {
     super(message);
     this.name = "AzureOpenAIError";
   }
-}
-
-/**
- * Analyze a system design diagram using Azure OpenAI with level-based review prompts.
- *
- * Uses the caller's own Azure OpenAI credentials (BYO key).
- */
-export async function analyzeDesign(
-  diagram: ParsedDiagram,
-  options?: AnalyzeOptions,
-): Promise<AIReviewResponse> {
-  const apiKey = options?.apiKey ?? process.env.AZURE_OPENAI_API_KEY ?? "";
-  const endpoint = options?.endpoint ?? process.env.AZURE_OPENAI_ENDPOINT ?? "";
-  const deployment = options?.deployment ?? process.env.AZURE_OPENAI_DEPLOYMENT ?? "";
-  const level: ReviewLevel = options?.level ?? "senior";
-
-  if (!apiKey) {
-    throw new AzureOpenAIError(
-      "No Azure OpenAI API key configured. Provide your own key or set AZURE_OPENAI_API_KEY.",
-      400,
-      "missing_api_key",
-    );
-  }
-  if (!endpoint) {
-    throw new AzureOpenAIError(
-      "No Azure OpenAI endpoint configured. Provide your own endpoint or set AZURE_OPENAI_ENDPOINT.",
-      400,
-      "missing_endpoint",
-    );
-  }
-  if (!deployment) {
-    throw new AzureOpenAIError(
-      "No Azure OpenAI deployment configured. Provide your own deployment or set AZURE_OPENAI_DEPLOYMENT.",
-      400,
-      "missing_deployment",
-    );
-  }
-
-  const formattedDiagram = formatDiagramForAnalysis(diagram, level);
-
-  const { url, headers, extraBody } = buildRequest(endpoint, deployment, apiKey);
-
-  const body = {
-    ...extraBody,
-    messages: [
-      { role: "system", content: getReviewPrompt(level) },
-      { role: "user", content: formattedDiagram },
-    ],
-    temperature: 0.3,
-    max_completion_tokens: 4096,
-    response_format: { type: "json_object" },
-  };
-
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-  } catch (err) {
-    throw new AzureOpenAIError(
-      `Network error connecting to Azure OpenAI: ${err instanceof Error ? err.message : String(err)}`,
-      undefined,
-      "network_error",
-    );
-  }
-
-  if (!response.ok) {
-    const status = response.status;
-    let errorBody = "";
-    try {
-      errorBody = await response.text();
-    } catch {
-      // ignore read errors
-    }
-
-    if (status === 401 || status === 403) {
-      throw new AzureOpenAIError(
-        "Authentication failed. Check your Azure OpenAI API key and endpoint.",
-        status,
-        "auth_error",
-      );
-    }
-    if (status === 429) {
-      throw new AzureOpenAIError(
-        "Rate limit exceeded. Please wait a moment and try again.",
-        429,
-        "rate_limit",
-      );
-    }
-    throw new AzureOpenAIError(
-      `Azure OpenAI request failed (HTTP ${status}): ${errorBody}`,
-      status,
-      "api_error",
-    );
-  }
-
-  let json: unknown;
-  try {
-    json = await response.json();
-  } catch {
-    throw new AzureOpenAIError(
-      "Failed to parse Azure OpenAI response as JSON.",
-      undefined,
-      "parse_error",
-    );
-  }
-
-  // Extract the assistant message content
-  const content = extractContent(json);
-
-  // Parse the inner JSON from the assistant message
-  let review: AIReviewResponse;
-  try {
-    review = JSON.parse(content) as AIReviewResponse;
-  } catch {
-    throw new AzureOpenAIError(
-      "Azure OpenAI returned a non-JSON response. The model may have produced invalid output.",
-      undefined,
-      "malformed_response",
-    );
-  }
-
-  return validateReview(review, level);
 }
 
 /** Extract the text content from the Azure OpenAI chat completion response. */
@@ -303,35 +140,7 @@ function validateLeadReviewer(raw: unknown): LeadReviewer {
   };
 }
 
-/** Validate and normalize the parsed AIReviewResponse. */
-function validateReview(raw: AIReviewResponse, level: ReviewLevel): AIReviewResponse {
-  return {
-    level,
-    summary: typeof raw.summary === "string" ? raw.summary : "",
-    // Section-based reviewers — always present
-    nfrReview: validateDimension(raw.nfrReview),
-    entitiesReview: validateDimension(raw.entitiesReview),
-    capacityReview: validateDimension(raw.capacityReview),
-    apiReview: validateDimension(raw.apiReview),
-    hldReview: validateDimension(raw.hldReview),
-    leadReviewer: validateLeadReviewer(raw.leadReviewer),
-    followUpQuestions: Array.isArray(raw.followUpQuestions)
-      ? raw.followUpQuestions
-      : [],
-  };
-}
-
-/* ── Multi-call mode ─────────────────────────────────────────── */
-
 const REVIEWER_SECTIONS: ReviewerSection[] = ["nfr", "entities", "capacity", "api", "hld"];
-
-const SECTION_TO_REVIEW_KEY: Record<ReviewerSection, keyof Pick<AIReviewResponse, "nfrReview" | "entitiesReview" | "capacityReview" | "apiReview" | "hldReview">> = {
-  nfr: "nfrReview",
-  entities: "entitiesReview",
-  capacity: "capacityReview",
-  api: "apiReview",
-  hld: "hldReview",
-};
 
 const SECTION_DISPLAY_NAME: Record<ReviewerSection, string> = {
   nfr: "NFR",
@@ -345,7 +154,7 @@ const SECTION_DISPLAY_NAME: Record<ReviewerSection, string> = {
  * Analyze a system design diagram using multiple focused API calls.
  * 5 section reviewers run in parallel, then 1 Lead Reviewer synthesizes.
  */
-export async function analyzeDesignMultiCall(
+export async function analyzeDesign(
   diagram: ParsedDiagram,
   options?: AnalyzeOptions,
 ): Promise<AIReviewResponse> {
@@ -364,12 +173,13 @@ export async function analyzeDesignMultiCall(
     throw new AzureOpenAIError("No Azure OpenAI deployment configured.", 400, "missing_deployment");
   }
 
-  const { url, headers, extraBody } = buildRequest(endpoint, deployment, apiKey);
+  const apiVersion = "2025-01-01-preview";
+  const url = `${endpoint.replace(/\/+$/, "")}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
+  const headers: Record<string, string> = { "Content-Type": "application/json", "api-key": apiKey };
 
   /** Make a single API call and parse the JSON response. */
   async function callReviewer(systemPrompt: string, userContent: string): Promise<unknown> {
     const body = {
-      ...extraBody,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
