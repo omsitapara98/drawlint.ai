@@ -516,7 +516,6 @@ function CanvasPageInner() {
     setAiStatus("analyzing");
     setAiError(undefined);
     setAiReview(null);
-    setSubmittedDesignId(null);
     startReviewerProgress();
 
     // Read BYO key from localStorage
@@ -534,8 +533,9 @@ function CanvasPageInner() {
     } catch { /* noop */ }
 
     try {
-      const isUpdate = !!editDesignId;
-      const url = isUpdate ? `/api/designs/${editDesignId}` : "/api/designs";
+      const isUpdate = !!(editDesignId || submittedDesignId);
+      const targetId = editDesignId || submittedDesignId;
+      const url = isUpdate ? `/api/designs/${targetId}` : "/api/designs";
       const method = isUpdate ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -627,7 +627,7 @@ function CanvasPageInner() {
       setAiError(err instanceof Error ? err.message : "An unexpected error occurred.");
       stopReviewerProgress("error");
     }
-  }, [selectedTopic, authStatus, router, elements, reviewLevel, anonymousMode, startReviewerProgress, stopReviewerProgress]);
+  }, [selectedTopic, authStatus, router, elements, reviewLevel, anonymousMode, editDesignId, submittedDesignId, startReviewerProgress, stopReviewerProgress]);
 
   /** Retry a failed submission. */
   const handleRetrySubmit = useCallback(async () => {
@@ -948,7 +948,7 @@ function CanvasPageInner() {
                     ) : (
                       <Send className="h-3 w-3" />
                     )}
-                    {aiStatus === "analyzing" ? "Analyzing…" : (editDesignId ? "Re-submit" : "Submit")}
+                    {aiStatus === "analyzing" ? "Analyzing…" : (editDesignId || submittedDesignId ? "Re-submit" : "Submit")}
                   </button>
                 )}
 
