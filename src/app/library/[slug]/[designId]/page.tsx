@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
+import { auth } from "@/auth";
 import { getDesignById } from "@/lib/db/designs";
 import { getReviewByDesignId } from "@/lib/db/reviews";
 import { getTopicBySlug } from "@/lib/db/topics";
@@ -53,6 +54,10 @@ export default async function DesignDetailPage({ params }: PageProps) {
   if (!design) notFound();
 
   const review = await getReviewByDesignId(designId);
+
+  // Check if current user is the author
+  const session = await auth();
+  const isAuthor = !!(session?.user?.id && session.user.id === design.userId.toString());
 
   // Fetch author
   const client = await clientPromise;
@@ -161,6 +166,8 @@ export default async function DesignDetailPage({ params }: PageProps) {
       <DesignDetailClient
         designId={design._id.toString()}
         review={serializedReview}
+        isAuthor={isAuthor}
+        topicSlug={slug}
       />
     </div>
   );

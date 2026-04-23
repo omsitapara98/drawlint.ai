@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { DiagramCanvas } from "@/components/canvas";
 import { FeedbackPanel } from "@/components/feedback";
@@ -51,6 +51,12 @@ const LEVELS: ReviewLevel[] = ["mid", "senior", "staff", "deep"];
 export default function CanvasPage() {
   const { data: session, status: authStatus } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  /* ── Edit mode (from design detail page) ────────────────────── */
+  const editDesignId = searchParams.get("edit");
+  const editTopicSlug = searchParams.get("topic");
+  const [editModeInitialized, setEditModeInitialized] = useState(false);
 
   /* ── Phase gate ──────────────────────────────────────────────── */
   const [phase, setPhase] = useState<"select" | "draw">("select");
@@ -121,6 +127,49 @@ export default function CanvasPage() {
     }
     fetchTopics();
   }, []);
+
+  /* ── Edit mode: load design elements + skip topic gate ──────── */
+  useEffect(() => {
+    if (!editDesignId || editModeInitialized || topicsLoading) return;
+
+    async function initEditMode() {
+      try {
+        // Find the matching topic from fetched topics
+        if (editTopicSlug) {
+          const matchedTopic = topics.find((t) => t.slug === editTopicSlug);
+          if (matchedTopic) setSelectedTopic(matchedTopic);
+        }
+
+        // Fetch design metadata to get reviewLevel
+        const metaRes = await fetch(`/api/designs/${editDesignId}`);
+        if (metaRes.ok) {
+          const metaData = (await metaRes.json()) as {
+            design: { reviewLevel?: string };
+          };
+          if (metaData.design.reviewLevel) {
+            setReviewLevel(metaData.design.reviewLevel as ReviewLevel);
+          }
+        }
+
+        // Fetch design elements
+        const res = await fetch(`/api/designs/${editDesignId}/elements`);
+        if (res.ok) {
+          const data = (await res.json()) as { elements: ExcalidrawElement[] };
+          setElements(data.elements);
+          setInitialData(data.elements);
+          setCanvasKey((k) => k + 1);
+        }
+
+        setPhase("draw");
+      } catch {
+        // Fall back to normal flow
+      } finally {
+        setEditModeInitialized(true);
+      }
+    }
+
+    initEditMode();
+  }, [editDesignId, editTopicSlug, editModeInitialized, topics, topicsLoading]);
 
   // Close topic dropdown on outside click
   useEffect(() => {
@@ -697,7 +746,7 @@ export default function CanvasPage() {
                     className="h-9 rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-4 text-sm text-white shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:shadow-none disabled:translate-y-0"
                   >
                     <Send className="mr-1.5 h-3.5 w-3.5" />
-                    Submit Design
+                    {editDesignId ? "Re-submit Design" : "Submit Design"}
                   </Button>
                 </div>
               )}
