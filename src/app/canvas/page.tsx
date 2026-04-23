@@ -1036,17 +1036,7 @@ function CanvasPageInner() {
                       <span className="text-sm font-semibold">Design Review</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      {aiStatus === "complete" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleRetrySubmit}
-                          disabled={!hasDrawnShapes}
-                          className="text-xs"
-                        >
-                          Re-submit
-                        </Button>
-                      )}
+
                       <Button
                         variant="ghost"
                         size="icon"
@@ -1062,7 +1052,6 @@ function CanvasPageInner() {
                   {/* Panel content */}
                   <div className="flex-1 overflow-hidden">
                     <FeedbackPanel
-                      diagram={parsedDiagram}
                       aiReview={aiReview}
                       aiStatus={aiStatus}
                       aiError={aiError}
