@@ -245,15 +245,11 @@ export async function PUT(
     return new Response(stream, { headers: NDJSON_HEADERS });
   }
 
-  // AI path — create AbortController tied to client disconnect
-  const abortController = new AbortController();
-  request.signal.addEventListener("abort", () => abortController.abort(), { once: true });
-
+  // AI path — runs to completion even if client disconnects; review is saved to DB
   const stream = new ReadableStream({
     async start(controller) {
       const enqueue = (data: object) => {
-        if (abortController.signal.aborted) return;
-        try { controller.enqueue(encoder.encode(JSON.stringify(data) + "\n")); } catch { /* closed */ }
+        try { controller.enqueue(encoder.encode(JSON.stringify(data) + "\n")); } catch { /* client already disconnected */ }
       };
 
       enqueue({ type: "design", designId, version });
@@ -264,7 +260,6 @@ export async function PUT(
           endpoint,
           deployment,
           level: reviewLevel,
-          signal: abortController.signal,
           onSectionComplete: (key, data) => {
             enqueue({ type: "section", section: key, data });
           },
@@ -292,17 +287,12 @@ export async function PUT(
 
         enqueue({ type: "complete", review: aiResult, design: updatedDesign });
       } catch (err) {
-        if (!abortController.signal.aborted) {
-          console.error("AI review failed during update:", err);
-          enqueue({ type: "error", message: err instanceof Error ? err.message : "AI review failed" });
-        }
+        console.error("AI review failed during update:", err);
+        enqueue({ type: "error", message: err instanceof Error ? err.message : "AI review failed" });
         await updateDesignStatus(designId, "submitted").catch(console.error);
       } finally {
         try { controller.close(); } catch { /* already closed */ }
       }
-    },
-    cancel() {
-      abortController.abort();
     },
   });
 

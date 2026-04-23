@@ -142,15 +142,11 @@ export async function POST(request: Request) {
     return new Response(stream, { headers: NDJSON_HEADERS });
   }
 
-  // AI path — create AbortController tied to client disconnect
-  const abortController = new AbortController();
-  request.signal.addEventListener("abort", () => abortController.abort(), { once: true });
-
+  // AI path — runs to completion even if client disconnects; review is saved to DB
   const stream = new ReadableStream({
     async start(controller) {
       const enqueue = (data: object) => {
-        if (abortController.signal.aborted) return;
-        try { controller.enqueue(encoder.encode(JSON.stringify(data) + "\n")); } catch { /* closed */ }
+        try { controller.enqueue(encoder.encode(JSON.stringify(data) + "\n")); } catch { /* client already disconnected */ }
       };
 
       // First event: client knows the design was saved and can show the panel
@@ -162,7 +158,6 @@ export async function POST(request: Request) {
           endpoint,
           deployment,
           level: reviewLevel,
-          signal: abortController.signal,
           onSectionComplete: (key, data) => {
             enqueue({ type: "section", section: key, data });
           },
@@ -190,20 +185,13 @@ export async function POST(request: Request) {
 
         enqueue({ type: "complete", review: aiResult });
       } catch (err) {
-        if (!abortController.signal.aborted) {
-          console.error("AI review failed, saving design without review:", err);
-          enqueue({ type: "error", message: err instanceof Error ? err.message : "AI review failed" });
-        }
-        // Whether aborted or errored — fall back to submitted status
+        console.error("AI review failed, saving design without review:", err);
+        enqueue({ type: "error", message: err instanceof Error ? err.message : "AI review failed" });
         await updateDesignStatus(design._id.toString(), "submitted").catch(console.error);
         await incrementSubmissionCount(body.topicId).catch(console.error);
       } finally {
         try { controller.close(); } catch { /* already closed */ }
       }
-    },
-    cancel() {
-      // Client disconnected — abort all in-flight Azure calls
-      abortController.abort();
     },
   });
 
