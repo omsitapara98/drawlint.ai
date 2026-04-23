@@ -467,6 +467,22 @@ export default function CanvasPage() {
     }
 
     const diagram = parseDiagram(elements);
+
+    // Validate design has enough substance before allowing submission
+    const sectionValues = Object.values(diagram.sections);
+    const filledSections = sectionValues.filter((s) => s.trim().length > 10).length;
+    const hldNodeCount = diagram.hld.nodes.length;
+
+    if (filledSections < 3 || hldNodeCount < 2) {
+      const missing: string[] = [];
+      if (filledSections < 3) missing.push(`at least 3 template sections filled (found ${filledSections})`);
+      if (hldNodeCount < 2) missing.push(`at least 2 HLD components (found ${hldNodeCount})`);
+      setAiError(`Design is too incomplete to submit. Please ensure: ${missing.join(", ")}.`);
+      setAiStatus("error");
+      setPanelOpen(true);
+      return;
+    }
+
     setParsedDiagram(diagram);
     setPanelOpen(true);
     setAiStatus("analyzing");
