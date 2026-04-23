@@ -940,8 +940,8 @@ function CanvasPageInner() {
                 {/* Drawing mode: Submit / Re-submit */}
                 {((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode)) && (
                   <button
-                    onClick={handleSubmitDesign}
-                    disabled={!hasDrawnShapes || aiStatus === "analyzing"}
+                    onClick={aiStatus === "analyzing" ? () => setPanelOpen(p => !p) : handleSubmitDesign}
+                    disabled={aiStatus !== "analyzing" && !hasDrawnShapes}
                     className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
                     {aiStatus === "analyzing" ? (
