@@ -27,6 +27,12 @@ export default function Header({ onOpenSettings }: HeaderProps) {
       </Link>
 
       <div className="flex items-center gap-1">
+        <Link
+          href="/library"
+          className="inline-flex items-center rounded-lg px-2.5 h-8 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+        >
+          Library
+        </Link>
         <Button
           variant="ghost"
           size="icon"

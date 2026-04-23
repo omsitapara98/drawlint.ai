@@ -61,6 +61,12 @@ export default function LandingPage() {
         </div>
         <div className="flex items-center gap-1">
           <Link
+            href="/library"
+            className="inline-flex items-center rounded-lg px-2.5 h-7 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+          >
+            Library
+          </Link>
+          <Link
             href="/guide"
             className="inline-flex items-center rounded-lg px-2.5 h-7 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
           >
@@ -94,6 +100,14 @@ export default function LandingPage() {
         >
           Start Drawing
           <ArrowRight className="ml-2 h-4 w-4" />
+        </Link>
+
+        <Link
+          href="/library"
+          className="inline-flex items-center rounded-full border border-violet-300 px-6 h-10 text-sm font-medium text-violet-600 transition-all hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/30"
+        >
+          Browse the Library
+          <ArrowRight className="ml-2 h-3.5 w-3.5" />
         </Link>
 
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">

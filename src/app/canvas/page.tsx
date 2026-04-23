@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+import { useSession } from "next-auth/react";
 
 import { DiagramCanvas } from "@/components/canvas";
 import { FeedbackPanel } from "@/components/feedback";
@@ -9,12 +10,14 @@ import { Header } from "@/components/layout";
 import { SettingsModal } from "@/components/settings";
 import { AuthGate } from "@/components/auth";
 import { Button } from "@/components/ui/button";
+import TopicSelector from "@/components/canvas/TopicSelector";
+import SubmitDialog from "@/components/canvas/SubmitDialog";
 import { useAutoSave } from "@/hooks";
 import { loadDiagram, clearDiagram } from "@/lib/storage";
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
-import { X, MessageSquareText, RotateCcw, Monitor } from "lucide-react";
+import { X, MessageSquareText, RotateCcw, Monitor, Send } from "lucide-react";
 import Link from "next/link";
 
 interface BYOConfig {
@@ -54,6 +57,7 @@ function loadPanelWidth(): number {
 }
 
 export default function CanvasPage() {
+  const { data: session } = useSession();
   const [elements, setElements] = useState<ExcalidrawElement[]>([]);
   const [initialData, setInitialData] = useState<ExcalidrawElement[] | null>(
     null,
@@ -67,6 +71,8 @@ export default function CanvasPage() {
   const [aiError, setAiError] = useState<string | undefined>();
   const [reviewLevel, setReviewLevel] = useState<ReviewLevel>("senior");
   const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT_W);
+  const [selectedTopic, setSelectedTopic] = useState<{ _id: string; name: string; slug: string; submissionCount: number } | null>(null);
+  const [submitOpen, setSubmitOpen] = useState(false);
   const [reviewerProgress, setReviewerProgress] = useState<ReviewerProgress>({
     nfrReview: "pending",
     entitiesReview: "pending",
@@ -343,6 +349,7 @@ export default function CanvasPage() {
       <div className="hidden md:flex h-screen flex-col relative">
       <Header onOpenSettings={() => setSettingsOpen(true)} />
       <AuthGate />
+      <TopicSelector onChange={setSelectedTopic} />
 
       {/* Full-width Excalidraw canvas */}
       <div className="relative flex-1 min-h-0">
@@ -386,6 +393,21 @@ export default function CanvasPage() {
               <MessageSquareText className="mr-1.5 h-3.5 w-3.5" />
               Analyze Design
             </Button>
+
+            {selectedTopic && session && (
+              <Button
+                onClick={() => {
+                  const diagram = parseDiagram(elements);
+                  setParsedDiagram(diagram);
+                  setSubmitOpen(true);
+                }}
+                disabled={!hasDrawnShapes}
+                className="h-9 rounded-full bg-violet-600 px-4 text-sm text-white shadow-md transition-all hover:bg-violet-700 hover:shadow-lg disabled:opacity-50 disabled:shadow-none"
+              >
+                <Send className="mr-1.5 h-3.5 w-3.5" />
+                Submit Design
+              </Button>
+            )}
           </div>
         )}
 
@@ -457,6 +479,18 @@ export default function CanvasPage() {
       </div>
 
       <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
+
+      {selectedTopic && parsedDiagram && (
+        <SubmitDialog
+          open={submitOpen}
+          onOpenChange={setSubmitOpen}
+          topicId={selectedTopic._id}
+          topicSlug={selectedTopic.slug}
+          topicName={selectedTopic.name}
+          elements={elements as unknown[]}
+          parsedDiagram={parsedDiagram}
+        />
+      )}
       </div>
     </>
   );
