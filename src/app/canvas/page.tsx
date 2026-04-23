@@ -889,10 +889,10 @@ export default function CanvasPage() {
                         ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
                         : "bg-muted text-muted-foreground hover:text-foreground"
                     }`}
-                    title={anonymousMode ? `Posting as: ${pseudonym ?? "…"}` : "Post anonymously"}
+                    title={anonymousMode ? `Posting anonymously as: ${pseudonym ?? "…"}` : "Click to post anonymously"}
                   >
                     <EyeOff className="h-3 w-3" />
-                    {anonymousMode ? (pseudonym ?? "Anon") : "Anon"}
+                    {anonymousMode ? (pseudonym ?? "…") : (session?.user?.name ?? "You")}
                   </button>
                 </>
               )}
