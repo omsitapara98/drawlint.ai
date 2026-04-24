@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { getTopics } from "@/lib/db/topics";
-import { ArrowRight, BookOpen } from "lucide-react";
 import { Header } from "@/components/layout";
-import { SearchableTopicGrid } from "@/components/library/SearchableTopicGrid";
+import { LibraryTabs } from "@/components/library/LibraryTabs";
 
 export const dynamic = "force-dynamic";
 
@@ -30,23 +28,11 @@ export default async function LibraryPage() {
         </div>
       </section>
 
-      {/* Topics Grid */}
+      {/* Topics Grid + My Designs */}
       <section className="mx-auto w-full max-w-5xl px-4 py-12">
-        {topics.length === 0 ? (
-          <div className="flex flex-col items-center gap-4 py-20 text-center">
-            <BookOpen className="h-12 w-12 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">No topics yet</p>
-            <Link
-              href="/canvas"
-              className="inline-flex items-center rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-6 h-9 text-sm font-medium text-white shadow-lg shadow-violet-500/25 hover:shadow-[0_0_24px_oklch(0.72_0.25_285_/_35%)] transition-all hover:-translate-y-0.5"
-            >
-              Submit the first design
-              <ArrowRight className="ml-2 h-3.5 w-3.5" />
-            </Link>
-          </div>
-        ) : (
-          <SearchableTopicGrid topics={topics.map(t => ({ _id: t._id.toString(), name: t.name, slug: t.slug, description: t.description, submissionCount: t.submissionCount }))} />
-        )}
+        <LibraryTabs
+          topics={topics.map(t => ({ _id: t._id.toString(), name: t.name, slug: t.slug, description: t.description, submissionCount: t.submissionCount }))}
+        />
       </section>
     </div>
   );

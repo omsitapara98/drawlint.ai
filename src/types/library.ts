@@ -27,7 +27,7 @@ export interface Design {
   version: number;
   blobUrl: string;
   blobKey: string;
-  status: "submitted" | "reviewing" | "reviewed";
+  status: "draft" | "submitted" | "reviewing" | "reviewed";
   forkedFrom?: ObjectId;
   reviewLevel: ReviewLevel;
   anonymousName?: string;

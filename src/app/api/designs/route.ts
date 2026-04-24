@@ -20,6 +20,10 @@ import type { SubmitDesignInput } from "@/types/library";
 import type { ReviewLevel } from "@/types/feedback";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
+interface DesignRequestBody extends SubmitDesignInput {
+  draft?: boolean;
+}
+
 const VALID_LEVELS: ReviewLevel[] = ["mid", "senior", "staff", "deep"];
 
 const NDJSON_HEADERS = {
@@ -34,9 +38,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: SubmitDesignInput;
+  let body: DesignRequestBody;
   try {
-    body = (await request.json()) as SubmitDesignInput;
+    body = (await request.json()) as DesignRequestBody;
   } catch {
     return NextResponse.json(
       { error: "Invalid JSON in request body." },
@@ -67,6 +71,45 @@ export async function POST(request: Request) {
       : "senior";
 
   const userId = session.user.id;
+
+  // ── Draft save fast path ─────────────────────────────────────
+  if (body.draft) {
+    const latestVersion = await getLatestVersion(body.topicId, userId);
+    const version = latestVersion + 1;
+    const { ObjectId } = await import("mongodb");
+    const designId = new ObjectId().toString();
+
+    let blobUrl: string;
+    let blobKey: string;
+    try {
+      const result = await uploadDesign(userId, designId, version, body.elements);
+      blobUrl = result.blobUrl;
+      blobKey = result.blobKey;
+    } catch (err) {
+      console.error("Blob upload failed:", err);
+      return NextResponse.json(
+        { error: "Failed to upload design to storage." },
+        { status: 500 },
+      );
+    }
+
+    const design = await createDesign({
+      topicId: body.topicId,
+      userId,
+      blobUrl,
+      blobKey,
+      reviewLevel,
+      version,
+      forkedFrom: body.forkedFrom,
+      status: "draft",
+    });
+
+    return NextResponse.json({
+      designId: design._id.toString(),
+      version,
+      status: "draft",
+    });
+  }
 
   // ── Email verification gate (all modes) ───────────────────────
   const verified = await isEmailVerified(userId);

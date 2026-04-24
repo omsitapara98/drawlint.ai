@@ -15,7 +15,7 @@ import { loadDiagram } from "@/lib/storage";
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
-import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key } from "lucide-react";
+import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save } from "lucide-react";
 import Link from "next/link";
 
 /* ── Topic gate types ─────────────────────────────────────────── */
@@ -278,7 +278,7 @@ function CanvasPageInner() {
             userId: string;
             topicId: string;
             anonymousName?: string;
-            status: "submitted" | "reviewing" | "reviewed";
+            status: "draft" | "submitted" | "reviewing" | "reviewed";
           };
           review: AIReviewResponse | null;
           author: { _id: string; name?: string } | null;
@@ -376,7 +376,7 @@ function CanvasPageInner() {
         const res = await fetch(`/api/designs/${viewDesignId}`);
         if (!res.ok) return;
         const data = (await res.json()) as {
-          design: { status: "submitted" | "reviewing" | "reviewed" };
+          design: { status: "draft" | "submitted" | "reviewing" | "reviewed" };
           review: AIReviewResponse | null;
         };
         if (data.review) {
@@ -733,6 +733,56 @@ function CanvasPageInner() {
     }
   }, [selectedTopic, authStatus, router, elements, reviewLevel, anonymousMode, editDesignId, submittedDesignId, startReviewerProgress, stopReviewerProgress]);
 
+  /** Save design as a draft — no AI review, stays private. */
+  const handleSaveDraft = useCallback(async () => {
+    if (!selectedTopic) return;
+
+    if (authStatus !== "authenticated") {
+      router.push("/signin");
+      return;
+    }
+
+    setAiStatus("loading" as AnalysisStatus);
+    setAiError(undefined);
+
+    try {
+      const isUpdate = !!(editDesignId || submittedDesignId);
+      const targetId = editDesignId || submittedDesignId;
+      const url = isUpdate ? `/api/designs/${targetId}` : "/api/designs";
+      const method = isUpdate ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...(isUpdate ? {} : { topicId: selectedTopic._id }),
+          elements: elements as unknown[],
+          reviewLevel,
+          draft: true,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error ?? `Draft save failed (${res.status})`);
+      }
+
+      const data = (await res.json()) as { designId: string; version: number; status: string };
+      setSubmittedDesignId(data.designId);
+      setAiStatus("idle");
+      setAiError("Draft saved successfully!");
+      setPanelOpen(true);
+
+      // Clear the success message after a few seconds
+      setTimeout(() => {
+        setAiError((prev) => prev === "Draft saved successfully!" ? undefined : prev);
+      }, 3000);
+    } catch (err) {
+      setAiStatus("error");
+      setAiError(err instanceof Error ? err.message : "Failed to save draft.");
+    }
+  }, [selectedTopic, authStatus, router, elements, reviewLevel, editDesignId, submittedDesignId]);
+
   /** Retry a failed submission. */
   const handleRetrySubmit = useCallback(async () => {
     await handleSubmitDesign();
@@ -1061,30 +1111,44 @@ function CanvasPageInner() {
 
               {/* Right: action buttons */}
               <div className="ml-auto flex items-center gap-2 shrink-0">
-                {/* Drawing mode: Submit / Re-submit */}
+                {/* Drawing mode: Save Draft + Post + AI Review */}
                 {((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode)) && (() => {
                   const emailBlocked = isEmailVerified === false;
                   const byoBlocked = aiMode === "byo" && !hasByoKey;
-                  const isDisabled = aiStatus !== "analyzing" && (!hasDrawnShapes || emailBlocked || byoBlocked);
+                  const isAnalyzing = aiStatus === "analyzing";
+                  const submitDisabled = isAnalyzing ? false : (!hasDrawnShapes || emailBlocked || byoBlocked);
+                  const draftDisabled = isAnalyzing || !hasDrawnShapes;
                   const tooltip = emailBlocked
                     ? "Email not verified — cannot submit"
                     : byoBlocked
                     ? "Add your Azure OpenAI credentials in Settings to submit"
                     : undefined;
                   return (
-                    <button
-                      onClick={aiStatus === "analyzing" ? () => setPanelOpen(p => !p) : handleSubmitDesign}
-                      disabled={isDisabled}
-                      title={tooltip}
-                      className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {aiStatus === "analyzing" ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Send className="h-3 w-3" />
-                      )}
-                      {aiStatus === "analyzing" ? "Analyzing…" : (editDesignId || submittedDesignId ? "Re-submit" : "Submit")}
-                    </button>
+                    <>
+                      {/* Save Draft button */}
+                      <button
+                        onClick={handleSaveDraft}
+                        disabled={draftDisabled}
+                        className="inline-flex h-7 items-center gap-1 rounded-lg border border-violet-300 dark:border-violet-700 px-3 text-xs font-medium text-violet-600 dark:text-violet-400 transition-colors hover:bg-violet-50 dark:hover:bg-violet-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Save className="h-3 w-3" />
+                        {editDesignId || submittedDesignId ? "Update Draft" : "Save Draft"}
+                      </button>
+                      {/* Post + AI Review button */}
+                      <button
+                        onClick={isAnalyzing ? () => setPanelOpen(p => !p) : handleSubmitDesign}
+                        disabled={submitDisabled}
+                        title={tooltip}
+                        className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isAnalyzing ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Send className="h-3 w-3" />
+                        )}
+                        {isAnalyzing ? "Analyzing…" : (editDesignId || submittedDesignId ? "Re-post + AI Review" : "Post + AI Review")}
+                      </button>
+                    </>
                   );
                 })()}
 

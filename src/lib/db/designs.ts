@@ -19,13 +19,13 @@ export async function getDesignsByTopic(
   const col = await collection();
   try {
     return await col
-      .find({ topicId: new ObjectId(topicId) })
+      .find({ topicId: new ObjectId(topicId), status: { $ne: "draft" } })
       .sort({ createdAt: -1 })
       .limit(limit)
       .toArray();
   } catch {
     const docs = await col
-      .find({ topicId: new ObjectId(topicId) })
+      .find({ topicId: new ObjectId(topicId), status: { $ne: "draft" } })
       .limit(limit)
       .toArray();
     docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -73,6 +73,7 @@ export async function createDesign(input: {
   version: number;
   forkedFrom?: string;
   anonymousName?: string;
+  status?: Design["status"];
 }): Promise<Design> {
   const col = await collection();
   const now = new Date();
@@ -84,7 +85,7 @@ export async function createDesign(input: {
     version: input.version,
     blobUrl: input.blobUrl,
     blobKey: input.blobKey,
-    status: "reviewing",
+    status: input.status ?? "reviewing",
     reviewLevel: input.reviewLevel,
     createdAt: now,
     updatedAt: now,

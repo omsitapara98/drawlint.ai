@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getDesignById, deleteDesign, updateDesignBlob, updateDesignStatus } from "@/lib/db/designs";
 import { getReviewByDesignId, deleteReviewByDesignId, createReview } from "@/lib/db/reviews";
-import { decrementSubmissionCount } from "@/lib/db/topics";
+import { decrementSubmissionCount, incrementSubmissionCount } from "@/lib/db/topics";
 import { uploadDesign, deleteDesign as deleteBlob } from "@/lib/blob/storage";
 import {
   getUserAiSettings,
@@ -41,6 +41,14 @@ export async function GET(
 
   if (!design) {
     return NextResponse.json({ error: "Design not found." }, { status: 404 });
+  }
+
+  // Draft privacy — only the owner can view their drafts
+  if (design.status === "draft") {
+    const session = await auth();
+    if (!session?.user?.id || design.userId.toString() !== session.user.id) {
+      return NextResponse.json({ error: "Design not found." }, { status: 404 });
+    }
   }
 
   const review = await getReviewByDesignId(designId);
@@ -101,8 +109,10 @@ export async function DELETE(
   // Delete design doc
   await deleteDesign(designId);
 
-  // Decrement topic count
-  await decrementSubmissionCount(design.topicId.toString());
+  // Decrement topic count (only for non-draft designs that were publicly counted)
+  if (design.status !== "draft") {
+    await decrementSubmissionCount(design.topicId.toString());
+  }
 
   return new NextResponse(null, { status: 204 });
 }
@@ -139,6 +149,7 @@ export async function PUT(
     elements?: unknown[];
     reviewLevel?: ReviewLevel;
     anonymous?: boolean;
+    draft?: boolean;
     /** BYO key mode: sent from client localStorage, never stored server-side */
     apiKey?: string;
     endpoint?: string;
@@ -171,6 +182,44 @@ export async function PUT(
 
   const userId = session.user.id;
   const version = design.version + 1;
+
+  // ── Draft update fast path ──────────────────────────────────────
+  if (body.draft) {
+    // Delete old blob
+    try {
+      await deleteBlob(design.blobKey);
+    } catch (err) {
+      console.error("Failed to delete old blob:", err);
+    }
+
+    // Upload new blob
+    let blobUrl: string;
+    let blobKey: string;
+    try {
+      const result = await uploadDesign(userId, designId, version, body.elements!);
+      blobUrl = result.blobUrl;
+      blobKey = result.blobKey;
+    } catch (err) {
+      console.error("Blob upload failed:", err);
+      return NextResponse.json(
+        { error: "Failed to upload design to storage." },
+        { status: 500 },
+      );
+    }
+
+    // Update design document — keep status as "draft"
+    const col = (await clientPromise).db(DB_NAME).collection("designs");
+    await col.updateOne(
+      { _id: new ObjectId(designId) },
+      { $set: { blobUrl, blobKey, version, reviewLevel, status: "draft" as const, updatedAt: new Date() } },
+    );
+
+    return NextResponse.json({
+      designId,
+      version,
+      status: "draft",
+    });
+  }
 
   // ── Email verification gate (all modes) ───────────────────────
   const verified = await isEmailVerified(userId);
@@ -295,6 +344,9 @@ export async function PUT(
       : { $set: updateFields, $unset: { anonymousName: "" } },
   );
 
+  // Track if this was a draft being published (for submission count)
+  const wasDraft = design.status === "draft";
+
   // 4. Delete old review
   await deleteReviewByDesignId(designId);
 
@@ -305,6 +357,7 @@ export async function PUT(
 
   if (!apiKey || !endpoint || !deployment) {
     await updateDesignStatus(designId, "submitted");
+    if (wasDraft) await incrementSubmissionCount(design.topicId.toString());
     const updatedDesign = await getDesignById(designId);
     const stream = new ReadableStream({
       start(controller) {
@@ -355,6 +408,7 @@ export async function PUT(
         });
 
         await updateDesignStatus(designId, "reviewed");
+        if (wasDraft) await incrementSubmissionCount(design.topicId.toString());
         const updatedDesign = await getDesignById(designId);
 
         enqueue({ type: "complete", review: aiResult, design: updatedDesign });
@@ -363,6 +417,7 @@ export async function PUT(
         enqueue({ type: "error", message: err instanceof Error ? err.message : "AI review failed" });
         if (isManagedMode) await releaseManagedQuota(userId).catch(console.error);
         await updateDesignStatus(designId, "submitted").catch(console.error);
+        if (wasDraft) await incrementSubmissionCount(design.topicId.toString()).catch(console.error);
       } finally {
         try { controller.close(); } catch { /* already closed */ }
       }
