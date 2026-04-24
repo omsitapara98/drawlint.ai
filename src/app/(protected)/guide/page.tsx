@@ -122,9 +122,9 @@ function CanvasPreview({ children, height = 180 }: { children: React.ReactNode; 
       initial={{ opacity: 0, y: 10 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5 }}
-      className="mt-5 rounded-xl border border-border dark:border-white/[0.08] bg-zinc-950 dark:bg-zinc-900/60 p-4 overflow-hidden"
+      className="mt-5 rounded-xl border border-border dark:border-white/[0.08] bg-zinc-950 dark:bg-zinc-900/60 p-2 overflow-hidden"
     >
-      <svg viewBox={`0 0 600 ${height}`} className="w-full" style={{ height }}>
+      <svg viewBox={`0 0 600 ${height}`} className="w-full h-auto">
         <defs>
           <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
             <polygon points="0 0, 8 3, 0 6" className="fill-muted-foreground/50" />
@@ -139,7 +139,7 @@ function CanvasPreview({ children, height = 180 }: { children: React.ReactNode; 
 /** Template layout preview — full architecture diagram */
 function TemplatePreview() {
   return (
-    <CanvasPreview height={400}>
+    <CanvasPreview height={340}>
       {/* ── Left column: compact, pushed left ── */}
       <AnimBox x={5} y={10} w={120} h={45} label="Functional Reqs" delay={0.1} />
       <AnimBox x={130} y={10} w={70} h={45} label="Assumptions" delay={0.15} />
