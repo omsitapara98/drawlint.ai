@@ -15,7 +15,7 @@ import { loadDiagram } from "@/lib/storage";
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
-import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff } from "lucide-react";
+import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key } from "lucide-react";
 import Link from "next/link";
 
 /* ── Topic gate types ─────────────────────────────────────────── */
@@ -1029,6 +1029,33 @@ function CanvasPageInner() {
                       </>
                     )}
                   </button>
+                </>
+              )}
+
+              {/* AI mode indicator — only in draw/edit modes, not view */}
+              {!viewDesignId && authStatus === "authenticated" && aiMode && (
+                <>
+                  <span className="text-xs text-muted-foreground shrink-0">·</span>
+                  <span className="text-xs text-muted-foreground shrink-0">ai mode:</span>
+                  <span
+                    className={`inline-flex h-5 items-center gap-1 rounded-full px-2 text-[0.65rem] font-semibold shrink-0 border ${
+                      aiMode === "byo"
+                        ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800"
+                        : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800"
+                    }`}
+                  >
+                    {aiMode === "byo" ? (
+                      <>
+                        <Key className="h-2.5 w-2.5" />
+                        BYO Key
+                      </>
+                    ) : (
+                      <>
+                        <Cpu className="h-2.5 w-2.5" />
+                        Managed AI
+                      </>
+                    )}
+                  </span>
                 </>
               )}
 

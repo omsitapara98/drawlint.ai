@@ -55,6 +55,12 @@ export default function Header() {
           >
             Guide
           </Link>
+          <Link
+            href="/guide/byo-keys"
+            className="relative inline-flex items-center rounded-lg px-2.5 h-8 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-gradient-to-r after:from-violet-500 after:to-cyan-500 after:transition-all after:duration-300"
+          >
+            BYO Keys
+          </Link>
           <motion.button
             whileTap={{ scale: 0.9, rotate: 15 }}
             className="inline-flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors relative"
