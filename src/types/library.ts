@@ -74,4 +74,8 @@ export interface SubmitDesignInput {
   reviewLevel?: ReviewLevel;
   forkedFrom?: string;
   anonymous?: boolean;
+  /** BYO key mode: sent from client localStorage, never stored server-side */
+  apiKey?: string;
+  endpoint?: string;
+  deployment?: string;
 }

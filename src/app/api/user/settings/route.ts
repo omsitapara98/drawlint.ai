@@ -3,8 +3,6 @@ import { auth } from "@/auth";
 import {
   getUserAiSettings,
   updateAiMode,
-  saveByoCredentials,
-  clearByoCredentials,
   type AiMode,
 } from "@/lib/db/users";
 
@@ -23,15 +21,13 @@ export async function GET() {
 
   const settings = await getUserAiSettings(session.user.id);
   return NextResponse.json({
-    ...settings,
+    aiMode: settings.aiMode,
     managedUsage: { ...settings.managedUsage, limit: 10, resetsOn: nextResetDate() },
   });
 }
 
 interface PatchBody {
   aiMode?: AiMode;
-  byoCredentials?: { apiKey?: string; endpoint?: string; deployment?: string };
-  clearByo?: boolean;
 }
 
 export async function PATCH(request: Request) {
@@ -56,22 +52,9 @@ export async function PATCH(request: Request) {
     await updateAiMode(userId, body.aiMode);
   }
 
-  if (body.clearByo) {
-    await clearByoCredentials(userId);
-  } else if (body.byoCredentials) {
-    const { apiKey, endpoint, deployment } = body.byoCredentials;
-    if (!apiKey || !endpoint || !deployment) {
-      return NextResponse.json(
-        { error: "apiKey, endpoint, and deployment are required." },
-        { status: 400 },
-      );
-    }
-    await saveByoCredentials(userId, { apiKey, endpoint, deployment });
-  }
-
   const settings = await getUserAiSettings(userId);
   return NextResponse.json({
-    ...settings,
+    aiMode: settings.aiMode,
     managedUsage: { ...settings.managedUsage, limit: 10, resetsOn: nextResetDate() },
   });
 }

@@ -558,6 +558,13 @@ function CanvasPageInner() {
       const url = isUpdate ? `/api/designs/${targetId}` : "/api/designs";
       const method = isUpdate ? "PUT" : "POST";
 
+      // Read BYO credentials from localStorage — never stored server-side
+      let byoCreds: { apiKey?: string; endpoint?: string; deployment?: string } = {};
+      try {
+        const raw = localStorage.getItem("drawlint:byo-key");
+        if (raw) byoCreds = JSON.parse(raw) as typeof byoCreds;
+      } catch { /* noop */ }
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -566,6 +573,12 @@ function CanvasPageInner() {
           elements: elements as unknown[],
           reviewLevel,
           anonymous: anonymousMode,
+          // Include BYO credentials only if configured — server uses them if present
+          ...(byoCreds.apiKey ? {
+            apiKey: byoCreds.apiKey,
+            endpoint: byoCreds.endpoint,
+            deployment: byoCreds.deployment,
+          } : {}),
         }),
       });
 

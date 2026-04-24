@@ -5,8 +5,6 @@ import { getReviewByDesignId, deleteReviewByDesignId, createReview } from "@/lib
 import { decrementSubmissionCount } from "@/lib/db/topics";
 import { uploadDesign, deleteDesign as deleteBlob } from "@/lib/blob/storage";
 import {
-  getUserAiSettings,
-  getByoCredentials,
   checkAndIncrementManagedQuota,
 } from "@/lib/db/users";
 import { analyzeDesign } from "@/lib/ai";
@@ -138,6 +136,10 @@ export async function PUT(
     elements?: unknown[];
     reviewLevel?: ReviewLevel;
     anonymous?: boolean;
+    /** BYO key mode: sent from client localStorage, never stored server-side */
+    apiKey?: string;
+    endpoint?: string;
+    deployment?: string;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -161,12 +163,19 @@ export async function PUT(
   const version = design.version + 1;
 
   // ── Resolve AI credentials BEFORE any mutations ────────────────
-  const aiSettings = await getUserAiSettings(userId);
+  // If the client sent BYO credentials → use them directly (no quota consumed).
+  // Otherwise → managed path: check quota and use server env vars.
   let apiKey: string | undefined;
   let endpoint: string | undefined;
   let deployment: string | undefined;
 
-  if (aiSettings.aiMode === "managed") {
+  if (body.apiKey) {
+    // BYO mode — credentials come from client localStorage, never stored server-side
+    apiKey = body.apiKey;
+    endpoint = body.endpoint;
+    deployment = body.deployment;
+  } else {
+    // Managed mode — use server key, enforce monthly quota
     if (
       !process.env.AZURE_OPENAI_API_KEY ||
       !process.env.AZURE_OPENAI_ENDPOINT ||
@@ -192,13 +201,6 @@ export async function PUT(
     apiKey = process.env.AZURE_OPENAI_API_KEY;
     endpoint = process.env.AZURE_OPENAI_ENDPOINT;
     deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
-  } else {
-    const creds = await getByoCredentials(userId);
-    if (creds) {
-      apiKey = creds.apiKey;
-      endpoint = creds.endpoint;
-      deployment = creds.deployment;
-    }
   }
 
   // Resolve anonymous name if toggled on

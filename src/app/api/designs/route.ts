@@ -9,8 +9,6 @@ import {
 import { createReview } from "@/lib/db/reviews";
 import { incrementSubmissionCount } from "@/lib/db/topics";
 import {
-  getUserAiSettings,
-  getByoCredentials,
   checkAndIncrementManagedQuota,
 } from "@/lib/db/users";
 import { analyzeDesign } from "@/lib/ai";
@@ -61,12 +59,19 @@ export async function POST(request: Request) {
   const userId = session.user.id;
 
   // ── Resolve AI credentials BEFORE any mutations ────────────────
-  const aiSettings = await getUserAiSettings(userId);
+  // If the client sent BYO credentials → use them directly (no quota consumed).
+  // Otherwise → managed path: check quota and use server env vars.
   let apiKey: string | undefined;
   let endpoint: string | undefined;
   let deployment: string | undefined;
 
-  if (aiSettings.aiMode === "managed") {
+  if (body.apiKey) {
+    // BYO mode — credentials come from client localStorage, never stored server-side
+    apiKey = body.apiKey;
+    endpoint = body.endpoint;
+    deployment = body.deployment;
+  } else {
+    // Managed mode — use server key, enforce monthly quota
     if (
       !process.env.AZURE_OPENAI_API_KEY ||
       !process.env.AZURE_OPENAI_ENDPOINT ||
@@ -92,14 +97,6 @@ export async function POST(request: Request) {
     apiKey = process.env.AZURE_OPENAI_API_KEY;
     endpoint = process.env.AZURE_OPENAI_ENDPOINT;
     deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
-  } else {
-    const creds = await getByoCredentials(userId);
-    if (creds) {
-      apiKey = creds.apiKey;
-      endpoint = creds.endpoint;
-      deployment = creds.deployment;
-    }
-    // No creds → no-AI path (submit without review)
   }
 
   // ── Resolve pseudonym if posting anonymously ───────────────────

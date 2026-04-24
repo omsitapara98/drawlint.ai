@@ -12,13 +12,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Shield, ChevronDown, Loader2, CheckCircle2 } from "lucide-react";
 
+const BYO_STORAGE_KEY = "drawlint:byo-key";
+
 interface AiSettings {
   aiMode: "managed" | "byo";
   managedUsage: { count: number; limit: number; month: number; year: number; resetsOn: string };
-  hasByoCredentials: boolean;
-  maskedKeyLast4?: string;
-  endpoint?: string;
-  deployment?: string;
+}
+
+interface ByoCreds {
+  apiKey: string;
+  endpoint: string;
+  deployment: string;
 }
 
 interface SettingsModalProps {
@@ -33,13 +37,13 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
 
   const [settings, setSettings] = useState<AiSettings | null>(null);
   const [selectedMode, setSelectedMode] = useState<"managed" | "byo">("managed");
+  const [hasLocalKey, setHasLocalKey] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [guideOpen, setGuideOpen] = useState(false);
-  const [legacyKeyDetected, setLegacyKeyDetected] = useState(false);
 
-  // Fetch settings when modal opens
+  // Load settings from server + read localStorage BYO creds when modal opens
   useEffect(() => {
     if (!open) return;
     setError(undefined);
@@ -51,26 +55,19 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
         setSettings(data);
         setSelectedMode(data.aiMode);
 
-        // Pre-populate BYO form with server-saved values
-        setTimeout(() => {
-          if (endpointRef.current) endpointRef.current.value = data.endpoint ?? "";
-          if (deploymentRef.current) deploymentRef.current.value = data.deployment ?? "";
-          if (apiKeyRef.current) apiKeyRef.current.value = data.hasByoCredentials ? "••••••••" : "";
-        }, 0);
-
-        // Detect legacy localStorage credentials and offer migration
+        // Read BYO creds from localStorage (client-side only, never sent to server)
         try {
-          const raw = localStorage.getItem("drawlint:byo-key");
-          if (raw && !data.hasByoCredentials) {
-            const cfg = JSON.parse(raw) as { apiKey?: string; endpoint?: string; deployment?: string };
-            if (cfg.apiKey) {
-              setLegacyKeyDetected(true);
-              setTimeout(() => {
-                if (apiKeyRef.current) apiKeyRef.current.value = cfg.apiKey ?? "";
-                if (endpointRef.current) endpointRef.current.value = cfg.endpoint ?? "";
-                if (deploymentRef.current) deploymentRef.current.value = cfg.deployment ?? "";
-              }, 0);
-            }
+          const raw = localStorage.getItem(BYO_STORAGE_KEY);
+          if (raw) {
+            const creds = JSON.parse(raw) as Partial<ByoCreds>;
+            setHasLocalKey(!!creds.apiKey);
+            setTimeout(() => {
+              if (apiKeyRef.current) apiKeyRef.current.value = creds.apiKey ? "••••••••" : "";
+              if (endpointRef.current) endpointRef.current.value = creds.endpoint ?? "";
+              if (deploymentRef.current) deploymentRef.current.value = creds.deployment ?? "";
+            }, 0);
+          } else {
+            setHasLocalKey(false);
           }
         } catch { /* noop */ }
       })
@@ -82,27 +79,27 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
     setSaving(true);
     setError(undefined);
 
-    const patch: Record<string, unknown> = { aiMode: selectedMode };
-
-    if (selectedMode === "byo") {
-      const apiKey = apiKeyRef.current?.value.trim() ?? "";
-      const endpoint = endpointRef.current?.value.trim() ?? "";
-      const deployment = deploymentRef.current?.value.trim() ?? "";
-
-      // Only send credentials if they're being changed (not the placeholder)
-      if (apiKey && apiKey !== "••••••••") {
-        patch.byoCredentials = { apiKey, endpoint, deployment };
-        // Clear legacy localStorage key after saving to server
-        try { localStorage.removeItem("drawlint:byo-key"); } catch { /* noop */ }
-        setLegacyKeyDetected(false);
-      }
-    }
-
     try {
+      // 1. Save BYO credentials to localStorage (if in BYO mode and a real key was entered)
+      if (selectedMode === "byo") {
+        const apiKey = apiKeyRef.current?.value.trim() ?? "";
+        const endpoint = endpointRef.current?.value.trim() ?? "";
+        const deployment = deploymentRef.current?.value.trim() ?? "";
+
+        if (apiKey && apiKey !== "••••••••") {
+          // New or updated key — save to localStorage
+          const creds: ByoCreds = { apiKey, endpoint, deployment };
+          localStorage.setItem(BYO_STORAGE_KEY, JSON.stringify(creds));
+          setHasLocalKey(true);
+        }
+        // If placeholder "••••••••" — existing key unchanged, don't overwrite
+      }
+
+      // 2. Save mode preference to server (no credentials)
       const res = await fetch("/api/user/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
+        body: JSON.stringify({ aiMode: selectedMode }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -118,26 +115,12 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
     }
   }, [selectedMode, onOpenChange]);
 
-  const handleClearByo = useCallback(async () => {
-    setSaving(true);
-    setError(undefined);
-    try {
-      const res = await fetch("/api/user/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clearByo: true }),
-      });
-      if (!res.ok) throw new Error("Failed to clear credentials.");
-      const updated = (await res.json()) as AiSettings;
-      setSettings(updated);
-      if (apiKeyRef.current) apiKeyRef.current.value = "";
-      if (endpointRef.current) endpointRef.current.value = "";
-      if (deploymentRef.current) deploymentRef.current.value = "";
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to clear credentials.");
-    } finally {
-      setSaving(false);
-    }
+  const handleClearByo = useCallback(() => {
+    try { localStorage.removeItem(BYO_STORAGE_KEY); } catch { /* noop */ }
+    setHasLocalKey(false);
+    if (apiKeyRef.current) apiKeyRef.current.value = "";
+    if (endpointRef.current) endpointRef.current.value = "";
+    if (deploymentRef.current) deploymentRef.current.value = "";
   }, []);
 
   const inputClass =
@@ -228,23 +211,14 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
                 <div className="flex items-start gap-2.5 rounded-md border border-primary/20 bg-primary/5 p-3">
                   <Shield className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   <p className="text-xs leading-relaxed text-foreground/70">
-                    Your credentials are stored securely in your account and used server-side for AI reviews.
+                    Your credentials are saved <strong>only in this browser</strong> and sent directly to Azure — never stored on our servers.
                   </p>
                 </div>
 
-                {legacyKeyDetected && (
-                  <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-3 py-2">
-                    <p className="text-xs text-amber-700 dark:text-amber-400">
-                      We found a key saved in your browser. Save below to migrate it to your account.
-                    </p>
-                  </div>
-                )}
-
-                {settings?.hasByoCredentials && (
+                {hasLocalKey && (
                   <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    Key configured (ends in {settings.maskedKeyLast4})
-                    {settings.endpoint && <span className="text-muted-foreground truncate max-w-[180px]">· {settings.endpoint}</span>}
+                    Key configured in this browser
                   </div>
                 )}
 
@@ -288,7 +262,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
         )}
 
         <DialogFooter className="gap-2">
-          {selectedMode === "byo" && settings?.hasByoCredentials && (
+          {selectedMode === "byo" && hasLocalKey && (
             <Button variant="outline" onClick={handleClearByo} disabled={saving}>
               Clear Key
             </Button>
@@ -302,3 +276,4 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
     </Dialog>
   );
 }
+

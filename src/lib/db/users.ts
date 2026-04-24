@@ -12,19 +12,9 @@ export interface ManagedUsage {
   year: number;
 }
 
-export interface ByoCredentials {
-  apiKey: string;
-  endpoint: string;
-  deployment: string;
-}
-
 export interface UserAiSettings {
   aiMode: AiMode;
   managedUsage: ManagedUsage;
-  hasByoCredentials: boolean;
-  maskedKeyLast4?: string;
-  endpoint?: string;
-  deployment?: string;
 }
 
 export interface QuotaCheckResult {
@@ -38,7 +28,7 @@ export async function getUserAiSettings(userId: string): Promise<UserAiSettings>
   const client = await clientPromise;
   const user = await client.db(DB_NAME).collection("users").findOne(
     { _id: new ObjectId(userId) },
-    { projection: { aiMode: 1, managedUsage: 1, byoCredentials: 1 } },
+    { projection: { aiMode: 1, managedUsage: 1 } },
   );
 
   const now = new Date();
@@ -52,17 +42,7 @@ export async function getUserAiSettings(userId: string): Promise<UserAiSettings>
       ? storedUsage
       : { count: 0, month, year };
 
-  const byo = user?.byoCredentials as ByoCredentials | undefined;
-  const hasByoCredentials = !!(byo?.apiKey && byo?.endpoint && byo?.deployment);
-
-  return {
-    aiMode,
-    managedUsage,
-    hasByoCredentials,
-    maskedKeyLast4: hasByoCredentials ? byo!.apiKey.slice(-4) : undefined,
-    endpoint: byo?.endpoint,
-    deployment: byo?.deployment,
-  };
+  return { aiMode, managedUsage };
 }
 
 export async function updateAiMode(userId: string, mode: AiMode): Promise<void> {
@@ -71,36 +51,6 @@ export async function updateAiMode(userId: string, mode: AiMode): Promise<void> 
     { _id: new ObjectId(userId) },
     { $set: { aiMode: mode, updatedAt: new Date() } },
   );
-}
-
-export async function saveByoCredentials(
-  userId: string,
-  credentials: ByoCredentials,
-): Promise<void> {
-  const client = await clientPromise;
-  await client.db(DB_NAME).collection("users").updateOne(
-    { _id: new ObjectId(userId) },
-    { $set: { byoCredentials: credentials, updatedAt: new Date() } },
-  );
-}
-
-export async function clearByoCredentials(userId: string): Promise<void> {
-  const client = await clientPromise;
-  await client.db(DB_NAME).collection("users").updateOne(
-    { _id: new ObjectId(userId) },
-    { $unset: { byoCredentials: "" }, $set: { updatedAt: new Date() } },
-  );
-}
-
-export async function getByoCredentials(userId: string): Promise<ByoCredentials | null> {
-  const client = await clientPromise;
-  const user = await client.db(DB_NAME).collection("users").findOne(
-    { _id: new ObjectId(userId) },
-    { projection: { byoCredentials: 1 } },
-  );
-  const creds = user?.byoCredentials as ByoCredentials | undefined;
-  if (!creds?.apiKey || !creds.endpoint || !creds.deployment) return null;
-  return creds;
 }
 
 /**
