@@ -11,10 +11,12 @@ const globalForMongo = globalThis as typeof globalThis & {
 };
 
 if (!uri) {
-  // During build time, provide a dummy promise that rejects at runtime
-  clientPromise = new Promise((_resolve, reject) => {
-    reject(new Error("MONGODB_URI environment variable is not set"));
-  });
+  // During build time, MONGODB_URI may not be set. Create a rejected promise
+  // but suppress the unhandled rejection — it will throw properly when awaited at runtime.
+  clientPromise = Promise.reject(
+    new Error("MONGODB_URI environment variable is not set")
+  );
+  clientPromise.catch(() => {});
 } else if (process.env.NODE_ENV === "development") {
   if (!globalForMongo._mongoClientPromise) {
     const client = new MongoClient(uri, options);

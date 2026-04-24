@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function VerifyEmailSentPage() {
+function VerifyEmailSentContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "your email";
   const initialEmailFailed = searchParams.get("emailFailed") === "1";
@@ -88,5 +88,17 @@ export default function VerifyEmailSentPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function VerifyEmailSentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#1a1a2e]">
+        <div className="w-8 h-8 rounded-full border-4 border-purple-500 border-t-transparent animate-spin" />
+      </div>
+    }>
+      <VerifyEmailSentContent />
+    </Suspense>
   );
 }

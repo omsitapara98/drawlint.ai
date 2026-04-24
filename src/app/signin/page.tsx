@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
@@ -15,7 +15,7 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   Default: "Something went wrong. Please try again.",
 };
 
-export default function SignInPage() {
+function SignInContent() {
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
   const rawCallback = searchParams.get("callbackUrl");
@@ -201,5 +201,17 @@ export default function SignInPage() {
         </p>
       </motion.div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-violet-500/10 via-background to-cyan-500/5 dark:from-violet-500/15 dark:via-background dark:to-cyan-500/8">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   );
 }
