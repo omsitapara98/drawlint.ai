@@ -1057,7 +1057,7 @@ function CanvasPageInner() {
                 {/* Topic + Level group */}
                 <div className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-100/80 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/30 px-2 py-0.5">
                   <span className="text-xs shrink-0">📋</span>
-                  <span className="text-[0.7rem] font-medium truncate max-w-[160px]">{selectedTopic?.name}</span>
+                  <span className="text-[0.7rem] font-medium truncate max-w-[320px]">{selectedTopic?.name}</span>
                   {viewDesignId && viewAuthorName && (
                     <span className="text-[0.65rem] text-muted-foreground truncate">by {viewAuthorName}</span>
                   )}
