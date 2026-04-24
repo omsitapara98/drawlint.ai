@@ -1266,17 +1266,11 @@ function CanvasPageInner() {
                       Edit
                     </button>
                     <button
-                      className="inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/50 transition-colors"
-                      onClick={async () => {
-                        if (!confirm("Delete this design?")) return;
-                        try {
-                          await fetch(`/api/designs/${viewDesignId}`, { method: "DELETE" });
-                          router.push(selectedTopic ? `/library/${selectedTopic.slug}` : "/library");
-                        } catch { /* noop */ }
-                      }}
+                      onClick={() => setShowDeleteDraftConfirm(true)}
+                      className="inline-flex h-7 items-center gap-1 rounded-lg border border-red-300 dark:border-red-700 px-2.5 text-xs font-medium text-red-600 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/30"
+                      title="Delete this design"
                     >
-                      <X className="h-3 w-3" />
-                      Delete
+                      <Trash2 className="h-3 w-3" />
                     </button>
                     {!panelOpen && (aiReview || aiStatus === "analyzing") && (
                       <button
