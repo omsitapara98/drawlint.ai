@@ -332,7 +332,6 @@ export default function GuidePage() {
               The whiteboard has a <strong className="text-foreground">left column</strong> for text sections and a <strong className="text-foreground">right area</strong> for your HLD diagram.
             </p>
             <TemplatePreview />
-            <Tip>Don&apos;t move the section headers — the parser uses their positions to identify content.</Tip>
           </div>
         </section>
 
