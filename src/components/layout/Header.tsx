@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { useSession } from "next-auth/react";
@@ -32,9 +33,7 @@ export default function Header() {
         }`}
       >
         <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-sm font-bold shadow-sm transition-shadow hover:shadow-[0_0_15px_oklch(0.72_0.25_285_/_40%)]">
-            D
-          </div>
+          <Image src="/logo.svg" alt="DrawLint" width={32} height={32} className="rounded-lg shadow-sm transition-shadow hover:shadow-[0_0_15px_oklch(0.72_0.25_285_/_40%)]" />
           <span className="text-sm font-semibold tracking-tight">
             DrawLint
             <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
