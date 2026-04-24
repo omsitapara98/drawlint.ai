@@ -15,7 +15,7 @@ import { loadDiagram } from "@/lib/storage";
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
-import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save } from "lucide-react";
+import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save, Pencil } from "lucide-react";
 import Link from "next/link";
 
 /* ── Topic gate types ─────────────────────────────────────────── */
@@ -1026,41 +1026,36 @@ function CanvasPageInner() {
         {phase === "draw" && (
           <>
             {/* Info bar: topic + level + actions (all controls here, nothing floating on canvas) */}
-            <div className="flex h-10 items-center border-b bg-muted/50 px-4 gap-3 shrink-0 min-w-0">
-              {/* Left: topic + level info */}
-              <span className="text-xs shrink-0">📋</span>
-              <span className="text-xs font-medium truncate min-w-0">{selectedTopic?.name}</span>
-              <span className="text-xs text-muted-foreground shrink-0">·</span>
-              <span className="text-xs shrink-0">🎯</span>
-              <span className="inline-flex h-5 items-center rounded-full bg-violet-100 px-2 text-[0.65rem] font-semibold text-violet-700 dark:bg-violet-900/50 dark:text-violet-300 shrink-0">
-                {levelLabel(reviewLevel)}
-              </span>
-              {viewDesignId && viewAuthorName && (
-                <>
-                  <span className="text-xs text-muted-foreground shrink-0">·</span>
-                  <span className="text-xs text-muted-foreground shrink-0">by {viewAuthorName}</span>
-                </>
-              )}
-              {!viewDesignId && !submitted && !editDesignId && (
-                <>
-                  <span className="text-xs text-muted-foreground shrink-0">·</span>
-                  <button
-                    onClick={handleChangeTopicLevel}
-                    className="text-xs font-medium text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 transition-colors shrink-0"
-                  >
-                    Change
-                  </button>
-                </>
-              )}
+            <div className="flex h-10 items-center border-b border-border/40 dark:border-white/[0.06] bg-background/50 dark:bg-white/[0.02] backdrop-blur-sm px-4 gap-3 shrink-0 min-w-0">
+              {/* Left: info chips */}
+              <div className="flex items-center gap-1.5 min-w-0">
+                {/* Topic + Level group */}
+                <div className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-100/80 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/30 px-2 py-0.5">
+                  <span className="text-xs shrink-0">📋</span>
+                  <span className="text-[0.7rem] font-medium truncate max-w-[160px]">{selectedTopic?.name}</span>
+                  {viewDesignId && viewAuthorName && (
+                    <span className="text-[0.65rem] text-muted-foreground truncate">by {viewAuthorName}</span>
+                  )}
+                  <span className="h-3.5 w-px bg-zinc-300 dark:bg-zinc-600 shrink-0" />
+                  <span className="text-[0.65rem] font-semibold text-violet-600 dark:text-violet-400 shrink-0">
+                    {levelLabel(reviewLevel)}
+                  </span>
+                  {!viewDesignId && !submitted && !editDesignId && (
+                    <button
+                      onClick={handleChangeTopicLevel}
+                      className="inline-flex items-center justify-center h-4 w-4 rounded text-violet-500 hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/40 transition-colors shrink-0"
+                      title="Change topic & level"
+                    >
+                      <Pencil className="h-2.5 w-2.5" />
+                    </button>
+                  )}
+                </div>
 
-              {/* Posting as label — only in draw/edit modes, not view */}
-              {!viewDesignId && authStatus === "authenticated" && (
-                <>
-                  <span className="text-xs text-muted-foreground shrink-0">·</span>
-                  <span className="text-xs text-muted-foreground shrink-0">posting as:</span>
+                {/* Identity chip — only in draw/edit modes, not view */}
+                {!viewDesignId && authStatus === "authenticated" && (
                   <button
                     onClick={handleToggleAnonymous}
-                    className={`inline-flex h-5 items-center gap-1 rounded-full px-2 text-[0.65rem] font-semibold transition-colors shrink-0 border ${
+                    className={`inline-flex h-6 items-center gap-1.5 rounded-lg px-2.5 text-[0.7rem] font-medium border transition-all shrink-0 ${
                       anonymousMode
                         ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800"
                         : "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-800"
@@ -1069,26 +1064,22 @@ function CanvasPageInner() {
                   >
                     {anonymousMode ? (
                       <>
-                        <EyeOff className="h-2.5 w-2.5" />
+                        <EyeOff className="h-3 w-3" />
                         {pseudonym ?? "…"}
                       </>
                     ) : (
                       <>
-                        <span className="h-2.5 w-2.5 rounded-full bg-violet-500 inline-block" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-violet-500 inline-block shrink-0" />
                         {session?.user?.name ?? "You"}
                       </>
                     )}
                   </button>
-                </>
-              )}
+                )}
 
-              {/* AI mode indicator — only in draw/edit modes, not view */}
-              {!viewDesignId && authStatus === "authenticated" && aiMode && (
-                <>
-                  <span className="text-xs text-muted-foreground shrink-0">·</span>
-                  <span className="text-xs text-muted-foreground shrink-0">ai mode:</span>
+                {/* Review mode chip — only in draw/edit modes, not view */}
+                {!viewDesignId && authStatus === "authenticated" && aiMode && (
                   <span
-                    className={`inline-flex h-5 items-center gap-1 rounded-full px-2 text-[0.65rem] font-semibold shrink-0 border ${
+                    className={`inline-flex h-6 items-center gap-1.5 rounded-lg px-2.5 text-[0.7rem] font-medium border transition-all shrink-0 ${
                       aiMode === "byo"
                         ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800"
                         : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800"
@@ -1096,18 +1087,18 @@ function CanvasPageInner() {
                   >
                     {aiMode === "byo" ? (
                       <>
-                        <Key className="h-2.5 w-2.5" />
+                        <Key className="h-3 w-3" />
                         BYO Key
                       </>
                     ) : (
                       <>
-                        <Cpu className="h-2.5 w-2.5" />
+                        <Cpu className="h-3 w-3" />
                         Managed AI
                       </>
                     )}
                   </span>
-                </>
-              )}
+                )}
+              </div>
 
               {/* Right: action buttons */}
               <div className="ml-auto flex items-center gap-2 shrink-0">
