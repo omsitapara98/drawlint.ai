@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import {
   getUserAiSettings,
   updateAiMode,
+  isEmailVerified,
+  MANAGED_LIMIT,
   type AiMode,
 } from "@/lib/db/users";
 
@@ -20,9 +22,17 @@ export async function GET() {
   }
 
   const settings = await getUserAiSettings(session.user.id);
+  const emailVerified = await isEmailVerified(session.user.id);
+  const isUnlimited = settings.role !== "free";
   return NextResponse.json({
     aiMode: settings.aiMode,
-    managedUsage: { ...settings.managedUsage, limit: 10, resetsOn: nextResetDate() },
+    role: settings.role,
+    emailVerified,
+    managedUsage: {
+      ...settings.managedUsage,
+      limit: isUnlimited ? null : MANAGED_LIMIT,
+      resetsOn: nextResetDate(),
+    },
   });
 }
 
@@ -53,8 +63,16 @@ export async function PATCH(request: Request) {
   }
 
   const settings = await getUserAiSettings(userId);
+  const emailVerified = await isEmailVerified(userId);
+  const isUnlimited = settings.role !== "free";
   return NextResponse.json({
     aiMode: settings.aiMode,
-    managedUsage: { ...settings.managedUsage, limit: 10, resetsOn: nextResetDate() },
+    role: settings.role,
+    emailVerified,
+    managedUsage: {
+      ...settings.managedUsage,
+      limit: isUnlimited ? null : MANAGED_LIMIT,
+      resetsOn: nextResetDate(),
+    },
   });
 }

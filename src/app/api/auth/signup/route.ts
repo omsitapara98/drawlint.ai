@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import clientPromise from "@/lib/db/mongodb";
+import { sendVerificationEmail, hashToken } from "@/lib/email/send";
 
 export async function POST(request: Request) {
   try {
@@ -52,18 +54,36 @@ export async function POST(request: Request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user (auto-verified for alpha)
-    const result = await db.collection("users").insertOne({
+    // Generate verification token — store only the hash in DB
+    const rawToken = crypto.randomUUID();
+    const tokenHash = hashToken(rawToken);
+    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+    const now = new Date();
+
+    // Create user — emailVerified is null until the link is clicked
+    await db.collection("users").insertOne({
       name: name.trim(),
       email: email.toLowerCase(),
       hashedPassword,
-      emailVerified: new Date(),
+      emailVerified: null,
+      emailVerificationTokenHash: tokenHash,
+      emailVerificationExpiry: tokenExpiry,
+      emailVerificationSentAt: now,
       image: null,
-      createdAt: new Date(),
+      createdAt: now,
     });
 
+    // Send verification email (non-fatal — don't block account creation if mail fails)
+    let emailSent = true;
+    try {
+      await sendVerificationEmail(email.toLowerCase(), rawToken);
+    } catch (err) {
+      console.error("Verification email failed to send:", err);
+      emailSent = false;
+    }
+
     return NextResponse.json(
-      { message: "Account created", userId: result.insertedId.toString() },
+      { message: "Account created", emailSent },
       { status: 201 },
     );
   } catch {
@@ -73,3 +93,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

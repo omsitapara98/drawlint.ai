@@ -9,7 +9,9 @@ import {
 import { createReview } from "@/lib/db/reviews";
 import { incrementSubmissionCount } from "@/lib/db/topics";
 import {
-  checkAndIncrementManagedQuota,
+  checkManagedQuota,
+  incrementManagedQuota,
+  isEmailVerified,
 } from "@/lib/db/users";
 import { analyzeDesign } from "@/lib/ai";
 import { parseDiagram } from "@/lib/diagram";
@@ -58,6 +60,18 @@ export async function POST(request: Request) {
 
   const userId = session.user.id;
 
+  // ── Email verification gate (all modes) ───────────────────────
+  const verified = await isEmailVerified(userId);
+  if (!verified) {
+    return NextResponse.json(
+      {
+        error: "Please verify your email before submitting designs. Check your inbox for a verification link.",
+        emailNotVerified: true,
+      },
+      { status: 403 },
+    );
+  }
+
   // ── Resolve AI credentials BEFORE any mutations ────────────────
   // If the client sent BYO credentials → use them directly (no quota consumed).
   // Otherwise → managed path: check quota and use server env vars.
@@ -82,7 +96,7 @@ export async function POST(request: Request) {
         { status: 503 },
       );
     }
-    const quota = await checkAndIncrementManagedQuota(userId);
+    const quota = await checkManagedQuota(userId);
     if (!quota.allowed) {
       return NextResponse.json(
         {
@@ -177,6 +191,7 @@ export async function POST(request: Request) {
   }
 
   // ── AI path — runs to completion even if client disconnects ────
+  const isManagedMode = !body.apiKey;
   const stream = new ReadableStream({
     async start(controller) {
       const enqueue = (data: object) => {
@@ -214,6 +229,7 @@ export async function POST(request: Request) {
         });
         await updateDesignStatus(design._id.toString(), "reviewed");
         await incrementSubmissionCount(body.topicId);
+        if (isManagedMode) await incrementManagedQuota(userId);
 
         enqueue({ type: "complete", review: aiResult });
       } catch (err) {

@@ -5,7 +5,9 @@ import { getReviewByDesignId, deleteReviewByDesignId, createReview } from "@/lib
 import { decrementSubmissionCount } from "@/lib/db/topics";
 import { uploadDesign, deleteDesign as deleteBlob } from "@/lib/blob/storage";
 import {
-  checkAndIncrementManagedQuota,
+  checkManagedQuota,
+  incrementManagedQuota,
+  isEmailVerified,
 } from "@/lib/db/users";
 import { analyzeDesign } from "@/lib/ai";
 import { parseDiagram } from "@/lib/diagram";
@@ -162,6 +164,18 @@ export async function PUT(
   const userId = session.user.id;
   const version = design.version + 1;
 
+  // ── Email verification gate (all modes) ───────────────────────
+  const verified = await isEmailVerified(userId);
+  if (!verified) {
+    return NextResponse.json(
+      {
+        error: "Please verify your email before submitting designs. Check your inbox for a verification link.",
+        emailNotVerified: true,
+      },
+      { status: 403 },
+    );
+  }
+
   // ── Resolve AI credentials BEFORE any mutations ────────────────
   // If the client sent BYO credentials → use them directly (no quota consumed).
   // Otherwise → managed path: check quota and use server env vars.
@@ -186,7 +200,7 @@ export async function PUT(
         { status: 503 },
       );
     }
-    const quota = await checkAndIncrementManagedQuota(userId);
+    const quota = await checkManagedQuota(userId);
     if (!quota.allowed) {
       return NextResponse.json(
         {
@@ -283,6 +297,7 @@ export async function PUT(
   }
 
   // AI path — runs to completion even if client disconnects; review is saved to DB
+  const isManagedMode = !body.apiKey;
   const stream = new ReadableStream({
     async start(controller) {
       const enqueue = (data: object) => {
@@ -320,6 +335,7 @@ export async function PUT(
         });
 
         await updateDesignStatus(designId, "reviewed");
+        if (isManagedMode) await incrementManagedQuota(userId);
         const updatedDesign = await getDesignById(designId);
 
         enqueue({ type: "complete", review: aiResult, design: updatedDesign });

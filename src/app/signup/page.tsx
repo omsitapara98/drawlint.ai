@@ -44,7 +44,7 @@ export default function SignUpPage() {
         body: JSON.stringify({ name, email, password }),
       });
 
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as { error?: string; emailSent?: boolean };
 
       if (!res.ok) {
         setError(data.error ?? "Something went wrong");
@@ -65,7 +65,7 @@ export default function SignUpPage() {
         return;
       }
 
-      window.location.href = "/canvas";
+      window.location.href = `/verify-email/sent?email=${encodeURIComponent(email)}${data.emailSent === false ? "&emailFailed=1" : ""}`;
     } catch {
       setError("Something went wrong");
       setLoading(false);

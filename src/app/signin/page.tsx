@@ -1,22 +1,42 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  OAuthAccountNotLinked:
+    "An account with this email already exists. Sign in with your email and password instead.",
+  OAuthCallbackError: "Sign-in failed. Please try again.",
+  CredentialsSignin: "Invalid email or password.",
+  SessionRequired: "Please sign in to continue.",
+  Default: "Something went wrong. Please try again.",
+};
+
 export default function SignInPage() {
+  const searchParams = useSearchParams();
+  const urlError = searchParams.get("error");
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/canvas";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const displayError =
+    formError ||
+    (urlError
+      ? (AUTH_ERROR_MESSAGES[urlError] ?? AUTH_ERROR_MESSAGES.Default)
+      : "");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    setFormError("");
 
     if (!email || !password) {
-      setError("Email and password are required");
+      setFormError("Email and password are required");
       return;
     }
 
@@ -30,14 +50,14 @@ export default function SignInPage() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        setFormError("Invalid email or password");
         setLoading(false);
         return;
       }
 
-      window.location.href = "/canvas";
+      window.location.href = callbackUrl;
     } catch {
-      setError("Something went wrong");
+      setFormError("Something went wrong");
       setLoading(false);
     }
   }
@@ -97,13 +117,13 @@ export default function SignInPage() {
             />
           </div>
 
-          {error && (
+          {displayError && (
             <motion.p
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-sm text-destructive"
             >
-              {error}
+              {displayError}
             </motion.p>
           )}
 
@@ -137,7 +157,7 @@ export default function SignInPage() {
 
         <div className="flex flex-col gap-3">
           <button
-            onClick={() => signIn("google", { callbackUrl: "/canvas" })}
+            onClick={() => signIn("google", { callbackUrl })}
             className="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border border-border/50 dark:border-white/[0.08] bg-card/50 dark:bg-white/5 backdrop-blur-sm text-sm font-medium transition-colors hover:border-primary/30"
           >
             <svg className="h-4.5 w-4.5" viewBox="0 0 24 24">
@@ -162,7 +182,7 @@ export default function SignInPage() {
           </button>
 
           <button
-            onClick={() => signIn("github", { callbackUrl: "/canvas" })}
+            onClick={() => signIn("github", { callbackUrl })}
             className="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border border-border/50 dark:border-white/[0.08] bg-[#24292f] text-sm font-medium text-white transition-all hover:bg-[#1b1f23] hover:shadow-[0_0_12px_oklch(0.72_0.25_285_/_15%)]"
           >
             <svg className="h-4.5 w-4.5" fill="currentColor" viewBox="0 0 24 24">

@@ -38,6 +38,14 @@ async function main() {
     await reviews.createIndex({ designId: 1, version: -1 });
     console.log("✓ reviews indexes created");
 
+    // ── Users ────────────────────────────────────────────────────
+    const users = db.collection("users");
+    await users.createIndex(
+      { emailVerificationTokenHash: 1 },
+      { sparse: true, name: "emailVerificationTokenHash_sparse" },
+    );
+    console.log("✓ users indexes created");
+
     console.log("Index setup complete.");
   } finally {
     await client.close();

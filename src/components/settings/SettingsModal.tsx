@@ -10,13 +10,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Shield, ChevronDown, Loader2, CheckCircle2 } from "lucide-react";
+import { Shield, ChevronDown, Loader2, CheckCircle2, MailWarning } from "lucide-react";
 
 const BYO_STORAGE_KEY = "drawlint:byo-key";
 
 interface AiSettings {
   aiMode: "managed" | "byo";
-  managedUsage: { count: number; limit: number; month: number; year: number; resetsOn: string };
+  emailVerified: boolean;
+  managedUsage: { count: number; limit: number | null; month: number; year: number; resetsOn: string };
 }
 
 interface ByoCreds {
@@ -150,6 +151,20 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
               <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/30 rounded-md px-3 py-2">{error}</p>
             )}
 
+            {/* Global email-not-verified banner (applies regardless of mode) */}
+            {settings && !settings.emailVerified && (
+              <div className="flex items-start gap-2.5 rounded-md border border-amber-400/30 bg-amber-50/60 dark:bg-amber-950/20 p-3">
+                <MailWarning className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                <div className="space-y-0.5">
+                  <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Email not verified</p>
+                  <p className="text-xs text-muted-foreground">
+                    Verify your email to submit designs.{" "}
+                    <a href="/verify-email/sent" className="underline hover:text-foreground">Resend link →</a>
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Mode selector */}
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -161,7 +176,9 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
                 }`}
               >
                 <p className="text-sm font-semibold">DrawLint AI</p>
-                <p className="text-xs text-muted-foreground mt-0.5">10 free reviews/month</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                  {settings?.managedUsage.limit === null ? "Unlimited reviews/month" : "10 free reviews/month"}
+                </p>
               </button>
               <button
                 onClick={() => setSelectedMode("byo")}
@@ -176,31 +193,41 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
               </button>
             </div>
 
-            {/* Managed: usage meter */}
             {selectedMode === "managed" && settings && (
               <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Monthly usage</span>
-                  <span className="text-sm font-semibold">
-                    {settings.managedUsage.count}
-                    <span className="text-muted-foreground font-normal">/{settings.managedUsage.limit}</span>
-                  </span>
-                </div>
-                <div className="h-2 rounded-full bg-border overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 transition-all"
-                    style={{ width: `${Math.min(100, (settings.managedUsage.count / settings.managedUsage.limit) * 100)}%` }}
-                  />
-                </div>
-                {resetDate && (
-                  <p className="text-xs text-muted-foreground">
-                    Resets on {resetDate}
-                  </p>
-                )}
-                {settings.managedUsage.count >= settings.managedUsage.limit && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                    Monthly limit reached. Switch to My Azure OpenAI for unlimited reviews.
-                  </p>
+                {settings.managedUsage.limit === null ? (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Monthly usage</span>
+                    <span className="text-sm font-semibold text-violet-600 dark:text-violet-400">Unlimited ✦</span>
+                  </div>
+                ) : !settings.emailVerified ? (
+                  <p className="text-xs text-muted-foreground">Quota available once your email is verified.</p>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Monthly usage</span>
+                      <span className="text-sm font-semibold">
+                        {settings.managedUsage.count}
+                        <span className="text-muted-foreground font-normal">/{settings.managedUsage.limit}</span>
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-border overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 transition-all"
+                        style={{ width: `${Math.min(100, (settings.managedUsage.count / settings.managedUsage.limit) * 100)}%` }}
+                      />
+                    </div>
+                    {resetDate && (
+                      <p className="text-xs text-muted-foreground">
+                        Resets on {resetDate}
+                      </p>
+                    )}
+                    {settings.managedUsage.count >= settings.managedUsage.limit && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                        Monthly limit reached. Switch to My Azure OpenAI for unlimited reviews.
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -211,7 +238,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
                 <div className="flex items-start gap-2.5 rounded-md border border-primary/20 bg-primary/5 p-3">
                   <Shield className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   <p className="text-xs leading-relaxed text-foreground/70">
-                    Your credentials are saved <strong>only in this browser</strong> and sent directly to Azure — never stored on our servers.
+                    Your key stays <strong>only in this browser</strong>. It's sent over HTTPS directly to Azure — we never see it, log it, or store it.
                   </p>
                 </div>
 

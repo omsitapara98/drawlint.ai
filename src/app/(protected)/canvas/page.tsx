@@ -95,6 +95,8 @@ function CanvasPageInner() {
   const [submitted, setSubmitted] = useState(false);
   const [anonymousMode, setAnonymousMode] = useState(false);
   const [pseudonym, setPseudonym] = useState<string | null>(null);
+  const [isEmailVerified, setIsEmailVerified] = useState<boolean | null>(null);
+  const [hasByoKey, setHasByoKey] = useState(false);
   const [reviewerProgress, setReviewerProgress] = useState<ReviewerProgress>({
     nfrReview: "pending",
     entitiesReview: "pending",
@@ -117,6 +119,28 @@ function CanvasPageInner() {
       if (raw === "true") setAnonymousMode(true);
     } catch { /* noop */ }
   }, []);
+
+  /* ── Read BYO key presence from localStorage ──────────────── */
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("drawlint:byo-key");
+      if (raw) {
+        const creds = JSON.parse(raw) as { apiKey?: string };
+        setHasByoKey(!!creds.apiKey);
+      }
+    } catch { /* noop */ }
+  }, []);
+
+  /* ── Fetch email verification status when authenticated ─────── */
+  useEffect(() => {
+    if (authStatus !== "authenticated") return;
+    fetch("/api/user/settings")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { emailVerified?: boolean } | null) => {
+        if (data) setIsEmailVerified(data.emailVerified ?? true);
+      })
+      .catch(() => { /* leave null — don't block submit on fetch error */ });
+  }, [authStatus]);
 
   /* ── Fetch pseudonym when anonymous mode is toggled on ──────── */
   useEffect(() => {
@@ -583,10 +607,18 @@ function CanvasPageInner() {
       });
 
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string; quotaExceeded?: boolean };
+        const data = (await res.json().catch(() => ({}))) as { error?: string; quotaExceeded?: boolean; emailNotVerified?: boolean };
         if (data.quotaExceeded) {
           setAiError(
             "You've used all 10 free AI reviews this month. Add your own Azure OpenAI key in Settings to continue.",
+          );
+          stopReviewerProgress("error");
+          activeStreamRef.current = false;
+          return;
+        }
+        if (data.emailNotVerified) {
+          setAiError(
+            "Please verify your email before using DrawLint AI. Check your inbox for a verification link.",
           );
           stopReviewerProgress("error");
           activeStreamRef.current = false;
@@ -972,20 +1004,28 @@ function CanvasPageInner() {
               {/* Right: action buttons */}
               <div className="ml-auto flex items-center gap-2 shrink-0">
                 {/* Drawing mode: Submit / Re-submit */}
-                {((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode)) && (
-                  <button
-                    onClick={aiStatus === "analyzing" ? () => setPanelOpen(p => !p) : handleSubmitDesign}
-                    disabled={aiStatus !== "analyzing" && !hasDrawnShapes}
-                    className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                  >
-                    {aiStatus === "analyzing" ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Send className="h-3 w-3" />
-                    )}
-                    {aiStatus === "analyzing" ? "Analyzing…" : (editDesignId || submittedDesignId ? "Re-submit" : "Submit")}
-                  </button>
-                )}
+                {((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode)) && (() => {
+                  const emailBlocked = isEmailVerified === false;
+                  const isDisabled = aiStatus !== "analyzing" && (!hasDrawnShapes || emailBlocked);
+                  const tooltip = emailBlocked
+                    ? "Email not verified — cannot submit"
+                    : undefined;
+                  return (
+                    <button
+                      onClick={aiStatus === "analyzing" ? () => setPanelOpen(p => !p) : handleSubmitDesign}
+                      disabled={isDisabled}
+                      title={tooltip}
+                      className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {aiStatus === "analyzing" ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Send className="h-3 w-3" />
+                      )}
+                      {aiStatus === "analyzing" ? "Analyzing…" : (editDesignId || submittedDesignId ? "Re-submit" : "Submit")}
+                    </button>
+                  );
+                })()}
 
                 {/* Post-submit mode: Edit unlocks canvas directly */}
                 {submitted && !viewDesignId && (
