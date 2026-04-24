@@ -771,7 +771,6 @@ function CanvasPageInner() {
       setSubmittedDesignId(data.designId);
       setAiStatus("idle");
       setAiError("Draft saved successfully!");
-      setPanelOpen(true);
 
       // Clear the success message after a few seconds
       setTimeout(() => {
