@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Shield, ChevronDown, Loader2, CheckCircle2, MailWarning } from "lucide-react";
+import { Shield, ExternalLink, Loader2, CheckCircle2, MailWarning } from "lucide-react";
 
 const BYO_STORAGE_KEY = "drawlint:byo-key";
 
@@ -42,7 +42,6 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | undefined>();
-  const [guideOpen, setGuideOpen] = useState(false);
 
   // Load settings from server + read localStorage BYO creds when modal opens
   useEffect(() => {
@@ -240,7 +239,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
                 <div className="flex items-start gap-2.5 rounded-md border border-primary/20 bg-primary/5 p-3">
                   <Shield className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   <p className="text-xs leading-relaxed text-foreground/70">
-                    Your key stays <strong>only in this browser</strong>. It's sent over HTTPS directly to Azure — we never see it, log it, or store it.
+                    Your key stays <strong>only in this browser</strong>. It&apos;s sent over HTTPS when you submit a review — we never log it, persist it, or store it.
                   </p>
                 </div>
 
@@ -251,25 +250,16 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
                   </div>
                 )}
 
-                {/* Setup guide */}
-                <div>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={() => setGuideOpen((v) => !v)}
-                  >
-                    <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${guideOpen ? "rotate-0" : "-rotate-90"}`} />
-                    How to get an Azure OpenAI key
-                  </button>
-                  {guideOpen && (
-                    <ol className="mt-2 ml-5 list-decimal space-y-1 text-xs text-muted-foreground">
-                      <li>Go to <a href="https://portal.azure.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">portal.azure.com</a> → Create an <strong>Azure OpenAI</strong> resource</li>
-                      <li>Deploy a model (e.g. <code className="text-[11px] bg-muted px-1 rounded">gpt-4o</code>) in Azure AI Foundry</li>
-                      <li>Copy the <strong>Endpoint URL</strong> and <strong>API Key</strong></li>
-                      <li>Paste them below and save</li>
-                    </ol>
-                  )}
-                </div>
+                {/* Setup guide link */}
+                <a
+                  href="/guide/byo-keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  How to get an Azure OpenAI key →
+                </a>
 
                 <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
