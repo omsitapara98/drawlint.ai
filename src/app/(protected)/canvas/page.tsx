@@ -790,7 +790,7 @@ function CanvasPageInner() {
       {/* Mobile guard — visible only on small screens */}
       <div className="flex md:hidden h-screen flex-col items-center justify-center gap-6 px-6 text-center bg-background">
         <span className="text-lg font-bold tracking-tight">
-          Draw<span className="text-violet-500">Lint</span>.ai
+          DrawLint<span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">.ai</span>
         </span>
         <Monitor className="h-16 w-16 text-violet-500" strokeWidth={1.5} />
         <div className="space-y-2">
@@ -823,7 +823,7 @@ function CanvasPageInner() {
                   D
                 </div>
                 <span className="text-lg font-bold tracking-tight">
-                  Draw<span className="text-violet-500">Lint</span>.ai
+                  DrawLint<span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">.ai</span>
                 </span>
               </div>
 

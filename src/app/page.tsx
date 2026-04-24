@@ -140,10 +140,8 @@ export default function LandingPage() {
             variants={item}
             className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[0.95] mb-6"
           >
-            <span className="bg-gradient-to-r from-violet-500 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-              DrawLint
-            </span>
-            <span className="text-foreground/90">.ai</span>
+            <span className="text-foreground">DrawLint</span>
+            <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">.ai</span>
           </motion.h1>
 
           <motion.div variants={item} className="h-10 flex items-center justify-center mb-6">
