@@ -139,57 +139,92 @@ function CanvasPreview({ children, height = 180 }: { children: React.ReactNode; 
 /** Template layout preview — full architecture diagram */
 function TemplatePreview() {
   return (
-    <CanvasPreview height={360}>
-      {/* Left column — text sections */}
-      <AnimBox x={15} y={15} w={190} h={35} label="Functional Requirements" delay={0.1} />
-      <AnimBox x={15} y={58} w={190} h={35} label="Assumptions" delay={0.2} />
-      <AnimBox x={15} y={101} w={190} h={35} label="Non-Functional Reqs" delay={0.3} />
-      <AnimBox x={15} y={144} w={190} h={35} label="Core Entities" delay={0.4} />
-      <AnimBox x={15} y={187} w={190} h={35} label="Capacity Calculations" delay={0.5} />
-      <AnimBox x={15} y={230} w={190} h={35} label="API Routes" delay={0.6} />
+    <CanvasPreview height={420}>
+      {/* Left column — sections with sample content inside */}
+      {/* FR */}
+      <AnimBox x={10} y={10} w={220} h={50} label="Functional Requirements" delay={0.1} />
+      <motion.text x={25} y={42} className="fill-violet-200/50 text-[7px]"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
+        Design a URL shortener for 100M URLs
+      </motion.text>
+
+      {/* Assumptions */}
+      <AnimBox x={10} y={70} w={220} h={55} label="Assumptions" delay={0.2} />
+      <motion.text x={25} y={100} className="fill-violet-200/50 text-[7px]"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>
+        10K DAU · 100:1 read/write · 99.9% SLA
+      </motion.text>
+
+      {/* NFRs */}
+      <AnimBox x={10} y={135} w={220} h={50} label="Non-Functional Requirements" delay={0.3} />
+      <motion.text x={25} y={167} className="fill-violet-200/50 text-[7px]"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}>
+        p99 &lt; 200ms · Eventual consistency OK
+      </motion.text>
+
+      {/* Entities */}
+      <AnimBox x={10} y={195} w={220} h={50} label="Core Entities" delay={0.4} />
+      <motion.text x={25} y={227} className="fill-violet-200/50 text-[7px]"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }}>
+        URL · User · ClickEvent · Analytics
+      </motion.text>
+
+      {/* Capacity */}
+      <AnimBox x={10} y={255} w={220} h={55} label="Capacity Calculations" delay={0.5} />
+      <motion.text x={25} y={288} className="fill-violet-200/50 text-[7px]"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}>
+        10K writes/day → 0.12 QPS write, 12 QPS read
+      </motion.text>
+
+      {/* API Routes */}
+      <AnimBox x={10} y={320} w={220} h={55} label="API Routes" delay={0.6} />
+      <motion.text x={25} y={350} className="fill-violet-200/50 text-[7px]"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }}>
+        POST /shorten · GET /:code · GET /stats/:code
+      </motion.text>
 
       {/* Divider line */}
-      <motion.line x1={225} y1={5} x2={225} y2={355} className="stroke-violet-500/30" strokeWidth={1.5} strokeDasharray="6 4"
+      <motion.line x1={245} y1={5} x2={245} y2={415} className="stroke-violet-500/30" strokeWidth={1.5} strokeDasharray="6 4"
         initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: 0.3 }} />
 
-      {/* Right area — HLD architecture */}
-      <motion.text x={410} y={22} textAnchor="middle" className="fill-violet-400/25 text-[11px] font-bold tracking-wider"
+      {/* Right area — HLD */}
+      <motion.text x={420} y={22} textAnchor="middle" className="fill-violet-400/25 text-[11px] font-bold tracking-wider"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
         HIGH-LEVEL DESIGN
       </motion.text>
 
       {/* Client */}
-      <AnimBox x={370} y={38} w={85} h={32} label="Client" delay={0.8} color="cyan" />
-      <AnimArrow x1={412} y1={70} x2={412} y2={100} delay={0.9} label="HTTPS" />
+      <AnimBox x={385} y={38} w={75} h={32} label="Client" delay={0.8} color="cyan" />
+      <AnimArrow x1={422} y1={70} x2={422} y2={100} delay={0.9} label="HTTPS" />
 
-      {/* Load Balancer */}
-      <AnimBox x={355} y={100} w={115} h={32} label="Load Balancer" delay={1.0} color="violet" />
+      {/* LB */}
+      <AnimBox x={370} y={100} w={105} h={32} label="Load Balancer" delay={1.0} color="violet" />
 
       {/* Services */}
-      <AnimBox x={250} y={170} w={95} h={32} label="Auth Service" delay={1.2} color="emerald" />
-      <AnimBox x={365} y={170} w={95} h={32} label="API Server" delay={1.3} color="violet" />
-      <AnimBox x={480} y={170} w={80} h={32} label="Worker" delay={1.4} color="amber" />
-      <AnimArrow x1={385} y1={132} x2={298} y2={170} delay={1.1} />
-      <AnimArrow x1={412} y1={132} x2={412} y2={170} delay={1.15} />
-      <AnimArrow x1={440} y1={132} x2={520} y2={170} delay={1.2} />
+      <AnimBox x={270} y={170} w={85} h={32} label="Auth Svc" delay={1.2} color="emerald" />
+      <AnimBox x={380} y={170} w={85} h={32} label="API Server" delay={1.3} color="violet" />
+      <AnimBox x={490} y={170} w={75} h={32} label="Worker" delay={1.4} color="amber" />
+      <AnimArrow x1={400} y1={132} x2={312} y2={170} delay={1.1} />
+      <AnimArrow x1={422} y1={132} x2={422} y2={170} delay={1.15} />
+      <AnimArrow x1={445} y1={132} x2={527} y2={170} delay={1.2} />
 
       {/* Data layer */}
-      <AnimBox x={250} y={240} w={95} h={32} label="PostgreSQL" delay={1.5} color="emerald" />
-      <AnimBox x={365} y={240} w={95} h={32} label="Redis Cache" delay={1.6} color="red" />
-      <AnimBox x={480} y={240} w={80} h={32} label="Kafka" delay={1.7} color="amber" />
-      <AnimArrow x1={298} y1={202} x2={298} y2={240} delay={1.5} />
-      <AnimArrow x1={412} y1={202} x2={412} y2={240} delay={1.55} />
-      <AnimArrow x1={520} y1={202} x2={520} y2={240} delay={1.6} />
+      <AnimBox x={270} y={240} w={85} h={32} label="PostgreSQL" delay={1.5} color="emerald" />
+      <AnimBox x={380} y={240} w={85} h={32} label="Redis" delay={1.6} color="red" />
+      <AnimBox x={490} y={240} w={75} h={32} label="Kafka" delay={1.7} color="amber" />
+      <AnimArrow x1={312} y1={202} x2={312} y2={240} delay={1.5} />
+      <AnimArrow x1={422} y1={202} x2={422} y2={240} delay={1.55} />
+      <AnimArrow x1={527} y1={202} x2={527} y2={240} delay={1.6} />
 
       {/* Storage */}
-      <AnimBox x={330} y={310} w={110} h={32} label="Blob Storage" delay={1.8} color="cyan" />
-      <AnimArrow x1={412} y1={272} x2={385} y2={310} delay={1.8} />
+      <AnimBox x={345} y={310} w={110} h={32} label="Blob Storage" delay={1.8} color="cyan" />
+      <AnimArrow x1={422} y1={272} x2={400} y2={310} delay={1.8} />
 
-      {/* Annotation */}
-      <motion.g initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 2.0, duration: 0.4 }}>
-        <rect x={15} y={285} width={190} height={60} rx={5} className="fill-amber-500/5 stroke-amber-500/20" strokeWidth={1} strokeDasharray="4 4" />
-        <text x={27} y={305} className="fill-amber-300/80 text-[8px]">💬 Design rationale goes here</text>
-        <text x={27} y={319} className="fill-amber-300/60 text-[7px]">Write notes near components for AI to give credit</text>
+      {/* Annotation near Redis */}
+      <motion.g initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 2.0, duration: 0.4 }}>
+        <rect x={270} y={360} width={170} height={45} rx={5} className="fill-amber-500/5 stroke-amber-500/20" strokeWidth={1} strokeDasharray="4 4" />
+        <text x={282} y={378} className="fill-amber-300/80 text-[8px]">💬 Sorted sets for leaderboard,</text>
+        <text x={282} y={392} className="fill-amber-300/60 text-[7px]">TTL=3600s for session cache</text>
       </motion.g>
     </CanvasPreview>
   );
