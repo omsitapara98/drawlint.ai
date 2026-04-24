@@ -244,35 +244,55 @@ export default function ByoKeysGuidePage() {
         {/* Section 3 — How your keys are stored */}
         <section>
           <div className="rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm p-8 shadow-md shadow-black/[0.04] dark:shadow-none space-y-4">
-            <SectionHeading emoji="🔒" title="How Your Keys Are Stored" />
+            <SectionHeading emoji="🔒" title="How Your Keys Are Handled" />
             <p className="text-base leading-7 text-muted-foreground">
-              Your API key is stored{" "}
+              Your API key is{" "}
               <strong className="text-foreground">
-                client-side only in localStorage
+                stored only in your browser&apos;s localStorage
               </strong>
-              . It is{" "}
+              . When you submit a design for review, your credentials are sent
+              over HTTPS to our server, which forwards the request to Azure
+              OpenAI on your behalf — then{" "}
               <strong className="text-foreground">
-                NEVER sent to our server
+                immediately discards them
               </strong>
               .
             </p>
             <div className="mt-4 rounded-xl bg-zinc-950 dark:bg-zinc-900/60 border border-zinc-800 p-6 font-mono text-sm text-emerald-400 overflow-x-auto">
               <pre className="leading-relaxed whitespace-pre">
-{`Your Browser (localStorage) → Azure OpenAI API
-     ↑                              ↓
-DrawLint UI  ←──── AI Review Result`}
+{`┌─────────────┐      HTTPS       ┌──────────────┐       HTTPS       ┌─────────────────┐
+│  Your Browser│ ──────────────→ │ DrawLint API │ ──────────────→  │ Azure OpenAI API│
+│ (localStorage│                 │  (stateless) │                  │  (your resource) │
+│  stores key) │ ←────────────── │ never stores │ ←──────────────  │                 │
+└─────────────┘   AI review      │  your key    │   AI response    └─────────────────┘
+                   result        └──────────────┘`}
               </pre>
             </div>
-            <p className="text-base leading-7 text-muted-foreground mt-2">
-              <strong className="text-foreground">
-                Your API key goes directly from your browser to Azure. Our
-                server never sees it.
-              </strong>
+            <p className="text-base leading-7 text-muted-foreground mt-4">
+              <strong className="text-foreground">Key guarantees:</strong>
             </p>
+            <ul className="space-y-2 text-base text-muted-foreground">
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500 inline-block" />
+                We <strong className="text-foreground">never log</strong> your API key, endpoint, or deployment name
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500 inline-block" />
+                We <strong className="text-foreground">never store</strong> your credentials in our database or on disk
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500 inline-block" />
+                Your key is used <strong className="text-foreground">only for the duration</strong> of that single API call, then discarded from memory
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500 inline-block" />
+                All communication is <strong className="text-foreground">encrypted over HTTPS</strong>
+              </li>
+            </ul>
             <Tip>
-              The key stays in your browser&apos;s localStorage — it never
-              leaves the client. Even network requests go directly from your
-              browser to Azure.
+              Your key lives in your browser&apos;s localStorage and is only
+              transmitted when you submit a review. Our server acts as a
+              stateless pass-through — it never persists your credentials.
             </Tip>
           </div>
         </section>
@@ -314,16 +334,16 @@ DrawLint UI  ←──── AI Review Result`}
                 <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500 inline-block" />
                 <span>
                   <strong className="text-foreground">
-                    localStorage encryption
+                    Stored only in your browser
                   </strong>{" "}
-                  — credentials are stored securely in your browser&apos;s sandboxed storage
+                  — credentials live in localStorage, sandboxed to your browser session
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500 inline-block" />
                 <span>
-                  <strong className="text-foreground">No server storage</strong>{" "}
-                  — our backend never receives or stores your API key
+                  <strong className="text-foreground">Never logged or persisted</strong>{" "}
+                  — our server processes your key in-memory for a single request, then discards it. No database, no logs, no disk writes.
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
@@ -338,9 +358,25 @@ DrawLint UI  ←──── AI Review Result`}
               <li className="flex items-start gap-2.5">
                 <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500 inline-block" />
                 <span>
-                  <strong className="text-foreground">Direct connection</strong>{" "}
-                  — API calls go straight from your browser to Azure, never
-                  proxied through DrawLint
+                  <strong className="text-foreground">HTTPS everywhere</strong>{" "}
+                  — all communication between your browser, our server, and Azure
+                  is encrypted in transit
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500 inline-block" />
+                <span>
+                  <strong className="text-foreground">Open source</strong>{" "}
+                  — our codebase is{" "}
+                  <a
+                    href="https://github.com/omsitapara98/drawlint.ai"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-violet-600 dark:text-violet-400 underline underline-offset-2 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+                  >
+                    public on GitHub
+                  </a>{" "}
+                  — you can verify exactly how keys are handled
                 </span>
               </li>
             </ul>
