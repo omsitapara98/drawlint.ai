@@ -1131,7 +1131,7 @@ function CanvasPageInner() {
                         className="inline-flex h-7 items-center gap-1 rounded-lg border border-violet-300 dark:border-violet-700 px-3 text-xs font-medium text-violet-600 dark:text-violet-400 transition-colors hover:bg-violet-50 dark:hover:bg-violet-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Save className="h-3 w-3" />
-                        {editDesignId || submittedDesignId ? "Update Draft" : "Save Draft"}
+                        Save Draft
                       </button>
                       {/* Post + AI Review button */}
                       <button
@@ -1145,7 +1145,7 @@ function CanvasPageInner() {
                         ) : (
                           <Send className="h-3 w-3" />
                         )}
-                        {isAnalyzing ? "Analyzing…" : (editDesignId || submittedDesignId ? "Re-post + AI Review" : "Post + AI Review")}
+                        {isAnalyzing ? "Analyzing…" : "Post + AI Review"}
                       </button>
                     </>
                   );
