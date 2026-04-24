@@ -173,20 +173,24 @@ export class AzureOpenAIProvider implements AIProvider {
     const systemPrompt = options.systemPrompt +
       "\n\nCRITICAL: Return ONLY a single valid JSON object. No markdown fences, no text before or after the JSON.";
 
-    const body = {
+    const body: Record<string, unknown> = {
       model: this.deployment,
       input: [
         { role: "system", content: systemPrompt },
         { role: "user", content: options.userContent },
       ],
-      temperature: options.temperature ?? 0.3,
       max_output_tokens: options.maxTokens ?? 2048,
     };
 
-    const json = await this.doFetch(url, body, options.signal);
-    const raw = extractResponsesContent(json);
-    const parsed = extractJson(raw);
-    return { parsed, raw };
+    try {
+      const json = await this.doFetch(url, body, options.signal);
+      const raw = extractResponsesContent(json);
+      const parsed = extractJson(raw);
+      return { parsed, raw };
+    } catch (err) {
+      // If first attempt fails with unsupported param, it's already clean — re-throw
+      throw err;
+    }
   }
 
   /** Shared fetch + error handling */
