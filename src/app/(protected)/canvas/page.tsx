@@ -16,7 +16,7 @@ import { hasAnyCredentials, getCredentialsForRequest, getAIConfig } from "@/lib/
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
-import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save, Pencil, Zap, Trash2 } from "lucide-react";
+import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save, Pencil, Zap, Trash2, Link2 } from "lucide-react";
 import Link from "next/link";
 
 /* ── Topic gate types ─────────────────────────────────────────── */
@@ -114,6 +114,7 @@ function CanvasPageInner() {
   const [draftToast, setDraftToast] = useState<string | null>(null);
   const [showDeleteDraftConfirm, setShowDeleteDraftConfirm] = useState(false);
   const [deletingDraft, setDeletingDraft] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const streamReaderRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const activeStreamRef = useRef(false);
 
@@ -1233,6 +1234,24 @@ function CanvasPageInner() {
                   >
                     <RotateCcw className="h-3 w-3" />
                     Edit
+                  </button>
+                )}
+
+                {/* Share button — visible when viewing any submitted design */}
+                {viewDesignId && submitted && !viewEditMode && (
+                  <button
+                    onClick={() => {
+                      const url = `${window.location.origin}/canvas?view=${viewDesignId}`;
+                      navigator.clipboard.writeText(url).then(() => {
+                        setShareCopied(true);
+                        setTimeout(() => setShareCopied(false), 2000);
+                      });
+                    }}
+                    className="inline-flex h-7 items-center gap-1 rounded-lg border border-border px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    title="Copy shareable link"
+                  >
+                    <Link2 className="h-3 w-3" />
+                    {shareCopied ? "Copied!" : "Share"}
                   </button>
                 )}
 
