@@ -310,7 +310,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
                   <Zap className="h-3.5 w-3.5 text-amber-500" />
                   <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">💡 Free</span>
                 </div>
-                <p className="text-sm font-semibold">Free AI</p>
+                <p className="text-sm font-semibold">Gemini AI</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">No cost • Quick setup</p>
                 <div className="mt-1.5 flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
@@ -331,7 +331,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
                   <Key className="h-3.5 w-3.5 text-blue-500" />
                   <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">⚙️ Advanced</span>
                 </div>
-                <p className="text-sm font-semibold">Your AI</p>
+                <p className="text-sm font-semibold">Azure OpenAI</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Your key • Full control</p>
                 <div className="mt-1.5 flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />

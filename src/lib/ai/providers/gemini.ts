@@ -8,7 +8,7 @@ import {
 import { extractJson } from "./base";
 
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
-const DEFAULT_MODEL = "gemini-1.5-flash";
+const DEFAULT_MODEL = "gemini-3.1-flash-lite-preview";
 
 /** Extra instructions appended for Gemini to enforce strict JSON output. */
 const GEMINI_JSON_SUFFIX = `
@@ -77,7 +77,7 @@ export class GeminiProvider implements AIProvider {
   readonly capabilities: ProviderCapabilities = {
     maxConcurrency: 2, // Conservative for free tier rate limits
     supportsJsonMode: true,
-    displayName: "Gemini (Free AI)",
+    displayName: "Gemini AI (Free)",
     qualityTier: "balanced",
   };
 
