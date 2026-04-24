@@ -91,6 +91,7 @@ export default async function TopicDesignsPage({ params }: PageProps) {
               avatarUrl: !design.anonymousName && author?.image ? String(author.image) : null,
               reviewLevel: design.reviewLevel,
               signal: review?.leadReviewer?.signal ?? null,
+              reviewedBy: review?.reviewedBy ?? null,
               status: design.status,
               date: new Date(design.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
             }))}

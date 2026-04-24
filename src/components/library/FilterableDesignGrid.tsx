@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Key } from "lucide-react";
 import { motion } from "framer-motion";
 
 type ReviewLevel = "mid" | "senior" | "staff" | "deep";
@@ -46,6 +46,7 @@ interface EnrichedDesign {
   signal: string | null;
   status: string;
   date: string;
+  reviewedBy: string | null;
 }
 
 const container = {
@@ -137,6 +138,22 @@ export function FilterableDesignGrid({ designs }: { designs: EnrichedDesign[] })
                       {SIGNAL_LABELS[design.signal] ?? design.signal}
                     </span>
                   )}
+                  {design.reviewedBy === "drawlint" ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 dark:bg-violet-900/40 px-2 py-0.5 text-[0.65rem] font-medium text-violet-700 dark:text-violet-300">
+                      <Sparkles className="h-2.5 w-2.5" />
+                      DrawLint AI
+                    </span>
+                  ) : design.reviewedBy === "gemini" ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 text-[0.65rem] font-medium text-amber-700 dark:text-amber-300">
+                      <Zap className="h-2.5 w-2.5" />
+                      Gemini
+                    </span>
+                  ) : design.reviewedBy === "azure" ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 text-[0.65rem] font-medium text-blue-700 dark:text-blue-300">
+                      <Key className="h-2.5 w-2.5" />
+                      Azure
+                    </span>
+                  ) : null}
                   {design.status !== "reviewed" && (
                     <span className="rounded-full bg-muted px-2 py-0.5 text-[0.65rem] font-medium text-muted-foreground">{design.status}</span>
                   )}

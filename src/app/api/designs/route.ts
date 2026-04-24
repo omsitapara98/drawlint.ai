@@ -267,6 +267,7 @@ export async function POST(request: Request) {
           hldReview: aiResult.hldReview,
           leadReviewer: aiResult.leadReviewer,
           followUpQuestions: aiResult.followUpQuestions,
+          reviewedBy: credentials.provider,
         });
         await updateDesignStatus(design._id.toString(), "reviewed");
         await incrementSubmissionCount(body.topicId);

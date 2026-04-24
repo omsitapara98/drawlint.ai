@@ -50,6 +50,8 @@ export interface Review {
   hldReview: ReviewDimension;
   leadReviewer: LeadReviewer;
   followUpQuestions: string[];
+  /** Which AI provider generated this review */
+  reviewedBy?: "drawlint" | "gemini" | "azure";
   createdAt: Date;
 }
 

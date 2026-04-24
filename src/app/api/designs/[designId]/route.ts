@@ -383,6 +383,7 @@ export async function PUT(
           hldReview: aiResult.hldReview,
           leadReviewer: aiResult.leadReviewer,
           followUpQuestions: aiResult.followUpQuestions,
+          reviewedBy: credentials.provider,
         });
 
         await updateDesignStatus(designId, "reviewed");

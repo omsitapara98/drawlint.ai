@@ -32,6 +32,7 @@ export async function createReview(input: {
   hldReview: AIReviewResponse["hldReview"];
   leadReviewer: AIReviewResponse["leadReviewer"];
   followUpQuestions: string[];
+  reviewedBy?: "drawlint" | "gemini" | "azure";
 }): Promise<Review> {
   const col = await collection();
   const doc: Review = {
@@ -47,6 +48,7 @@ export async function createReview(input: {
     hldReview: input.hldReview,
     leadReviewer: input.leadReviewer,
     followUpQuestions: input.followUpQuestions,
+    reviewedBy: input.reviewedBy,
     createdAt: new Date(),
   };
 
