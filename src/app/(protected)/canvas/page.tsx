@@ -97,6 +97,7 @@ function CanvasPageInner() {
   const [pseudonym, setPseudonym] = useState<string | null>(null);
   const [isEmailVerified, setIsEmailVerified] = useState<boolean | null>(null);
   const [hasByoKey, setHasByoKey] = useState(false);
+  const [aiMode, setAiMode] = useState<"managed" | "byo" | null>(null);
   const [reviewerProgress, setReviewerProgress] = useState<ReviewerProgress>({
     nfrReview: "pending",
     entitiesReview: "pending",
@@ -131,13 +132,16 @@ function CanvasPageInner() {
     } catch { /* noop */ }
   }, []);
 
-  /* ── Fetch email verification status when authenticated ─────── */
+  /* ── Fetch email verification status and AI mode when authenticated ── */
   useEffect(() => {
     if (authStatus !== "authenticated") return;
     fetch("/api/user/settings")
       .then((r) => r.ok ? r.json() : null)
-      .then((data: { emailVerified?: boolean } | null) => {
-        if (data) setIsEmailVerified(data.emailVerified ?? true);
+      .then((data: { emailVerified?: boolean; aiMode?: "managed" | "byo" } | null) => {
+        if (data) {
+          setIsEmailVerified(data.emailVerified ?? true);
+          if (data.aiMode) setAiMode(data.aiMode);
+        }
       })
       .catch(() => { /* leave null — don't block submit on fetch error */ });
   }, [authStatus]);
@@ -1006,9 +1010,12 @@ function CanvasPageInner() {
                 {/* Drawing mode: Submit / Re-submit */}
                 {((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode)) && (() => {
                   const emailBlocked = isEmailVerified === false;
-                  const isDisabled = aiStatus !== "analyzing" && (!hasDrawnShapes || emailBlocked);
+                  const byoBlocked = aiMode === "byo" && !hasByoKey;
+                  const isDisabled = aiStatus !== "analyzing" && (!hasDrawnShapes || emailBlocked || byoBlocked);
                   const tooltip = emailBlocked
                     ? "Email not verified — cannot submit"
+                    : byoBlocked
+                    ? "Add your Azure OpenAI credentials in Settings to submit"
                     : undefined;
                   return (
                     <button

@@ -9,6 +9,7 @@ import {
 import { createReview } from "@/lib/db/reviews";
 import { incrementSubmissionCount } from "@/lib/db/topics";
 import {
+  getUserAiSettings,
   reserveManagedQuota,
   releaseManagedQuota,
   isEmailVerified,
@@ -86,11 +87,23 @@ export async function POST(request: Request) {
   let endpoint: string | undefined;
   let deployment: string | undefined;
 
+  // Check if user's selected AI mode is BYO — if so, they must supply credentials
+  const userSettings = await getUserAiSettings(userId);
+
   if (body.apiKey) {
     // BYO mode — credentials come from client localStorage, never stored server-side
     apiKey = body.apiKey;
     endpoint = body.endpoint;
     deployment = body.deployment;
+  } else if (userSettings.aiMode === "byo") {
+    // User has BYO mode selected but didn't provide credentials — block submission
+    return NextResponse.json(
+      {
+        error: "Your AI mode is set to 'My Azure OpenAI' but no credentials were provided. Please add your Azure OpenAI credentials in Settings.",
+        byoCredentialsMissing: true,
+      },
+      { status: 400 },
+    );
   } else {
     // Managed mode — use server key, enforce monthly quota
     if (

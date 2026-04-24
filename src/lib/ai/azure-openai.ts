@@ -26,9 +26,9 @@ function validateAzureEndpoint(endpoint: string): void {
 
 /** Validate that a deployment name contains only safe characters. */
 function validateDeploymentName(deployment: string): void {
-  if (!/^[a-zA-Z0-9_-]+$/.test(deployment)) {
+  if (!/^[a-zA-Z0-9._-]+$/.test(deployment)) {
     throw new AzureOpenAIError(
-      "Deployment name contains invalid characters. Only alphanumeric, hyphens, and underscores are allowed.",
+      "Deployment name contains invalid characters. Only alphanumeric, dots, hyphens, and underscores are allowed.",
       400,
       "invalid_deployment",
     );
