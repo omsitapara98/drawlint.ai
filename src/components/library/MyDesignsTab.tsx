@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Loader2, FileEdit, Eye, Pencil } from "lucide-react";
+import { Loader2, FileEdit, Eye, Pencil, Sparkles, Zap, Key } from "lucide-react";
 
 interface UserDesign {
   _id: string;
@@ -14,6 +14,7 @@ interface UserDesign {
   status: "draft" | "submitted" | "reviewing" | "reviewed";
   reviewLevel: string;
   hasReview: boolean;
+  reviewedBy: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -152,12 +153,37 @@ export function MyDesignsTab() {
               </span>
             </div>
 
-            <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-              <span>v{d.version}</span>
-              <span>·</span>
+            <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
               <span className="capitalize">{d.reviewLevel}</span>
               <span>·</span>
               <span>{timeAgo(d.updatedAt)}</span>
+              {d.reviewedBy === "drawlint" && (
+                <>
+                  <span>·</span>
+                  <span className="inline-flex items-center gap-1 text-violet-600 dark:text-violet-400 font-medium">
+                    <Sparkles className="h-2.5 w-2.5" />
+                    DrawLint AI
+                  </span>
+                </>
+              )}
+              {d.reviewedBy === "gemini" && (
+                <>
+                  <span>·</span>
+                  <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
+                    <Zap className="h-2.5 w-2.5" />
+                    Gemini
+                  </span>
+                </>
+              )}
+              {d.reviewedBy === "azure" && (
+                <>
+                  <span>·</span>
+                  <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 font-medium">
+                    <Key className="h-2.5 w-2.5" />
+                    Azure
+                  </span>
+                </>
+              )}
             </div>
 
             <div className="mt-3 flex items-center gap-1 text-xs font-medium text-violet-600 dark:text-violet-400 transition-all group-hover:gap-2">

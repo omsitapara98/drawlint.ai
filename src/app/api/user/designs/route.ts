@@ -32,6 +32,7 @@ export async function GET() {
         status: d.status,
         reviewLevel: d.reviewLevel,
         hasReview: !!review,
+        reviewedBy: review?.reviewedBy ?? null,
         createdAt: d.createdAt,
         updatedAt: d.updatedAt,
       };
