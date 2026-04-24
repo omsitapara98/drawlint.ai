@@ -8,6 +8,11 @@ import {
 } from "@/lib/db/designs";
 import { createReview } from "@/lib/db/reviews";
 import { incrementSubmissionCount } from "@/lib/db/topics";
+import {
+  getUserAiSettings,
+  getByoCredentials,
+  checkAndIncrementManagedQuota,
+} from "@/lib/db/users";
 import { analyzeDesign } from "@/lib/ai";
 import { parseDiagram } from "@/lib/diagram";
 import type { SubmitDesignInput } from "@/types/library";
@@ -38,12 +43,8 @@ export async function POST(request: Request) {
     );
   }
 
-  // Validate required fields
   if (!body.topicId || typeof body.topicId !== "string") {
-    return NextResponse.json(
-      { error: "topicId is required." },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "topicId is required." }, { status: 400 });
   }
   if (!Array.isArray(body.elements) || body.elements.length === 0) {
     return NextResponse.json(
@@ -59,7 +60,49 @@ export async function POST(request: Request) {
 
   const userId = session.user.id;
 
-  // Resolve pseudonym if posting anonymously
+  // ── Resolve AI credentials BEFORE any mutations ────────────────
+  const aiSettings = await getUserAiSettings(userId);
+  let apiKey: string | undefined;
+  let endpoint: string | undefined;
+  let deployment: string | undefined;
+
+  if (aiSettings.aiMode === "managed") {
+    if (
+      !process.env.AZURE_OPENAI_API_KEY ||
+      !process.env.AZURE_OPENAI_ENDPOINT ||
+      !process.env.AZURE_OPENAI_DEPLOYMENT
+    ) {
+      return NextResponse.json(
+        { error: "Managed AI is not configured. Please add your own Azure OpenAI key in Settings." },
+        { status: 503 },
+      );
+    }
+    const quota = await checkAndIncrementManagedQuota(userId);
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: `You've used all ${quota.limit} free AI reviews this month. Add your own Azure OpenAI key in Settings to continue.`,
+          quotaExceeded: true,
+          used: quota.used,
+          limit: quota.limit,
+        },
+        { status: 429 },
+      );
+    }
+    apiKey = process.env.AZURE_OPENAI_API_KEY;
+    endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+    deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
+  } else {
+    const creds = await getByoCredentials(userId);
+    if (creds) {
+      apiKey = creds.apiKey;
+      endpoint = creds.endpoint;
+      deployment = creds.deployment;
+    }
+    // No creds → no-AI path (submit without review)
+  }
+
+  // ── Resolve pseudonym if posting anonymously ───────────────────
   let anonymousName: string | undefined;
   if (body.anonymous) {
     const { ObjectId: OId } = await import("mongodb");
@@ -72,7 +115,6 @@ export async function POST(request: Request) {
     if (user?.pseudonym) {
       anonymousName = user.pseudonym as string;
     } else {
-      // Generate + persist
       const ADJECTIVES = ["Swift","Brave","Curious","Clever","Bold","Calm","Keen","Wise","Noble","Bright","Agile","Steady","Quick","Sharp","Silent","Fierce","Gentle","Witty","Daring","Nimble"];
       const ANIMALS = ["Panda","Eagle","Fox","Wolf","Owl","Bear","Hawk","Lion","Tiger","Falcon","Lynx","Raven","Cobra","Otter","Shark","Phoenix","Dragon","Panther","Jaguar","Viper"];
       const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
@@ -83,11 +125,11 @@ export async function POST(request: Request) {
     }
   }
 
-  // 1. Determine version
+  // ── 1. Determine version ───────────────────────────────────────
   const latestVersion = await getLatestVersion(body.topicId, userId);
   const version = latestVersion + 1;
 
-  // 2. Upload elements to blob storage
+  // ── 2. Upload elements to blob storage ─────────────────────────
   const { ObjectId } = await import("mongodb");
   const designId = new ObjectId().toString();
 
@@ -105,10 +147,10 @@ export async function POST(request: Request) {
     );
   }
 
-  // 3. Parse diagram from elements (not stored, used only for AI review)
+  // ── 3. Parse diagram (for AI review only, not stored) ──────────
   const diagram = parseDiagram(body.elements as ExcalidrawElement[]);
 
-  // 4. Create design doc in Cosmos (no parsedDiagram stored)
+  // ── 4. Create design doc ───────────────────────────────────────
   const design = await createDesign({
     topicId: body.topicId,
     userId,
@@ -122,12 +164,7 @@ export async function POST(request: Request) {
 
   const encoder = new TextEncoder();
 
-  // 5. Attempt AI review using BYO key from client (fall back to env vars)
-  const apiKey = body.apiKey || process.env.AZURE_OPENAI_API_KEY;
-  const endpoint = body.endpoint || process.env.AZURE_OPENAI_ENDPOINT;
-  const deployment = body.deployment || process.env.AZURE_OPENAI_DEPLOYMENT;
-
-  // No-AI fast path — stream two events and close
+  // ── No-AI fast path ────────────────────────────────────────────
   if (!apiKey || !endpoint || !deployment) {
     await updateDesignStatus(design._id.toString(), "submitted");
     await incrementSubmissionCount(body.topicId);
@@ -142,14 +179,13 @@ export async function POST(request: Request) {
     return new Response(stream, { headers: NDJSON_HEADERS });
   }
 
-  // AI path — runs to completion even if client disconnects; review is saved to DB
+  // ── AI path — runs to completion even if client disconnects ────
   const stream = new ReadableStream({
     async start(controller) {
       const enqueue = (data: object) => {
-        try { controller.enqueue(encoder.encode(JSON.stringify(data) + "\n")); } catch { /* client already disconnected */ }
+        try { controller.enqueue(encoder.encode(JSON.stringify(data) + "\n")); } catch { /* client disconnected */ }
       };
 
-      // First event: client knows the design was saved and can show the panel
       enqueue({ type: "design", designId: design._id.toString(), version });
 
       try {
@@ -166,7 +202,6 @@ export async function POST(request: Request) {
           },
         });
 
-        // Save review + update status server-side (no client PATCH needed)
         await createReview({
           designId: design._id.toString(),
           version,
@@ -185,7 +220,7 @@ export async function POST(request: Request) {
 
         enqueue({ type: "complete", review: aiResult });
       } catch (err) {
-        console.error("AI review failed, saving design without review:", err);
+        console.error("AI review failed:", err);
         enqueue({ type: "error", message: err instanceof Error ? err.message : "AI review failed" });
         await updateDesignStatus(design._id.toString(), "submitted").catch(console.error);
         await incrementSubmissionCount(body.topicId).catch(console.error);

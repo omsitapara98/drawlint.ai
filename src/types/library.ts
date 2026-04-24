@@ -74,7 +74,4 @@ export interface SubmitDesignInput {
   reviewLevel?: ReviewLevel;
   forkedFrom?: string;
   anonymous?: boolean;
-  apiKey?: string;
-  endpoint?: string;
-  deployment?: string;
 }

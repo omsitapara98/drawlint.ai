@@ -4,6 +4,11 @@ import { getDesignById, deleteDesign, updateDesignBlob, updateDesignStatus } fro
 import { getReviewByDesignId, deleteReviewByDesignId, createReview } from "@/lib/db/reviews";
 import { decrementSubmissionCount } from "@/lib/db/topics";
 import { uploadDesign, deleteDesign as deleteBlob } from "@/lib/blob/storage";
+import {
+  getUserAiSettings,
+  getByoCredentials,
+  checkAndIncrementManagedQuota,
+} from "@/lib/db/users";
 import { analyzeDesign } from "@/lib/ai";
 import { parseDiagram } from "@/lib/diagram";
 import clientPromise from "@/lib/db/mongodb";
@@ -133,9 +138,6 @@ export async function PUT(
     elements?: unknown[];
     reviewLevel?: ReviewLevel;
     anonymous?: boolean;
-    apiKey?: string;
-    endpoint?: string;
-    deployment?: string;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -157,6 +159,47 @@ export async function PUT(
 
   const userId = session.user.id;
   const version = design.version + 1;
+
+  // ── Resolve AI credentials BEFORE any mutations ────────────────
+  const aiSettings = await getUserAiSettings(userId);
+  let apiKey: string | undefined;
+  let endpoint: string | undefined;
+  let deployment: string | undefined;
+
+  if (aiSettings.aiMode === "managed") {
+    if (
+      !process.env.AZURE_OPENAI_API_KEY ||
+      !process.env.AZURE_OPENAI_ENDPOINT ||
+      !process.env.AZURE_OPENAI_DEPLOYMENT
+    ) {
+      return NextResponse.json(
+        { error: "Managed AI is not configured. Please add your own Azure OpenAI key in Settings." },
+        { status: 503 },
+      );
+    }
+    const quota = await checkAndIncrementManagedQuota(userId);
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: `You've used all ${quota.limit} free AI reviews this month. Add your own Azure OpenAI key in Settings to continue.`,
+          quotaExceeded: true,
+          used: quota.used,
+          limit: quota.limit,
+        },
+        { status: 429 },
+      );
+    }
+    apiKey = process.env.AZURE_OPENAI_API_KEY;
+    endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+    deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
+  } else {
+    const creds = await getByoCredentials(userId);
+    if (creds) {
+      apiKey = creds.apiKey;
+      endpoint = creds.endpoint;
+      deployment = creds.deployment;
+    }
+  }
 
   // Resolve anonymous name if toggled on
   const client = await clientPromise;
@@ -204,13 +247,10 @@ export async function PUT(
 
   // 3. Update design document
   await updateDesignBlob(designId, blobUrl, blobKey);
-  // Also bump version + reviewLevel + anonymousName
   const col = (await clientPromise).db(DB_NAME).collection("designs");
   const updateFields: Record<string, unknown> = { version, reviewLevel, updatedAt: new Date() };
   if (anonymousName) {
     updateFields.anonymousName = anonymousName;
-  } else if (body.anonymous === false) {
-    // Explicitly remove anonymousName when toggling off
   }
   await col.updateOne(
     { _id: new ObjectId(designId) },
@@ -224,11 +264,6 @@ export async function PUT(
 
   // 5. Parse diagram for AI
   const diagram = parseDiagram(body.elements as ExcalidrawElement[]);
-
-  // 6. Attempt AI review
-  const apiKey = body.apiKey || process.env.AZURE_OPENAI_API_KEY;
-  const endpoint = body.endpoint || process.env.AZURE_OPENAI_ENDPOINT;
-  const deployment = body.deployment || process.env.AZURE_OPENAI_DEPLOYMENT;
 
   const encoder = new TextEncoder();
 

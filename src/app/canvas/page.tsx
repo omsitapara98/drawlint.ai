@@ -93,7 +93,6 @@ function CanvasPageInner() {
   const [selectedTopic, setSelectedTopic] = useState<TopicOption | null>(null);
   const [submittedDesignId, setSubmittedDesignId] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [byoKeyConfigured, setByoKeyConfigured] = useState(false);
   const [anonymousMode, setAnonymousMode] = useState(false);
   const [pseudonym, setPseudonym] = useState<string | null>(null);
   const [reviewerProgress, setReviewerProgress] = useState<ReviewerProgress>({
@@ -110,25 +109,6 @@ function CanvasPageInner() {
   const activeStreamRef = useRef(false);
 
   useAutoSave(elements);
-
-  /* ── Check BYO key configuration ───────────────────────────── */
-  /* ── Check BYO key configuration (once on mount + when tab regains focus) */
-  useEffect(() => {
-    function checkKey() {
-      try {
-        const raw = localStorage.getItem("drawlint:byo-key");
-        if (raw) {
-          const cfg = JSON.parse(raw) as { apiKey?: string };
-          setByoKeyConfigured(!!cfg.apiKey);
-        } else {
-          setByoKeyConfigured(false);
-        }
-      } catch { /* noop */ }
-    }
-    checkKey();
-    window.addEventListener("focus", checkKey);
-    return () => window.removeEventListener("focus", checkKey);
-  }, []);
 
   /* ── Load anonymous mode preference from localStorage ──────── */
   useEffect(() => {
@@ -568,23 +548,9 @@ function CanvasPageInner() {
     setAiStatus("analyzing");
     setAiError(undefined);
     setAiReview(null);
-    setViewModePolling(false); // stop background polling if any
+    setViewModePolling(false);
     startReviewerProgress();
     activeStreamRef.current = true;
-
-    // Read BYO key from localStorage
-    let apiKey: string | undefined;
-    let endpoint: string | undefined;
-    let deployment: string | undefined;
-    try {
-      const raw = localStorage.getItem("drawlint:byo-key");
-      if (raw) {
-        const cfg = JSON.parse(raw) as { apiKey?: string; endpoint?: string; deployment?: string };
-        apiKey = cfg.apiKey || undefined;
-        endpoint = cfg.endpoint || undefined;
-        deployment = cfg.deployment || undefined;
-      }
-    } catch { /* noop */ }
 
     try {
       const isUpdate = !!(editDesignId || submittedDesignId);
@@ -600,14 +566,19 @@ function CanvasPageInner() {
           elements: elements as unknown[],
           reviewLevel,
           anonymous: anonymousMode,
-          apiKey,
-          endpoint,
-          deployment,
         }),
       });
 
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        const data = (await res.json().catch(() => ({}))) as { error?: string; quotaExceeded?: boolean };
+        if (data.quotaExceeded) {
+          setAiError(
+            "You've used all 10 free AI reviews this month. Add your own Azure OpenAI key in Settings to continue.",
+          );
+          stopReviewerProgress("error");
+          activeStreamRef.current = false;
+          return;
+        }
         throw new Error(data.error ?? `Submission failed (${res.status})`);
       }
 
@@ -912,12 +883,6 @@ function CanvasPageInner() {
                 Start Drawing
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
-
-              {!byoKeyConfigured && (
-                <p className="text-center text-xs text-muted-foreground">
-                  ⚙️ Configure your Azure OpenAI key in your profile menu (top-right) before submitting
-                </p>
-              )}
 
               {authStatus !== "authenticated" && (
                 <p className="text-center text-xs text-muted-foreground">

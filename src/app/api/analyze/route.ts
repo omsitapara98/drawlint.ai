@@ -43,14 +43,10 @@ export async function POST(request: Request) {
     );
   }
 
-  // Check that credentials are available (BYO or platform)
-  const hasApiKey = !!body.apiKey || !!process.env.AZURE_OPENAI_API_KEY;
-  if (!hasApiKey) {
+  // Require BYO credentials — no platform key fallback
+  if (!body.apiKey) {
     return NextResponse.json(
-      {
-        error:
-          "No Azure OpenAI API key available. Either provide your own key in the request or configure the platform key.",
-      },
+      { error: "An Azure OpenAI API key is required. Configure your key in Settings." },
       { status: 400 },
     );
   }
