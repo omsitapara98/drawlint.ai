@@ -257,7 +257,7 @@ export default function LandingPage() {
 
   // Stats counters
   const topics = useCountUp(20);
-  const reviewers = useCountUp(5);
+  const reviewers = useCountUp(6);
   const levels = useCountUp(4);
 
   return (
