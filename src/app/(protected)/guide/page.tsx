@@ -139,78 +139,67 @@ function CanvasPreview({ children, height = 180 }: { children: React.ReactNode; 
 /** Template layout preview — full architecture diagram */
 function TemplatePreview() {
   return (
-    <CanvasPreview height={440}>
-      {/* ── Left column: matches actual whiteboard layout ── */}
-      {/* Row 1: FR (wide) + Assumptions (narrow) */}
-      <AnimBox x={10} y={10} w={145} h={55} label="Functional Requirements" delay={0.1} />
-      <AnimBox x={162} y={10} w={75} h={55} label="Assumptions" delay={0.15} />
+    <CanvasPreview height={400}>
+      {/* ── Left column: compact, pushed left ── */}
+      <AnimBox x={5} y={10} w={120} h={45} label="Functional Reqs" delay={0.1} />
+      <AnimBox x={130} y={10} w={70} h={45} label="Assumptions" delay={0.15} />
 
-      {/* Row 2: NFR (full width) */}
-      <AnimBox x={10} y={75} w={227} h={55} label="Non-Functional Requirements" delay={0.2} />
+      <AnimBox x={5} y={63} w={195} h={45} label="Non-Functional Requirements" delay={0.2} />
 
-      {/* Row 3: Core Entities + Capacity (side by side) */}
-      <AnimBox x={10} y={140} w={110} h={50} label="Core Entities" delay={0.3} />
-      <AnimBox x={127} y={140} w={110} h={50} label="Capacity Calc" delay={0.35} />
+      <AnimBox x={5} y={116} w={95} h={42} label="Core Entities" delay={0.3} />
+      <AnimBox x={105} y={116} w={95} h={42} label="Capacity Calc" delay={0.35} />
 
-      {/* Row 4: API Routes (full width, tall) */}
-      <AnimBox x={10} y={200} w={227} h={65} label="API Routes" delay={0.4} />
+      <AnimBox x={5} y={166} w={195} h={50} label="API Routes" delay={0.4} />
 
-      {/* Divider line */}
-      <motion.line x1={250} y1={5} x2={250} y2={435} className="stroke-violet-500/30" strokeWidth={1.5} strokeDasharray="6 4"
+      {/* Divider */}
+      <motion.line x1={210} y1={5} x2={210} y2={395} className="stroke-violet-500/30" strokeWidth={1.5} strokeDasharray="6 4"
         initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: 0.3 }} />
 
-      {/* ── Right area: HLD ── */}
-      <motion.text x={420} y={22} textAnchor="middle" className="fill-violet-400/25 text-[11px] font-bold tracking-wider"
+      {/* ── Right area: HLD with more space ── */}
+      <motion.text x={400} y={20} textAnchor="middle" className="fill-violet-400/25 text-[11px] font-bold tracking-wider"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
         HIGH-LEVEL DESIGN
       </motion.text>
 
-      {/* Client */}
-      <AnimBox x={385} y={38} w={75} h={32} label="Client" delay={0.6} color="cyan" />
-      <AnimArrow x1={422} y1={70} x2={422} y2={100} delay={0.7} label="HTTPS" />
+      <AnimBox x={365} y={35} w={75} h={30} label="Client" delay={0.6} color="cyan" />
+      <AnimArrow x1={402} y1={65} x2={402} y2={90} delay={0.7} label="HTTPS" />
 
-      {/* LB */}
-      <AnimBox x={370} y={100} w={105} h={32} label="Load Balancer" delay={0.8} color="violet" />
+      <AnimBox x={350} y={90} w={105} h={30} label="Load Balancer" delay={0.8} color="violet" />
 
-      {/* Services */}
-      <AnimBox x={270} y={170} w={85} h={32} label="Auth Svc" delay={1.0} color="emerald" />
-      <AnimBox x={380} y={170} w={85} h={32} label="API Server" delay={1.1} color="violet" />
-      <AnimBox x={490} y={170} w={75} h={32} label="Worker" delay={1.2} color="amber" />
-      <AnimArrow x1={400} y1={132} x2={312} y2={170} delay={0.9} />
-      <AnimArrow x1={422} y1={132} x2={422} y2={170} delay={0.95} />
-      <AnimArrow x1={445} y1={132} x2={527} y2={170} delay={1.0} />
+      <AnimBox x={235} y={155} w={85} h={30} label="Auth Svc" delay={1.0} color="emerald" />
+      <AnimBox x={340} y={155} w={85} h={30} label="API Server" delay={1.1} color="violet" />
+      <AnimBox x={445} y={155} w={75} h={30} label="Worker" delay={1.2} color="amber" />
+      <AnimArrow x1={380} y1={120} x2={277} y2={155} delay={0.9} />
+      <AnimArrow x1={402} y1={120} x2={382} y2={155} delay={0.95} />
+      <AnimArrow x1={425} y1={120} x2={482} y2={155} delay={1.0} />
 
-      {/* Data layer */}
-      <AnimBox x={270} y={240} w={85} h={32} label="PostgreSQL" delay={1.3} color="emerald" />
-      <AnimBox x={380} y={240} w={85} h={32} label="Redis" delay={1.4} color="red" />
-      <AnimBox x={490} y={240} w={75} h={32} label="Kafka" delay={1.5} color="amber" />
-      <AnimArrow x1={312} y1={202} x2={312} y2={240} delay={1.3} />
-      <AnimArrow x1={422} y1={202} x2={422} y2={240} delay={1.35} />
-      <AnimArrow x1={527} y1={202} x2={527} y2={240} delay={1.4} />
+      <AnimBox x={235} y={220} w={85} h={30} label="PostgreSQL" delay={1.3} color="emerald" />
+      <AnimBox x={340} y={220} w={85} h={30} label="Redis" delay={1.4} color="red" />
+      <AnimBox x={445} y={220} w={75} h={30} label="Kafka" delay={1.5} color="amber" />
+      <AnimArrow x1={277} y1={185} x2={277} y2={220} delay={1.3} />
+      <AnimArrow x1={382} y1={185} x2={382} y2={220} delay={1.35} />
+      <AnimArrow x1={482} y1={185} x2={482} y2={220} delay={1.4} />
 
-      {/* Storage */}
-      <AnimBox x={345} y={320} w={110} h={32} label="Blob Storage" delay={1.6} color="cyan" />
-      <AnimArrow x1={422} y1={272} x2={400} y2={320} delay={1.6} />
+      {/* Blob Storage — below PostgreSQL */}
+      <AnimBox x={235} y={290} w={100} h={30} label="Blob Storage" delay={1.6} color="cyan" />
+      <AnimArrow x1={277} y1={250} x2={285} y2={290} delay={1.6} />
 
-      {/* ── Kafka annotation with dotted line ── */}
+      {/* Kafka annotation — horizontal, right of Kafka */}
       <motion.g initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1.9, duration: 0.4 }}>
-        <rect x={460} y={300} width={130} height={55} rx={5} className="fill-amber-500/5 stroke-amber-500/20" strokeWidth={1} strokeDasharray="4 4" />
-        <text x={472} y={318} className="fill-amber-300/80 text-[8px] font-medium">💬 Kafka handles async</text>
-        <text x={472} y={332} className="fill-amber-300/60 text-[7px]">event processing. 3 partitions</text>
-        <text x={472} y={344} className="fill-amber-300/60 text-[7px]">for parallel consumers.</text>
+        <rect x={530} y={215} width={60} height={42} rx={5} className="fill-amber-500/5 stroke-amber-500/20" strokeWidth={1} strokeDasharray="4 4" />
+        <text x={537} y={230} className="fill-amber-300/80 text-[6px] font-medium">💬 3 partitions</text>
+        <text x={537} y={242} className="fill-amber-300/60 text-[6px]">parallel consume</text>
       </motion.g>
-      {/* Dotted line from annotation to Kafka */}
-      <motion.line x1={527} y1={272} x2={525} y2={300} className="stroke-amber-500/40" strokeWidth={1.5} strokeDasharray="4 4"
+      <motion.line x1={520} y1={235} x2={530} y2={235} className="stroke-amber-500/40" strokeWidth={1.5} strokeDasharray="4 4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }} />
 
-      {/* ── Redis annotation with dotted line ── */}
-      <motion.g initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 2.1, duration: 0.4 }}>
-        <rect x={270} y={380} width={140} height={45} rx={5} className="fill-red-500/5 stroke-red-500/20" strokeWidth={1} strokeDasharray="4 4" />
-        <text x={282} y={398} className="fill-red-300/80 text-[8px] font-medium">💬 LRU eviction, TTL=3600s</text>
-        <text x={282} y={412} className="fill-red-300/60 text-[7px]">for session + leaderboard cache</text>
+      {/* Redis annotation — right side bottom */}
+      <motion.g initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 2.1, duration: 0.4 }}>
+        <rect x={440} y={290} width={130} height={40} rx={5} className="fill-red-500/5 stroke-red-500/20" strokeWidth={1} strokeDasharray="4 4" />
+        <text x={452} y={306} className="fill-red-300/80 text-[7px] font-medium">💬 LRU eviction, TTL=3600s</text>
+        <text x={452} y={320} className="fill-red-300/60 text-[6px]">session + leaderboard cache</text>
       </motion.g>
-      {/* Dotted line from annotation to Redis */}
-      <motion.line x1={422} y1={272} x2={380} y2={380} className="stroke-red-500/30" strokeWidth={1.5} strokeDasharray="4 4"
+      <motion.line x1={425} y1={250} x2={470} y2={290} className="stroke-red-500/30" strokeWidth={1.5} strokeDasharray="4 4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.0 }} />
     </CanvasPreview>
   );
