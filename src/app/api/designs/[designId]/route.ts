@@ -234,46 +234,30 @@ export async function PUT(
   }
 
   // ── Resolve AI credentials BEFORE any mutations ────────────────
-  // If the client sent BYO credentials → use them directly (no quota consumed).
-  // Otherwise → managed path: check quota and use server env vars.
-  let apiKey: string | undefined;
-  let endpoint: string | undefined;
-  let deployment: string | undefined;
-
-  // Check if user's selected AI mode is BYO — if so, they must supply credentials
+  // Use centralized provider resolver based on user's aiMode.
+  const { resolveAnalysisProvider, isResolutionError } = await import("@/lib/ai/resolve-provider");
   const userSettings = await getUserAiSettings(userId);
+  const providerResult = resolveAnalysisProvider(userSettings, body);
 
-  if (body.apiKey) {
-    // BYO mode — credentials come from client localStorage, never stored server-side
-    apiKey = body.apiKey;
-    endpoint = body.endpoint;
-    deployment = body.deployment;
-  } else if (userSettings.aiMode === "byo") {
-    // User has BYO mode selected but didn't provide credentials — block submission
+  let isManagedMode = false;
+
+  if (isResolutionError(providerResult)) {
     return NextResponse.json(
-      {
-        error: "Your AI mode is set to 'My Azure OpenAI' but no credentials were provided. Please add your Azure OpenAI credentials in Settings.",
-        byoCredentialsMissing: true,
-      },
-      { status: 400 },
+      { error: providerResult.error, code: providerResult.errorCode },
+      { status: providerResult.status },
     );
-  } else {
-    // Managed mode — use server key, enforce monthly quota
-    if (
-      !process.env.AZURE_OPENAI_API_KEY ||
-      !process.env.AZURE_OPENAI_ENDPOINT ||
-      !process.env.AZURE_OPENAI_DEPLOYMENT
-    ) {
-      return NextResponse.json(
-        { error: "Managed AI is not configured. Please add your own Azure OpenAI key in Settings." },
-        { status: 503 },
-      );
-    }
+  }
+
+  const credentials = providerResult.credentials;
+  isManagedMode = providerResult.isManagedQuota;
+
+  // For managed mode: check and reserve quota
+  if (isManagedMode) {
     const quota = await reserveManagedQuota(userId);
     if (!quota.allowed) {
       return NextResponse.json(
         {
-          error: `You've used all ${quota.limit} free AI reviews this month. Add your own Azure OpenAI key in Settings to continue.`,
+          error: `You've used all ${quota.limit} free AI reviews this month. Switch to Free AI or add your own key in Settings to continue.`,
           quotaExceeded: true,
           used: quota.used,
           limit: quota.limit,
@@ -281,9 +265,6 @@ export async function PUT(
         { status: 429 },
       );
     }
-    apiKey = process.env.AZURE_OPENAI_API_KEY;
-    endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-    deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
   }
 
   // Resolve anonymous name if toggled on
@@ -355,7 +336,7 @@ export async function PUT(
 
   const encoder = new TextEncoder();
 
-  if (!apiKey || !endpoint || !deployment) {
+  if (!credentials) {
     await updateDesignStatus(designId, "submitted");
     if (wasDraft) await incrementSubmissionCount(design.topicId.toString());
     const updatedDesign = await getDesignById(designId);
@@ -370,7 +351,6 @@ export async function PUT(
   }
 
   // AI path — runs to completion even if client disconnects; review is saved to DB
-  const isManagedMode = !body.apiKey;
   const stream = new ReadableStream({
     async start(controller) {
       const enqueue = (data: object) => {
@@ -381,9 +361,7 @@ export async function PUT(
 
       try {
         const aiResult = await analyzeDesign(diagram, {
-          apiKey,
-          endpoint,
-          deployment,
+          credentials,
           level: reviewLevel,
           onSectionComplete: (key, data) => {
             enqueue({ type: "section", section: key, data });

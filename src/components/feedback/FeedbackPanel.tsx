@@ -242,7 +242,7 @@ function AIReviewContent({
         <div className="text-center">
           <p className="text-sm font-medium">AI Review Available</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Add your Azure OpenAI API key in Settings to get an AI-powered 5-reviewer analysis of your design.
+            Configure your AI provider in Settings to get an AI-powered 5-reviewer analysis of your design.
           </p>
         </div>
         {onOpenSettings && (
@@ -450,10 +450,18 @@ export function FeedbackPanel({
 }: FeedbackPanelProps) {
   const hasBYOKey = (() => {
     try {
-      const raw = localStorage.getItem("drawlint:byo-key");
-      if (!raw) return false;
-      const config = JSON.parse(raw) as { apiKey?: string };
-      return !!config.apiKey;
+      // Check both old and new storage formats
+      const v2Raw = localStorage.getItem("drawlint:ai-config:v2");
+      if (v2Raw) {
+        const config = JSON.parse(v2Raw) as { gemini?: { apiKey?: string }; azure?: { apiKey?: string } };
+        return !!(config.gemini?.apiKey || config.azure?.apiKey);
+      }
+      const legacyRaw = localStorage.getItem("drawlint:byo-key");
+      if (legacyRaw) {
+        const config = JSON.parse(legacyRaw) as { apiKey?: string };
+        return !!config.apiKey;
+      }
+      return false;
     } catch {
       return false;
     }

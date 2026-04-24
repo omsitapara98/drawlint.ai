@@ -3,7 +3,8 @@ import { auth } from "@/auth";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { ReviewLevel } from "@/types/feedback";
 import { analyzeDesign, AzureOpenAIError } from "@/lib/ai";
-import { isEmailVerified } from "@/lib/db/users";
+import { isEmailVerified, getUserAiSettings } from "@/lib/db/users";
+import { resolveAnalysisProvider, isResolutionError } from "@/lib/ai/resolve-provider";
 
 const VALID_LEVELS: ReviewLevel[] = ["mid", "senior", "staff", "deep"];
 
@@ -61,11 +62,14 @@ export async function POST(request: Request) {
     );
   }
 
-  // Require BYO credentials — no platform key fallback
-  if (!body.apiKey) {
+  // Resolve provider from user settings
+  const userSettings = await getUserAiSettings(session.user.id);
+  const providerResult = resolveAnalysisProvider(userSettings, body);
+
+  if (isResolutionError(providerResult)) {
     return NextResponse.json(
-      { error: "An Azure OpenAI API key is required. Configure your key in Settings." },
-      { status: 400 },
+      { error: providerResult.error, code: providerResult.errorCode },
+      { status: providerResult.status },
     );
   }
 
@@ -73,9 +77,7 @@ export async function POST(request: Request) {
     const level: ReviewLevel = body.level && VALID_LEVELS.includes(body.level) ? body.level : "senior";
 
     const review = await analyzeDesign(body.diagram, {
-      apiKey: body.apiKey,
-      endpoint: body.endpoint,
-      deployment: body.deployment,
+      credentials: providerResult.credentials,
       level,
     });
 

@@ -1,5 +1,6 @@
+import { hasAnyCredentials } from "./ai-config";
+
 const USAGE_KEY = "drawlint:usage";
-const BYO_KEY = "drawlint:byo-key";
 const FREE_LIMIT = 5;
 
 interface UsageData {
@@ -32,26 +33,20 @@ function saveUsage(usage: UsageData): void {
   }
 }
 
+/** @deprecated Use hasAnyCredentials() from ai-config instead */
 export function isUsingBYOKey(): boolean {
-  try {
-    const raw = localStorage.getItem(BYO_KEY);
-    if (!raw) return false;
-    const config = JSON.parse(raw) as { apiKey?: string };
-    return !!config.apiKey;
-  } catch {
-    return false;
-  }
+  return hasAnyCredentials();
 }
 
 export function canAnalyze(): boolean {
-  if (isUsingBYOKey()) return true;
+  if (hasAnyCredentials()) return true;
   const usage = getUsage();
   if (usage.month !== getCurrentMonth()) return true;
   return usage.count < FREE_LIMIT;
 }
 
 export function recordAnalysis(): void {
-  if (isUsingBYOKey()) return;
+  if (hasAnyCredentials()) return;
   const current = getCurrentMonth();
   const usage = getUsage();
   if (usage.month !== current) {
@@ -62,7 +57,7 @@ export function recordAnalysis(): void {
 }
 
 export function getRemainingAnalyses(): number {
-  if (isUsingBYOKey()) return Infinity;
+  if (hasAnyCredentials()) return Infinity;
   const usage = getUsage();
   if (usage.month !== getCurrentMonth()) return FREE_LIMIT;
   return Math.max(0, FREE_LIMIT - usage.count);

@@ -9,11 +9,14 @@ import {
   getRemainingAnalyses,
   isUsingBYOKey,
 } from "@/lib/storage/rate-limit";
+import { getCredentialsForRequest, getAIConfig } from "@/lib/storage/ai-config";
 
-interface BYOKeyConfig {
-  apiKey?: string;
-  endpoint?: string;
-  deployment?: string;
+interface UseAnalysisReturn {
+  feedback: DiagramFeedback | null;
+  status: AnalysisStatus;
+  error: string | undefined;
+  analyze: (diagram: SerializedDiagram, sections?: WhiteboardSections) => Promise<void>;
+  reset: () => void;
 }
 
 export interface WhiteboardSections {
@@ -24,14 +27,6 @@ export interface WhiteboardSections {
   coreEntities: string;
   capacityCalculations: string;
   apiRoutes: string;
-}
-
-interface UseAnalysisReturn {
-  feedback: DiagramFeedback | null;
-  status: AnalysisStatus;
-  error: string | undefined;
-  analyze: (diagram: SerializedDiagram, sections?: WhiteboardSections) => Promise<void>;
-  reset: () => void;
 }
 
 export function useAnalysis(): UseAnalysisReturn {
@@ -49,7 +44,7 @@ export function useAnalysis(): UseAnalysisReturn {
       const remaining = getRemainingAnalyses();
       setStatus("error");
       setError(
-        `Free trial limit reached (${remaining} analyses remaining this month). Add your own API key in Settings to continue.`,
+        `Free trial limit reached (${remaining} analyses remaining this month). Switch to Free AI (Gemini) or add your own key in Settings.`,
       );
       return;
     }
@@ -57,16 +52,12 @@ export function useAnalysis(): UseAnalysisReturn {
     setStatus("analyzing");
 
     try {
-      // Get BYO key config if available
-      let byoConfig: BYOKeyConfig = {};
-      try {
-        const raw = localStorage.getItem("drawlint:byo-key");
-        if (raw) {
-          byoConfig = JSON.parse(raw) as BYOKeyConfig;
-        }
-      } catch {
-        // Ignore parse errors
-      }
+      // Get credentials from versioned AI config
+      const config = getAIConfig();
+      let provider: "managed" | "gemini" | "azure" = "managed";
+      if (config.gemini?.apiKey) provider = "gemini";
+      if (config.azure?.apiKey) provider = "azure";
+      const creds = getCredentialsForRequest(provider);
 
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -74,11 +65,7 @@ export function useAnalysis(): UseAnalysisReturn {
         body: JSON.stringify({
           diagram,
           ...(sections && { sections }),
-          ...(byoConfig.apiKey && {
-            apiKey: byoConfig.apiKey,
-            endpoint: byoConfig.endpoint,
-            deployment: byoConfig.deployment,
-          }),
+          ...(creds.apiKey && creds),
         }),
       });
 

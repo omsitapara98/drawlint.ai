@@ -4,8 +4,15 @@ import { ObjectId } from "mongodb";
 const DB_NAME = "drawlint-db";
 export const MANAGED_LIMIT = 10;
 
-export type AiMode = "managed" | "byo";
+export type AiMode = "managed" | "gemini" | "azure";
 export type UserRole = "free" | "premium" | "admin";
+
+/** Normalize legacy "byo" mode to "azure" at read boundary. */
+function normalizeAiMode(raw: unknown): AiMode {
+  if (raw === "gemini") return "gemini";
+  if (raw === "azure" || raw === "byo") return "azure";
+  return "managed";
+}
 
 export interface ManagedUsage {
   count: number;
@@ -37,7 +44,7 @@ export async function getUserAiSettings(userId: string): Promise<UserAiSettings>
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
 
-  const aiMode = (user?.aiMode as AiMode) ?? "managed";
+  const aiMode = normalizeAiMode(user?.aiMode);
   const role = (user?.role as UserRole) ?? "free";
   const storedUsage = user?.managedUsage as ManagedUsage | undefined;
   const managedUsage: ManagedUsage =

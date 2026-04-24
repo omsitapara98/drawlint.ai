@@ -3,51 +3,32 @@ import type { AIReviewResponse, ReviewDimension, ReviewHighlight, FeedbackItem, 
 import { getReviewerPrompt, getLeadReviewerPrompt } from "./prompts";
 import type { ReviewerSection } from "./prompts";
 import { formatSectionForReview } from "./format-prompt";
-
-/** Validate that an endpoint URL is a legitimate Azure OpenAI endpoint. */
-function validateAzureEndpoint(endpoint: string): void {
-  let parsed: URL;
-  try {
-    parsed = new URL(endpoint);
-  } catch {
-    throw new AzureOpenAIError("Invalid Azure OpenAI endpoint URL.", 400, "invalid_endpoint");
-  }
-  if (parsed.protocol !== "https:") {
-    throw new AzureOpenAIError("Azure OpenAI endpoint must use HTTPS.", 400, "invalid_endpoint");
-  }
-  if (!parsed.hostname.endsWith(".openai.azure.com")) {
-    throw new AzureOpenAIError(
-      "Azure OpenAI endpoint must be an *.openai.azure.com host.",
-      400,
-      "invalid_endpoint",
-    );
-  }
-}
-
-/** Validate that a deployment name contains only safe characters. */
-function validateDeploymentName(deployment: string): void {
-  if (!/^[a-zA-Z0-9._-]+$/.test(deployment)) {
-    throw new AzureOpenAIError(
-      "Deployment name contains invalid characters. Only alphanumeric, dots, hyphens, and underscores are allowed.",
-      400,
-      "invalid_deployment",
-    );
-  }
-}
+import {
+  createProvider,
+  withRetry,
+  withConcurrencyLimit,
+  type AIProvider,
+  type ProviderCredentials,
+} from "./providers";
 
 interface AnalyzeOptions {
+  /** New: provider credentials (preferred) */
+  credentials?: ProviderCredentials;
+  /** @deprecated — use credentials instead. Kept for backward compat. */
   apiKey?: string;
+  /** @deprecated */
   endpoint?: string;
+  /** @deprecated */
   deployment?: string;
   level?: ReviewLevel;
-  /** AbortSignal — aborts all in-flight Azure OpenAI calls when triggered. */
   signal?: AbortSignal;
-  /** Called as each section completes (before all sections finish). */
   onSectionComplete?: (key: ReviewerKey, data: ReviewDimension) => void;
-  /** Called immediately before the lead reviewer call starts. */
   onLeadStarted?: () => void;
 }
 
+/**
+ * @deprecated Use ProviderError instead. Kept for backward compatibility.
+ */
 export class AzureOpenAIError extends Error {
   constructor(
     message: string,
@@ -57,35 +38,6 @@ export class AzureOpenAIError extends Error {
     super(message);
     this.name = "AzureOpenAIError";
   }
-}
-
-/** Extract the text content from the Azure OpenAI chat completion response. */
-function extractContent(json: unknown): string {
-  if (
-    typeof json === "object" &&
-    json !== null &&
-    "choices" in json &&
-    Array.isArray((json as Record<string, unknown>).choices)
-  ) {
-    const choices = (json as Record<string, unknown>).choices as unknown[];
-    const first = choices[0];
-    if (
-      typeof first === "object" &&
-      first !== null &&
-      "message" in first &&
-      typeof (first as Record<string, unknown>).message === "object"
-    ) {
-      const message = (first as Record<string, unknown>).message as Record<string, unknown>;
-      if (typeof message.content === "string") {
-        return message.content;
-      }
-    }
-  }
-  throw new AzureOpenAIError(
-    "Unexpected response structure from Azure OpenAI.",
-    undefined,
-    "malformed_response",
-  );
 }
 
 /** Validate a single FeedbackItem. */
@@ -196,102 +148,74 @@ const SECTION_DISPLAY_NAME: Record<ReviewerSection, string> = {
 };
 
 /**
+ * Resolve provider from options — supports both new credentials and legacy Azure fields.
+ */
+function resolveProvider(options?: AnalyzeOptions): AIProvider {
+  // New path: explicit credentials
+  if (options?.credentials) {
+    return createProvider(options.credentials);
+  }
+
+  // Legacy path: Azure-specific fields
+  const apiKey = options?.apiKey ?? process.env.AZURE_OPENAI_API_KEY ?? "";
+  const endpoint = options?.endpoint ?? process.env.AZURE_OPENAI_ENDPOINT ?? "";
+  const deployment = options?.deployment ?? process.env.AZURE_OPENAI_DEPLOYMENT ?? "";
+
+  if (!apiKey) {
+    throw new AzureOpenAIError("No Azure OpenAI API key configured.", 400, "missing_api_key");
+  }
+
+  return createProvider({
+    provider: "azure",
+    apiKey,
+    endpoint,
+    deployment,
+  });
+}
+
+/**
  * Analyze a system design diagram using multiple focused API calls.
- * 5 section reviewers run in parallel, then 1 Lead Reviewer synthesizes.
+ * 5 section reviewers run with provider-appropriate concurrency,
+ * then 1 Lead Reviewer synthesizes.
  */
 export async function analyzeDesign(
   diagram: ParsedDiagram,
   options?: AnalyzeOptions,
 ): Promise<AIReviewResponse> {
-  const apiKey = options?.apiKey ?? process.env.AZURE_OPENAI_API_KEY ?? "";
-  const endpoint = options?.endpoint ?? process.env.AZURE_OPENAI_ENDPOINT ?? "";
-  const deployment = options?.deployment ?? process.env.AZURE_OPENAI_DEPLOYMENT ?? "";
+  const provider = resolveProvider(options);
   const level: ReviewLevel = options?.level ?? "senior";
 
-  if (!apiKey) {
-    throw new AzureOpenAIError("No Azure OpenAI API key configured.", 400, "missing_api_key");
-  }
-  if (!endpoint) {
-    throw new AzureOpenAIError("No Azure OpenAI endpoint configured.", 400, "missing_endpoint");
-  }
-  if (!deployment) {
-    throw new AzureOpenAIError("No Azure OpenAI deployment configured.", 400, "missing_deployment");
-  }
-
-  validateAzureEndpoint(endpoint);
-  validateDeploymentName(deployment);
-
-  const apiVersion = "2025-01-01-preview";
-  // Extract base URL: strip any path after the host (users may paste full URLs from Azure portal)
-  const baseUrl = endpoint.replace(/\/+$/, "").replace(/\/openai\/.*$/, "");
-  const url = `${baseUrl}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
-  const headers: Record<string, string> = { "Content-Type": "application/json", "api-key": apiKey };
-
-  /** Make a single API call and parse the JSON response. */
+  /** Make a single reviewer call with retry on malformed JSON. */
   async function callReviewer(systemPrompt: string, userContent: string): Promise<unknown> {
-    const body = {
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userContent },
-      ],
-      temperature: 0.3,
-      max_completion_tokens: 2048,
-      response_format: { type: "json_object" },
-    };
-
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-        signal: options?.signal,
-      });
-    } catch (err) {
-      throw new AzureOpenAIError(
-        `Network error: ${err instanceof Error ? err.message : String(err)}`,
-        undefined,
-        "network_error",
-      );
-    }
-
-    if (!response.ok) {
-      const status = response.status;
-      let errorBody = "";
-      try { errorBody = await response.text(); } catch { /* ignore */ }
-
-      if (status === 401 || status === 403) {
-        throw new AzureOpenAIError("Authentication failed.", status, "auth_error");
-      }
-      if (status === 429) {
-        throw new AzureOpenAIError("Rate limit exceeded.", 429, "rate_limit");
-      }
-      throw new AzureOpenAIError(`Azure OpenAI request failed (HTTP ${status}): ${errorBody}`, status, "api_error");
-    }
-
-    let json: unknown;
-    try { json = await response.json(); } catch {
-      throw new AzureOpenAIError("Failed to parse response as JSON.", undefined, "parse_error");
-    }
-
-    const content = extractContent(json);
-    try { return JSON.parse(content); } catch {
-      throw new AzureOpenAIError("Model returned invalid JSON.", undefined, "malformed_response");
-    }
+    const result = await withRetry(
+      () =>
+        provider.generate({
+          systemPrompt,
+          userContent,
+          temperature: 0.3,
+          maxTokens: 2048,
+          signal: options?.signal,
+        }),
+      provider.type,
+      1, // 1 retry on malformed JSON
+    );
+    return result.parsed;
   }
 
-  // Step 1: Fire 5 section reviewer calls in parallel, emitting each as it resolves
+  // Step 1: Run 5 section reviewers with concurrency cap
   const dimensions: Record<string, ReviewDimension> = {};
-  await Promise.all(
-    REVIEWER_SECTIONS.map(async (section) => {
+  const reviewerTasks = REVIEWER_SECTIONS.map((section) => {
+    return async () => {
       const systemPrompt = getReviewerPrompt(section, level);
       const userContent = formatSectionForReview(diagram, section, level);
       const result = await callReviewer(systemPrompt, userContent);
       const dimension = validateDimension(result);
       dimensions[section] = dimension;
       options?.onSectionComplete?.(SECTION_TO_KEY[section], dimension);
-    }),
-  );
+    };
+  });
+
+  await withConcurrencyLimit(reviewerTasks, provider.capabilities.maxConcurrency);
 
   // Step 2: Build lead reviewer input from section results
   options?.onLeadStarted?.();

@@ -56,8 +56,13 @@ export async function PATCH(request: Request) {
   const userId = session.user.id;
 
   if (body.aiMode !== undefined) {
-    if (body.aiMode !== "managed" && body.aiMode !== "byo") {
-      return NextResponse.json({ error: "Invalid aiMode" }, { status: 400 });
+    if (body.aiMode !== "managed" && body.aiMode !== "gemini" && body.aiMode !== "azure") {
+      // Accept legacy "byo" and map to "azure"
+      if ((body.aiMode as string) === "byo") {
+        body.aiMode = "azure" as AiMode;
+      } else {
+        return NextResponse.json({ error: "Invalid aiMode" }, { status: 400 });
+      }
     }
     await updateAiMode(userId, body.aiMode);
   }

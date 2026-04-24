@@ -59,7 +59,7 @@ export default function Header() {
             href="/guide/byo-keys"
             className="relative inline-flex items-center rounded-lg px-2.5 h-8 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-gradient-to-r after:from-violet-500 after:to-cyan-500 after:transition-all after:duration-300"
           >
-            BYO Keys
+            AI Setup
           </Link>
           <Link
             href="/support"

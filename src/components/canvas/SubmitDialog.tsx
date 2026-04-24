@@ -45,18 +45,22 @@ export default function SubmitDialog({
     setStep("uploading");
     setError(null);
 
-    // Read BYO key from localStorage
+    // Read credentials from versioned AI config
     let apiKey: string | undefined;
     let endpoint: string | undefined;
     let deployment: string | undefined;
     try {
-      const raw = localStorage.getItem("drawlint:byo-key");
-      if (raw) {
-        const cfg = JSON.parse(raw) as { apiKey?: string; endpoint?: string; deployment?: string };
-        apiKey = cfg.apiKey || undefined;
-        endpoint = cfg.endpoint || undefined;
-        deployment = cfg.deployment || undefined;
-      }
+      const { getCredentialsForRequest, getAIConfig } = await import("@/lib/storage/ai-config");
+      // Determine active provider from settings event or default
+      const config = getAIConfig();
+      // Try to get mode from server settings; fallback to checking which credentials exist
+      let provider: "managed" | "gemini" | "azure" = "managed";
+      if (config.gemini?.apiKey) provider = "gemini";
+      if (config.azure?.apiKey) provider = "azure";
+      const creds = getCredentialsForRequest(provider);
+      apiKey = creds.apiKey;
+      endpoint = creds.endpoint;
+      deployment = creds.deployment;
     } catch { /* noop */ }
 
     try {

@@ -12,6 +12,7 @@ import { AuthGate } from "@/components/auth";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks";
 import { loadDiagram } from "@/lib/storage";
+import { hasAnyCredentials, getCredentialsForRequest, getAIConfig } from "@/lib/storage/ai-config";
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
@@ -126,11 +127,7 @@ function CanvasPageInner() {
   /* ── Read BYO key presence from localStorage ──────────────── */
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("drawlint:byo-key");
-      if (raw) {
-        const creds = JSON.parse(raw) as { apiKey?: string };
-        setHasByoKey(!!creds.apiKey);
-      }
+      setHasByoKey(hasAnyCredentials());
     } catch { /* noop */ }
   }, []);
 
@@ -139,10 +136,10 @@ function CanvasPageInner() {
     if (authStatus !== "authenticated") return;
     fetch("/api/user/settings")
       .then((r) => r.ok ? r.json() : null)
-      .then((data: { emailVerified?: boolean; aiMode?: "managed" | "byo" } | null) => {
+      .then((data: { emailVerified?: boolean; aiMode?: string } | null) => {
         if (data) {
           setIsEmailVerified(data.emailVerified ?? true);
-          if (data.aiMode) setAiMode(data.aiMode);
+          if (data.aiMode) setAiMode(data.aiMode as "managed" | "byo");
         }
       })
       .catch(() => { /* leave null — don't block submit on fetch error */ });
@@ -151,22 +148,16 @@ function CanvasPageInner() {
   /* ── Sync settings after SettingsModal saves ─────────────────── */
   useEffect(() => {
     const handler = () => {
-      // Re-read BYO key presence from localStorage
+      // Re-read credential presence from versioned config
       try {
-        const raw = localStorage.getItem("drawlint:byo-key");
-        if (raw) {
-          const creds = JSON.parse(raw) as { apiKey?: string };
-          setHasByoKey(!!creds.apiKey);
-        } else {
-          setHasByoKey(false);
-        }
+        setHasByoKey(hasAnyCredentials());
       } catch { setHasByoKey(false); }
 
       // Re-fetch aiMode from server
       fetch("/api/user/settings")
         .then((r) => r.ok ? r.json() : null)
-        .then((data: { emailVerified?: boolean; aiMode?: "managed" | "byo" } | null) => {
-          if (data?.aiMode) setAiMode(data.aiMode);
+        .then((data: { emailVerified?: boolean; aiMode?: string } | null) => {
+          if (data?.aiMode) setAiMode(data.aiMode as "managed" | "byo");
         })
         .catch(() => {});
     };
@@ -616,11 +607,15 @@ function CanvasPageInner() {
       const url = isUpdate ? `/api/designs/${targetId}` : "/api/designs";
       const method = isUpdate ? "PUT" : "POST";
 
-      // Read BYO credentials from localStorage — never stored server-side
+      // Read credentials from versioned AI config
       let byoCreds: { apiKey?: string; endpoint?: string; deployment?: string } = {};
       try {
-        const raw = localStorage.getItem("drawlint:byo-key");
-        if (raw) byoCreds = JSON.parse(raw) as typeof byoCreds;
+        const config = getAIConfig();
+        // Determine provider from what's available
+        let provider: "managed" | "gemini" | "azure" = "managed";
+        if (config.gemini?.apiKey) provider = "gemini";
+        if (config.azure?.apiKey) provider = "azure";
+        byoCreds = getCredentialsForRequest(provider);
       } catch { /* noop */ }
 
       const res = await fetch(url, {
@@ -644,7 +639,7 @@ function CanvasPageInner() {
         const data = (await res.json().catch(() => ({}))) as { error?: string; quotaExceeded?: boolean; emailNotVerified?: boolean };
         if (data.quotaExceeded) {
           setAiError(
-            "You've used all 10 free AI reviews this month. Add your own Azure OpenAI key in Settings to continue.",
+            "You've used all 10 free AI reviews this month. Switch to Free AI (Gemini) or add your own key in Settings to continue.",
           );
           stopReviewerProgress("error");
           activeStreamRef.current = false;
