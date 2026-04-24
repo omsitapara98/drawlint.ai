@@ -89,6 +89,7 @@ export class AzureOpenAIProvider implements AIProvider {
 
   private readonly apiKey: string;
   private readonly url: string;
+  private readonly isFoundry: boolean;
 
   constructor(apiKey: string, endpoint: string, deployment: string) {
     if (!apiKey) {
@@ -106,21 +107,34 @@ export class AzureOpenAIProvider implements AIProvider {
 
     this.apiKey = apiKey;
     const apiVersion = "2025-04-01-preview";
-    // Strip any trailing path — users may paste full URLs from Azure portal
     const baseUrl = endpoint.replace(/\/+$/, "").replace(/\/openai\/.*$/, "");
     this.url = `${baseUrl}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
+    // Foundry endpoints may not support response_format or max_completion_tokens
+    this.isFoundry = !new URL(endpoint).hostname.endsWith(".openai.azure.com");
   }
 
   async generate(options: GenerateOptions): Promise<GenerateResult> {
-    const body = {
+    // For Foundry endpoints without native JSON mode, add stricter JSON instructions
+    const systemPrompt = this.isFoundry
+      ? options.systemPrompt + "\n\nCRITICAL: Return ONLY a single valid JSON object. No markdown fences, no text before or after the JSON."
+      : options.systemPrompt;
+
+    const body: Record<string, unknown> = {
       messages: [
-        { role: "system", content: options.systemPrompt },
+        { role: "system", content: systemPrompt },
         { role: "user", content: options.userContent },
       ],
       temperature: options.temperature ?? 0.3,
-      max_completion_tokens: options.maxTokens ?? 2048,
-      response_format: { type: "json_object" },
     };
+
+    if (this.isFoundry) {
+      // Foundry/AI Services: use max_tokens (widely supported)
+      body.max_tokens = options.maxTokens ?? 2048;
+    } else {
+      // Azure OpenAI: use newer params + JSON mode
+      body.max_completion_tokens = options.maxTokens ?? 2048;
+      body.response_format = { type: "json_object" };
+    }
 
     let response: Response;
     try {
