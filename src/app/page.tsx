@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Zap, Shield, Star, ChevronDown } from "lucide-react";
-import { motion } from "framer-motion";
+import { ArrowRight, Sparkles, Zap, Shield, Star, ChevronDown, Brain, Layers, Target, Activity, Users, FileCheck } from "lucide-react";
+import { motion, useInView } from "framer-motion";
 import { Header } from "@/components/layout";
 import { ParticleBackground } from "@/components/ui/particle-background";
 
@@ -15,26 +15,32 @@ const TYPEWRITER_WORDS = [
   "API Design",
 ];
 
-// Steps data — improved copy
+// Steps data
 const steps = [
   {
     number: "01",
     title: "Design",
+    emoji: "🎨",
     description: "Sketch your architecture on an interactive whiteboard with system design templates and components.",
+    color: "violet",
   },
   {
     number: "02",
     title: "Analyze",
+    emoji: "🤖",
     description: "Five specialized AI reviewers dissect your NFRs, entities, capacity planning, APIs, and HLD in parallel.",
+    color: "cyan",
   },
   {
     number: "03",
     title: "Improve",
+    emoji: "🚀",
     description: "Receive a structured review with highlights for strong decisions and actionable feedback on gaps.",
+    color: "emerald",
   },
 ];
 
-// Features — improved copy with lucide icons
+// Features
 const features = [
   {
     icon: Zap,
@@ -49,13 +55,22 @@ const features = [
   {
     icon: Shield,
     title: "Privacy First",
-    description: "Bring your own Azure OpenAI key. It stays in your browser — we never store or proxy your credentials.",
+    description: "Your API keys stay in your browser. We never store or log credentials — verified by our open-source codebase.",
   },
   {
     icon: Star,
     title: "Beyond Bug-Finding",
     description: "Get credit for strong design choices, not just a list of problems. Highlights + issues = balanced review.",
   },
+];
+
+// AI reviewers for the pipeline animation
+const AI_REVIEWERS = [
+  { icon: Layers, label: "NFR", color: "text-blue-400" },
+  { icon: Target, label: "Entities", color: "text-violet-400" },
+  { icon: Activity, label: "Capacity", color: "text-amber-400" },
+  { icon: Zap, label: "API", color: "text-cyan-400" },
+  { icon: Brain, label: "HLD", color: "text-emerald-400" },
 ];
 
 // Animation variants
@@ -108,8 +123,142 @@ function useTypewriter(words: string[], typingSpeed = 80, deletingSpeed = 40, pa
   return text;
 }
 
+// Counter animation hook
+function useCountUp(target: number, duration = 2000) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true });
+
+  useEffect(() => {
+    if (!inView) return;
+    const start = Date.now();
+    const step = () => {
+      const elapsed = Date.now() - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(eased * target));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [inView, target, duration]);
+
+  return { count, ref };
+}
+
+// AI Pipeline animation component
+function AIPipelineAnimation() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(containerRef, { once: true, margin: "-100px" });
+  const [activeStep, setActiveStep] = useState(-1);
+
+  useEffect(() => {
+    if (!inView) return;
+    // Animate through each reviewer, then lead
+    const intervals: ReturnType<typeof setTimeout>[] = [];
+    AI_REVIEWERS.forEach((_, i) => {
+      intervals.push(setTimeout(() => setActiveStep(i), 400 * (i + 1)));
+    });
+    intervals.push(setTimeout(() => setActiveStep(5), 400 * 6)); // lead reviewer
+    intervals.push(setTimeout(() => setActiveStep(6), 400 * 7)); // complete
+    return () => intervals.forEach(clearTimeout);
+  }, [inView]);
+
+  return (
+    <div ref={containerRef} className="mx-auto max-w-2xl">
+      {/* Input */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={inView ? { opacity: 1, scale: 1 } : {}}
+        transition={{ duration: 0.5 }}
+        className="flex items-center justify-center gap-2 mb-6"
+      >
+        <div className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium">
+          📋 Your Design
+        </div>
+        <motion.div
+          animate={inView ? { opacity: [0.3, 1, 0.3] } : {}}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+        </motion.div>
+      </motion.div>
+
+      {/* 5 Reviewers */}
+      <div className="grid grid-cols-5 gap-3 mb-6">
+        {AI_REVIEWERS.map((r, i) => (
+          <motion.div
+            key={r.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.4, delay: 0.3 + i * 0.1 }}
+            className={`flex flex-col items-center gap-2 rounded-xl border p-3 transition-all duration-500 ${
+              activeStep >= i
+                ? "border-violet-500/50 bg-violet-500/5 shadow-[0_0_15px_oklch(0.72_0.25_285_/_15%)]"
+                : "border-border bg-card"
+            }`}
+          >
+            <r.icon className={`h-5 w-5 transition-colors duration-500 ${activeStep >= i ? r.color : "text-muted-foreground/40"}`} />
+            <span className="text-[0.65rem] font-medium">{r.label}</span>
+            {activeStep >= i && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="text-[0.6rem] text-emerald-500 font-medium"
+              >
+                ✓
+              </motion.span>
+            )}
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Arrow down */}
+      <div className="flex justify-center mb-6">
+        <motion.div
+          animate={activeStep >= 5 ? { opacity: 1 } : { opacity: 0.3 }}
+          transition={{ duration: 0.3 }}
+        >
+          <ChevronDown className="h-5 w-5 text-violet-500" />
+        </motion.div>
+      </div>
+
+      {/* Lead Reviewer */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.4, delay: 0.8 }}
+        className={`flex items-center justify-center gap-3 rounded-xl border p-4 transition-all duration-500 ${
+          activeStep >= 5
+            ? "border-violet-500/50 bg-gradient-to-r from-violet-500/10 to-indigo-500/10 shadow-[0_0_20px_oklch(0.72_0.25_285_/_20%)]"
+            : "border-border bg-card"
+        }`}
+      >
+        <Brain className={`h-6 w-6 transition-colors duration-500 ${activeStep >= 5 ? "text-violet-500" : "text-muted-foreground/40"}`} />
+        <div>
+          <span className="text-sm font-semibold">Lead Reviewer</span>
+          {activeStep >= 6 && (
+            <motion.span
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="ml-2 inline-flex items-center rounded-full bg-emerald-500 px-2 py-0.5 text-[0.6rem] font-bold text-white"
+            >
+              Hire Signal Ready
+            </motion.span>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function LandingPage() {
   const typewriterText = useTypewriter(TYPEWRITER_WORDS);
+
+  // Stats counters
+  const reviews = useCountUp(500);
+  const reviewers = useCountUp(5);
+  const levels = useCountUp(4);
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -192,6 +341,33 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
+      {/* ── Stats ────────────────────────────────────────────── */}
+      <section className="relative px-4 py-16">
+        <div className="mx-auto h-px max-w-4xl bg-gradient-to-r from-transparent via-border to-transparent" />
+        <div className="mx-auto max-w-3xl mt-16 grid grid-cols-3 gap-8">
+          {[
+            { ref: reviews.ref, count: reviews.count, suffix: "+", label: "Design Reviews", icon: FileCheck },
+            { ref: reviewers.ref, count: reviewers.count, suffix: "", label: "AI Reviewers", icon: Brain },
+            { ref: levels.ref, count: levels.count, suffix: "", label: "Review Levels", icon: Users },
+          ].map((stat) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-center"
+            >
+              <stat.icon className="h-6 w-6 mx-auto mb-3 text-violet-500" />
+              <span ref={stat.ref} className="block text-4xl font-black font-heading bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
+                {stat.count}{stat.suffix}
+              </span>
+              <span className="text-sm text-muted-foreground mt-1">{stat.label}</span>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
       {/* ── How It Works ────────────────────────────────────── */}
       <section className="relative px-4 py-24">
         <div className="mx-auto h-px max-w-4xl bg-gradient-to-r from-transparent via-border to-transparent" />
@@ -204,24 +380,62 @@ export default function LandingPage() {
         >
           How It Works
         </motion.h2>
-        <div className="mx-auto grid max-w-4xl gap-6 sm:grid-cols-3">
-          {steps.map((step, i) => (
-            <motion.div
-              key={step.number}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.15 * i }}
-              className="group relative rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm p-8 shadow-md shadow-black/[0.04] dark:shadow-none hover:shadow-lg hover:shadow-violet-500/[0.08] dark:hover:shadow-[0_0_20px_oklch(0.72_0.25_285_/_15%)] hover:border-violet-500/30 hover:-translate-y-1 transition-all duration-300"
-            >
-              <span className="text-5xl font-black text-violet-500/40 dark:text-violet-400/20 font-heading">{step.number}</span>
-              <h3 className="mt-3 text-lg font-bold font-heading">{step.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{step.description}</p>
-              {/* Hover glow aura */}
-              <span className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-violet-500/5 dark:bg-violet-500/10 blur-xl -z-10" />
-            </motion.div>
-          ))}
+
+        {/* Steps with connecting line */}
+        <div className="mx-auto max-w-4xl relative">
+          {/* Connecting line */}
+          <div className="hidden sm:block absolute top-16 left-0 right-0 h-px bg-gradient-to-r from-violet-500/20 via-cyan-500/20 to-emerald-500/20 z-0" />
+
+          <div className="grid gap-6 sm:grid-cols-3 relative z-10">
+            {steps.map((step, i) => (
+              <motion.div
+                key={step.number}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.15 * i }}
+                className="group relative rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm p-8 shadow-md shadow-black/[0.04] dark:shadow-none hover:shadow-lg hover:shadow-violet-500/[0.08] dark:hover:shadow-[0_0_20px_oklch(0.72_0.25_285_/_15%)] hover:border-violet-500/30 hover:-translate-y-1 transition-all duration-300"
+              >
+                {/* Animated emoji */}
+                <motion.span
+                  className="text-4xl block mb-3"
+                  whileHover={{ scale: 1.2, rotate: [0, -10, 10, 0] }}
+                  transition={{ duration: 0.4 }}
+                >
+                  {step.emoji}
+                </motion.span>
+                <span className="text-5xl font-black text-violet-500/40 dark:text-violet-400/20 font-heading">{step.number}</span>
+                <h3 className="mt-3 text-lg font-bold font-heading">{step.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                <span className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-violet-500/5 dark:bg-violet-500/10 blur-xl -z-10" />
+              </motion.div>
+            ))}
+          </div>
         </div>
+      </section>
+
+      {/* ── AI Review Pipeline (Live Animation) ─────────────── */}
+      <section className="relative px-4 py-24">
+        <div className="mx-auto h-px max-w-4xl bg-gradient-to-r from-transparent via-border to-transparent" />
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="gradient-text mt-16 mb-4 text-center font-heading text-3xl sm:text-4xl font-bold tracking-tight"
+        >
+          The Review Pipeline
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="text-center text-muted-foreground mb-12 max-w-xl mx-auto"
+        >
+          Watch five specialized reviewers analyze your design in parallel, then a Lead Reviewer synthesizes the final verdict.
+        </motion.p>
+        <AIPipelineAnimation />
       </section>
 
       {/* ── Features ────────────────────────────────────────── */}
@@ -244,17 +458,56 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 * i }}
-              className="group relative rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm shadow-md shadow-black/[0.04] dark:shadow-none hover:shadow-lg hover:shadow-violet-500/[0.08] dark:hover:shadow-[0_0_20px_oklch(0.72_0.25_285_/_15%)] hover:border-violet-500/30 hover:-translate-y-1 transition-all duration-300 p-7 text-card-foreground"
+              whileHover={{ y: -4 }}
+              className="group relative rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm shadow-md shadow-black/[0.04] dark:shadow-none hover:shadow-lg hover:shadow-violet-500/[0.08] dark:hover:shadow-[0_0_20px_oklch(0.72_0.25_285_/_15%)] hover:border-violet-500/30 transition-all duration-300 p-7 text-card-foreground"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400 mb-4">
+              <motion.div
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400 mb-4"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
                 <f.icon className="h-5 w-5" />
-              </div>
+              </motion.div>
               <h3 className="text-base font-bold font-heading">{f.title}</h3>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.description}</p>
               <span className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-violet-500/5 dark:bg-violet-500/10 blur-xl -z-10" />
             </motion.div>
           ))}
         </div>
+      </section>
+
+      {/* ── CTA ──────────────────────────────────────────────── */}
+      <section className="relative px-4 py-24">
+        <div className="mx-auto h-px max-w-4xl bg-gradient-to-r from-transparent via-border to-transparent" />
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="relative mx-auto mt-16 max-w-3xl overflow-hidden rounded-2xl border border-border dark:border-white/[0.08] bg-gradient-to-br from-violet-500/5 via-card to-cyan-500/3 dark:from-violet-500/10 dark:via-card dark:to-cyan-500/5 p-12 text-center"
+        >
+          <ParticleBackground className="absolute inset-0" particleCount={20} />
+          <div className="relative z-10 flex flex-col items-center gap-5">
+            <motion.p
+              className="text-2xl sm:text-3xl font-bold font-heading"
+              whileInView={{ opacity: [0, 1] }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              Ready to level up your designs?
+            </motion.p>
+            <p className="text-muted-foreground max-w-md">
+              Join engineers practicing system design with AI-powered reviews. Free to start.
+            </p>
+            <Link
+              href="/canvas"
+              className="group inline-flex items-center rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-8 h-12 text-base font-medium text-white shadow-lg shadow-violet-500/25 shadow-[0_0_25px_oklch(0.72_0.25_285_/_25%)] transition-all hover:shadow-xl hover:shadow-[0_0_35px_oklch(0.72_0.25_285_/_40%)] hover:-translate-y-0.5"
+            >
+              Start Drawing — It&apos;s Free
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+        </motion.div>
       </section>
 
       {/* ── Footer ──────────────────────────────────────────── */}
