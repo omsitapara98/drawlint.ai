@@ -28,9 +28,9 @@ const item = {
 /* ── Reusable sub-components ──────────────────────────────── */
 function Tip({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mt-4 rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm p-4 shadow-sm dark:shadow-none border-l-[3px] border-l-violet-500">
-      <span className="font-medium text-foreground">💡 Tip:</span>{" "}
-      <span className="text-muted-foreground">{children}</span>
+    <div className="mt-4 rounded-xl border-l-[3px] border-l-violet-500 border border-violet-200 dark:border-violet-800/40 bg-violet-50 dark:bg-violet-950/30 p-4 shadow-sm">
+      <span className="font-semibold text-violet-700 dark:text-violet-300">💡 Tip:</span>{" "}
+      <span className="text-violet-900/80 dark:text-violet-200/80">{children}</span>
     </div>
   );
 }
@@ -151,15 +151,15 @@ function TemplatePreview() {
       <motion.line x1={165} y1={5} x2={165} y2={195} className="stroke-violet-500/30" strokeWidth={1} strokeDasharray="4 4"
         initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.8, delay: 0.3 }} />
       {/* Right area label */}
-      <motion.text x={300} y={100} textAnchor="middle" className="fill-violet-400/40 text-[14px] font-bold"
+      <motion.text x={300} y={20} textAnchor="middle" className="fill-violet-400/30 text-[11px] font-bold"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
         HLD Diagram Area
       </motion.text>
       {/* Sample boxes on right */}
-      <AnimBox x={210} y={40} w={80} h={30} label="API Gateway" delay={0.8} color="cyan" />
-      <AnimBox x={330} y={40} w={80} h={30} label="Auth Service" delay={0.9} color="emerald" />
-      <AnimBox x={270} y={120} w={80} h={30} label="PostgreSQL" delay={1.0} color="amber" />
-      <AnimArrow x1={290} y1={70} x2={290} y2={120} delay={1.1} />
+      <AnimBox x={200} y={55} w={80} h={30} label="API Gateway" delay={0.8} color="cyan" />
+      <AnimBox x={320} y={55} w={80} h={30} label="Auth Service" delay={0.9} color="emerald" />
+      <AnimBox x={260} y={130} w={80} h={30} label="PostgreSQL" delay={1.0} color="amber" />
+      <AnimArrow x1={280} y1={85} x2={280} y2={130} delay={1.1} />
     </CanvasPreview>
   );
 }
@@ -174,19 +174,19 @@ function ComponentsPreview() {
       <AnimBox x={20} y={90} w={90} h={35} label="Kafka Queue" delay={0.4} color="amber" />
       <AnimBox x={140} y={90} w={90} h={35} label="PostgreSQL" delay={0.5} color="emerald" />
       <AnimBox x={260} y={90} w={90} h={35} label="CDN" delay={0.6} color="cyan" />
-      {/* Type labels */}
+      {/* Auto-detected type labels */}
       <motion.text x={65} y={70} textAnchor="middle" className="fill-cyan-500/60 text-[7px]"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>gateway</motion.text>
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>auto-detected: gateway</motion.text>
       <motion.text x={185} y={70} textAnchor="middle" className="fill-violet-500/60 text-[7px]"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}>service</motion.text>
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}>auto-detected: service</motion.text>
       <motion.text x={305} y={70} textAnchor="middle" className="fill-red-500/60 text-[7px]"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0 }}>cache</motion.text>
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0 }}>auto-detected: cache</motion.text>
       <motion.text x={65} y={140} textAnchor="middle" className="fill-amber-500/60 text-[7px]"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}>queue</motion.text>
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}>auto-detected: queue</motion.text>
       <motion.text x={185} y={140} textAnchor="middle" className="fill-emerald-500/60 text-[7px]"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>database</motion.text>
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>auto-detected: database</motion.text>
       <motion.text x={305} y={140} textAnchor="middle" className="fill-cyan-500/60 text-[7px]"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3 }}>cdn</motion.text>
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3 }}>auto-detected: cdn</motion.text>
     </CanvasPreview>
   );
 }
