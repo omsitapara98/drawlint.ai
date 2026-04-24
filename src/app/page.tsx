@@ -256,7 +256,7 @@ export default function LandingPage() {
   const typewriterText = useTypewriter(TYPEWRITER_WORDS);
 
   // Stats counters
-  const reviews = useCountUp(500);
+  const topics = useCountUp(20);
   const reviewers = useCountUp(5);
   const levels = useCountUp(4);
 
@@ -346,7 +346,7 @@ export default function LandingPage() {
         <div className="mx-auto h-px max-w-4xl bg-gradient-to-r from-transparent via-border to-transparent" />
         <div className="mx-auto max-w-3xl mt-16 grid grid-cols-3 gap-8">
           {[
-            { ref: reviews.ref, count: reviews.count, suffix: "+", label: "Design Reviews", icon: FileCheck },
+            { ref: topics.ref, count: topics.count, suffix: "+", label: "Design Topics", icon: FileCheck },
             { ref: reviewers.ref, count: reviewers.count, suffix: "", label: "AI Reviewers", icon: Brain },
             { ref: levels.ref, count: levels.count, suffix: "", label: "Review Levels", icon: Users },
           ].map((stat) => (
