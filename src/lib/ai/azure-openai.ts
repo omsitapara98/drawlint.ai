@@ -4,6 +4,37 @@ import { getReviewerPrompt, getLeadReviewerPrompt } from "./prompts";
 import type { ReviewerSection } from "./prompts";
 import { formatSectionForReview } from "./format-prompt";
 
+/** Validate that an endpoint URL is a legitimate Azure OpenAI endpoint. */
+function validateAzureEndpoint(endpoint: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(endpoint);
+  } catch {
+    throw new AzureOpenAIError("Invalid Azure OpenAI endpoint URL.", 400, "invalid_endpoint");
+  }
+  if (parsed.protocol !== "https:") {
+    throw new AzureOpenAIError("Azure OpenAI endpoint must use HTTPS.", 400, "invalid_endpoint");
+  }
+  if (!parsed.hostname.endsWith(".openai.azure.com")) {
+    throw new AzureOpenAIError(
+      "Azure OpenAI endpoint must be an *.openai.azure.com host.",
+      400,
+      "invalid_endpoint",
+    );
+  }
+}
+
+/** Validate that a deployment name contains only safe characters. */
+function validateDeploymentName(deployment: string): void {
+  if (!/^[a-zA-Z0-9_-]+$/.test(deployment)) {
+    throw new AzureOpenAIError(
+      "Deployment name contains invalid characters. Only alphanumeric, hyphens, and underscores are allowed.",
+      400,
+      "invalid_deployment",
+    );
+  }
+}
+
 interface AnalyzeOptions {
   apiKey?: string;
   endpoint?: string;
@@ -186,6 +217,9 @@ export async function analyzeDesign(
   if (!deployment) {
     throw new AzureOpenAIError("No Azure OpenAI deployment configured.", 400, "missing_deployment");
   }
+
+  validateAzureEndpoint(endpoint);
+  validateDeploymentName(deployment);
 
   const apiVersion = "2025-01-01-preview";
   // Extract base URL: strip any path after the host (users may paste full URLs from Azure portal)

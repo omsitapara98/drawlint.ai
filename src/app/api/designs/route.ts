@@ -9,8 +9,8 @@ import {
 import { createReview } from "@/lib/db/reviews";
 import { incrementSubmissionCount } from "@/lib/db/topics";
 import {
-  checkManagedQuota,
-  incrementManagedQuota,
+  reserveManagedQuota,
+  releaseManagedQuota,
   isEmailVerified,
 } from "@/lib/db/users";
 import { analyzeDesign } from "@/lib/ai";
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
         { status: 503 },
       );
     }
-    const quota = await checkManagedQuota(userId);
+    const quota = await reserveManagedQuota(userId);
     if (!quota.allowed) {
       return NextResponse.json(
         {
@@ -229,12 +229,12 @@ export async function POST(request: Request) {
         });
         await updateDesignStatus(design._id.toString(), "reviewed");
         await incrementSubmissionCount(body.topicId);
-        if (isManagedMode) await incrementManagedQuota(userId);
 
         enqueue({ type: "complete", review: aiResult });
       } catch (err) {
         console.error("AI review failed:", err);
         enqueue({ type: "error", message: err instanceof Error ? err.message : "AI review failed" });
+        if (isManagedMode) await releaseManagedQuota(userId).catch(console.error);
         await updateDesignStatus(design._id.toString(), "submitted").catch(console.error);
         await incrementSubmissionCount(body.topicId).catch(console.error);
       } finally {

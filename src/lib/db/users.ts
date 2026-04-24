@@ -126,6 +126,92 @@ export async function incrementManagedQuota(userId: string): Promise<void> {
  * Returns true if the user's email is verified.
  * OAuth users (no hashedPassword) are always treated as verified.
  */
+/**
+ * Atomically reserve a managed quota slot for the current month.
+ * Uses findOneAndUpdate so parallel requests cannot exceed MANAGED_LIMIT.
+ */
+export async function reserveManagedQuota(
+  userId: string,
+): Promise<QuotaCheckResult & { reserved: boolean }> {
+  const client = await clientPromise;
+  const col = client.db(DB_NAME).collection("users");
+  const oid = new ObjectId(userId);
+
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+
+  // Premium / admin users — unlimited, no reservation needed
+  const user = await col.findOne({ _id: oid }, { projection: { role: 1, managedUsage: 1 } });
+  const role = (user?.role as UserRole) ?? "free";
+  if (role !== "free") {
+    return { allowed: true, reserved: true, used: 0, limit: MANAGED_LIMIT };
+  }
+
+  // Try atomic increment for current month (only if under limit)
+  const result = await col.findOneAndUpdate(
+    {
+      _id: oid,
+      "managedUsage.month": month,
+      "managedUsage.year": year,
+      "managedUsage.count": { $lt: MANAGED_LIMIT },
+    },
+    { $inc: { "managedUsage.count": 1 }, $set: { updatedAt: new Date() } },
+    { returnDocument: "after", projection: { managedUsage: 1 } },
+  );
+
+  if (result) {
+    const usage = result.managedUsage as ManagedUsage;
+    return { allowed: true, reserved: true, used: usage.count, limit: MANAGED_LIMIT };
+  }
+
+  // No match — either new month or quota exhausted
+  const existing = user?.managedUsage as ManagedUsage | undefined;
+
+  if (!existing || existing.month !== month || existing.year !== year) {
+    // New month — reset and set count to 1
+    await col.updateOne(
+      { _id: oid },
+      { $set: { managedUsage: { count: 1, month, year }, updatedAt: new Date() } },
+    );
+    return { allowed: true, reserved: true, used: 1, limit: MANAGED_LIMIT };
+  }
+
+  // Quota exhausted
+  return {
+    allowed: false,
+    reserved: false,
+    used: existing.count,
+    limit: MANAGED_LIMIT,
+    reason: "quota_exceeded",
+  };
+}
+
+/**
+ * Release a previously reserved quota slot (e.g. on AI failure).
+ * Decrements count for the current month but never below 0.
+ */
+export async function releaseManagedQuota(userId: string): Promise<void> {
+  const client = await clientPromise;
+  const col = client.db(DB_NAME).collection("users");
+  const oid = new ObjectId(userId);
+
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+
+  // Only decrement if current month matches and count > 0
+  await col.updateOne(
+    {
+      _id: oid,
+      "managedUsage.month": month,
+      "managedUsage.year": year,
+      "managedUsage.count": { $gt: 0 },
+    },
+    { $inc: { "managedUsage.count": -1 }, $set: { updatedAt: new Date() } },
+  );
+}
+
 export async function isEmailVerified(userId: string): Promise<boolean> {
   const client = await clientPromise;
   const user = await client.db(DB_NAME).collection("users").findOne(

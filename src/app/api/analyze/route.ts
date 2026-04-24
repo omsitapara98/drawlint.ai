@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { ReviewLevel } from "@/types/feedback";
 import { analyzeDesign, AzureOpenAIError } from "@/lib/ai";
+import { isEmailVerified } from "@/lib/db/users";
 
 const VALID_LEVELS: ReviewLevel[] = ["mid", "senior", "staff", "deep"];
 
@@ -14,6 +16,22 @@ interface AnalyzeRequestBody {
 }
 
 export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const verified = await isEmailVerified(session.user.id);
+  if (!verified) {
+    return NextResponse.json(
+      {
+        error: "Please verify your email before submitting designs. Check your inbox for a verification link.",
+        emailNotVerified: true,
+      },
+      { status: 403 },
+    );
+  }
+
   let body: AnalyzeRequestBody;
   try {
     body = (await request.json()) as AnalyzeRequestBody;

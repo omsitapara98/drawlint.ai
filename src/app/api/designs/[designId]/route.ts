@@ -5,8 +5,8 @@ import { getReviewByDesignId, deleteReviewByDesignId, createReview } from "@/lib
 import { decrementSubmissionCount } from "@/lib/db/topics";
 import { uploadDesign, deleteDesign as deleteBlob } from "@/lib/blob/storage";
 import {
-  checkManagedQuota,
-  incrementManagedQuota,
+  reserveManagedQuota,
+  releaseManagedQuota,
   isEmailVerified,
 } from "@/lib/db/users";
 import { analyzeDesign } from "@/lib/ai";
@@ -200,7 +200,7 @@ export async function PUT(
         { status: 503 },
       );
     }
-    const quota = await checkManagedQuota(userId);
+    const quota = await reserveManagedQuota(userId);
     if (!quota.allowed) {
       return NextResponse.json(
         {
@@ -335,13 +335,13 @@ export async function PUT(
         });
 
         await updateDesignStatus(designId, "reviewed");
-        if (isManagedMode) await incrementManagedQuota(userId);
         const updatedDesign = await getDesignById(designId);
 
         enqueue({ type: "complete", review: aiResult, design: updatedDesign });
       } catch (err) {
         console.error("AI review failed during update:", err);
         enqueue({ type: "error", message: err instanceof Error ? err.message : "AI review failed" });
+        if (isManagedMode) await releaseManagedQuota(userId).catch(console.error);
         await updateDesignStatus(designId, "submitted").catch(console.error);
       } finally {
         try { controller.close(); } catch { /* already closed */ }
