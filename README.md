@@ -6,53 +6,97 @@ AI-powered system design review platform. Draw your architecture, get expert-lev
 
 **Live:** https://drawlint-ai.azurewebsites.net
 
+---
+
 ## 🎯 How It Works
 
-1. **Draw** — Use the Excalidraw whiteboard with structured sections (Functional Requirements, Assumptions, NFRs, Entities, Capacity, API Routes, HLD)
-2. **Analyze** — Click the Analyze button to trigger multi-call AI review
-3. **Review** — Get expert feedback from 5 specialized reviewers + 1 Lead Reviewer with hire signals
+1. **Draw** — Use the Excalidraw whiteboard with structured sections (FR, Assumptions, NFRs, Entities, Capacity, API Routes, HLD)
+2. **Submit** — Choose your review level and submit to the community library
+3. **Review** — Get feedback from 5 specialized AI reviewers + 1 Lead Reviewer with hire signals
 
-## ✨ Features (Alpha)
+## ✨ Features
 
-- 🎨 **Excalidraw Canvas** — Structured template with locked sections for consistent system design documentation
-- 🤖 **Multi-Call AI Review** — 5 parallel section reviewers (NFR, Entities, Capacity, API, HLD) + Lead Reviewer
+### AI Review Engine
+- 🤖 **Multi-Reviewer Pipeline** — 5 parallel section reviewers (NFR, Entities, Capacity, API, HLD) + Lead Reviewer synthesis
 - 📈 **4 Review Levels** — Mid (L4-L5), Senior (L5-L6), Staff (L6+), Deep Analysis
-- ✅ **Positive & Critical Feedback** — Highlights strengths + identifies issues (critical/warning/info)
+- ✅ **Highlights + Issues** — Strengths (strong/good) and issues (critical/warning/info)
 - 🎓 **Hire Signal** — Lead Reviewer assessment (strong-hire → no-hire)
-- 🔐 **BYO Azure OpenAI Key** — Bring your own credentials, stored in browser localStorage (never sent to our servers)
-- 💾 **Cached Results** — Re-analyze button for quick re-review
-- 🎛️ **Resizable Feedback Panel** — Adjust workspace layout on demand
+
+### AI Providers
+- ⭐ **DrawLint AI** — Managed, best quality, 10 free reviews/month
+- 💡 **Gemini AI** — Free, unlimited with your own Google API key (~30 sec setup)
+- ⚙️ **Azure OpenAI** — BYO key with full control, supports Azure OpenAI + Azure AI Foundry
+- 🔌 **Provider Abstraction** — Unified interface, per-provider optimizations, automatic retry on malformed JSON
+
+### Platform
+- 🎨 **Excalidraw Canvas** — Structured whiteboard template with locked sections
+- 📚 **Community Library** — Browse, fork, and learn from other designers
+- 💾 **Draft System** — Auto-save drafts, continue editing anytime
+- 🔒 **Auth** — GitHub + Google OAuth via NextAuth.js v5
+- 👤 **Anonymous Mode** — Post designs with a pseudonym
 - 🌙 **Dark Mode** — Full theme support
-- 📱 **Auto-save** — Diagrams persist in localStorage
+- 🎛️ **Resizable Panels** — Adjust workspace layout
 
 ## 🏗️ Architecture
 
-- **4-Pass Graph Parser** — Nodes → Edges → Annotations → Clusters for comprehensive diagram analysis
-- **Isolated Section Reviews** — Each reviewer receives only its section data for focused analysis
-- **Structured Input Template** — Locked sections enforce consistent system design documentation
+```
+User Input → Core Evaluation Prompt → Provider Adapter → LLM Call → Output Normalizer → Final Review
+```
+
+- **4-Pass Graph Parser** — Nodes → Edges → Annotations → Clusters
+- **Provider Abstraction Layer** — DrawLint (managed) / Gemini / Azure with unified `generate()` interface
+- **Concurrency Control** — Parallel reviewers for Azure, capped concurrency for Gemini (free tier rate limits)
+- **Output Normalization** — JSON schema validation, retry on malformed output, default fallbacks
 
 ## 🛣️ Pages
 
-- **`/`** — Landing page
-- **`/canvas`** — Interactive whiteboard + AI review engine
-- **`/guide`** — Drawing guide & best practices
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page |
+| `/canvas` | Interactive whiteboard + AI review engine |
+| `/canvas?view={id}` | View a submitted design |
+| `/canvas?edit={id}` | Edit your design |
+| `/library` | Community design library |
+| `/library/{slug}` | Designs for a specific topic |
+| `/guide` | Drawing guide & best practices |
+| `/guide/byo-keys` | AI provider setup guide |
+| `/support` | FAQ & support |
 
 ## 🛠️ Tech Stack
 
-- **Next.js 16** (App Router, TypeScript)
-- **Excalidraw 0.18** — diagram canvas
-- **Azure OpenAI** — AI analysis engine (BYO key)
-- **shadcn/ui + Tailwind CSS v4** — UI components
-- **Docker + Azure App Service** — deployment
-- **GitHub Actions** — CI/CD (manual trigger)
+| Layer | Technology |
+|-------|-----------|
+| **Framework** | Next.js 16 (App Router, TypeScript) |
+| **Canvas** | Excalidraw 0.18 |
+| **AI** | Azure OpenAI, Google Gemini, Azure AI Foundry |
+| **Auth** | NextAuth.js v5 (GitHub + Google OAuth) |
+| **Database** | MongoDB (Azure Cosmos DB) |
+| **Storage** | Azure Blob Storage |
+| **UI** | shadcn/ui + Tailwind CSS v4 + Framer Motion |
+| **Deployment** | Docker + Azure App Service |
+| **CI/CD** | GitHub Actions |
 
 ## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 20+
+- MongoDB instance (or Azure Cosmos DB)
+- Azure Blob Storage account
 
 ### Development
 
 ```bash
+# Clone the repo
+git clone https://github.com/omsitapara98/drawlint.ai.git
+cd drawlint.ai
+
 # Install dependencies
 npm install
+
+# Copy environment variables
+cp .env.example .env.local
+# Fill in your values (see Configuration below)
 
 # Run development server
 npm run dev
@@ -60,13 +104,104 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Production
-
-The app is deployed on Azure App Service via GitHub Actions. Deploy by pushing to main or manually triggering the workflow.
-
 ### Configuration
 
-All Azure OpenAI credentials are configured via the **Settings** modal in the app (no `.env.local` needed). Your keys are stored securely in browser localStorage and never sent to our servers.
+Copy `.env.example` to `.env.local` and fill in:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `AZURE_OPENAI_API_KEY` | For managed AI | Platform Azure OpenAI key |
+| `AZURE_OPENAI_ENDPOINT` | For managed AI | Azure OpenAI endpoint URL |
+| `AZURE_OPENAI_DEPLOYMENT` | For managed AI | Model deployment name |
+| `AUTH_SECRET` | ✅ | NextAuth.js secret (`openssl rand -base64 32`) |
+| `AUTH_GOOGLE_ID/SECRET` | ✅ | Google OAuth credentials |
+| `AUTH_GITHUB_ID/SECRET` | ✅ | GitHub OAuth credentials |
+| `MONGODB_URI` | ✅ | MongoDB connection string |
+| `GMAIL_USER` | ✅ | Gmail for email verification |
+| `GMAIL_APP_PASSWORD` | ✅ | Gmail app password (2FA required) |
+| `NEXT_PUBLIC_APP_URL` | ✅ | Public URL (e.g. `http://localhost:3000`) |
+
+> **Note:** Gemini and Azure BYO keys are provided by users via the Settings UI — no server-side config needed.
+
+### Production
+
+```bash
+# Build
+npm run build
+
+# Docker
+docker build -t drawlint-ai .
+docker run -p 3000:3000 --env-file .env.local drawlint-ai
+```
+
+Deployed via GitHub Actions → Docker → Azure App Service.
+
+## 🔐 Security
+
+- **API keys are never stored server-side** — user credentials (Gemini/Azure) live in browser localStorage only
+- **Keys transit over HTTPS** — sent to our server only during review, immediately discarded from memory
+- **No logging of credentials** — API keys are never written to logs or databases
+- **Open source** — verify the key handling yourself in `src/lib/ai/providers/`
+
+## 💰 Pricing
+
+| Tier | AI Provider | Reviews | Cost |
+|------|-------------|---------|------|
+| **Free** | DrawLint AI | 10/month | $0 |
+| **Pro** | DrawLint AI | More reviews + deeper evaluation | ₹99/month *(coming soon)* |
+| **BYO Gemini** | Your Gemini key | Unlimited | Free (your API usage) |
+| **BYO Azure** | Your Azure key | Unlimited | Your Azure costs |
+
+## 🗺️ Roadmap
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the full product roadmap.
+
+### Recently Shipped
+- ✅ Multi-provider AI (DrawLint AI + Gemini + Azure OpenAI + Azure AI Foundry)
+- ✅ Test Connection button in Settings
+- ✅ Provider badges in library (shows which AI reviewed each design)
+- ✅ Pro plan teaser
+
+### Coming Next
+- 🔜 Pro tier with Stripe billing
+- 🔜 Usage analytics dashboard
+- 🔜 Multi-model selection within providers
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how:
+
+1. Fork the repo
+2. Create a feature branch (`git checkout -b feat/my-feature`)
+3. Make your changes
+4. Run checks: `npm run lint && npx tsc --noEmit`
+5. Commit with a descriptive message
+6. Open a Pull Request
+
+### Project Structure
+
+```
+src/
+├── app/                    # Next.js App Router pages & API routes
+│   ├── (protected)/        # Auth-gated pages (canvas, library, guide)
+│   └── api/                # API routes (analyze, designs, user, topics)
+├── components/             # React components
+│   ├── canvas/             # Whiteboard & submit dialog
+│   ├── feedback/           # AI review panel
+│   ├── library/            # Design library grid & cards
+│   ├── settings/           # AI settings modal
+│   └── ui/                 # shadcn/ui primitives
+├── hooks/                  # Custom React hooks
+├── lib/
+│   ├── ai/                 # AI engine
+│   │   ├── providers/      # Provider abstraction (Azure, Gemini, DrawLint)
+│   │   ├── prompts.ts      # Review criteria & prompt templates
+│   │   └── azure-openai.ts # analyzeDesign() orchestrator
+│   ├── db/                 # MongoDB data access (users, designs, reviews)
+│   ├── diagram/            # 4-pass graph parser
+│   └── storage/            # Client-side config & rate limiting
+└── types/                  # TypeScript type definitions
+```
 
 ## 📄 License
 
