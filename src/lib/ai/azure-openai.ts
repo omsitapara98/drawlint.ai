@@ -192,7 +192,7 @@ export async function analyzeDesign(
         provider.generate({
           systemPrompt,
           userContent,
-          temperature: 0.3,
+          temperature: 0.2,
           maxTokens: 2048,
           signal: options?.signal,
         }),

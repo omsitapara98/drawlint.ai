@@ -154,7 +154,7 @@ export class AzureOpenAIProvider implements AIProvider {
         { role: "system", content: options.systemPrompt },
         { role: "user", content: options.userContent },
       ],
-      temperature: options.temperature ?? 0.3,
+      temperature: options.temperature ?? 0.2,
       max_completion_tokens: options.maxTokens ?? 2048,
       response_format: { type: "json_object" },
     };
