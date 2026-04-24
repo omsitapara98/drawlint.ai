@@ -59,7 +59,7 @@ export default function UserMenu({ session, onOpenSettings }: UserMenuProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="absolute right-0 top-full mt-1.5 w-48 rounded-lg border border-border/50 dark:border-white/[0.08] bg-card/90 dark:bg-card/80 backdrop-blur-xl p-1 shadow-xl dark:shadow-[0_0_30px_oklch(0_0_0_/30%)] z-50"
+            className="absolute right-0 top-full mt-1.5 w-48 rounded-lg border border-border/50 dark:border-white/[0.12] bg-card dark:bg-zinc-900 p-1 shadow-xl dark:shadow-[0_0_30px_oklch(0_0_0_/30%)] z-50"
           >
             <div className="px-3 py-2 border-b mb-1">
               <p className="text-xs font-medium truncate">{user?.name}</p>

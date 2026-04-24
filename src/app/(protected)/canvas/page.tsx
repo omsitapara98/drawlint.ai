@@ -816,7 +816,7 @@ function CanvasPageInner() {
         {/* ── Phase: Topic + Level Selection Gate ──────────────── */}
         {phase === "select" && (
           <div className="flex flex-1 items-center justify-center bg-background">
-            <div className="w-full max-w-lg rounded-2xl border bg-background p-8 shadow-xl space-y-6">
+            <div className="w-full max-w-lg rounded-2xl border dark:border-white/[0.12] bg-background dark:bg-zinc-900 p-8 shadow-xl space-y-6">
               {/* Logo */}
               <div className="flex flex-col items-center gap-2">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-lg font-bold shadow-lg">
@@ -849,7 +849,7 @@ function CanvasPageInner() {
                   ) : (
                     <>
                       <div
-                        className="flex h-10 items-center rounded-lg border bg-background px-3 cursor-pointer"
+                        className="flex h-10 items-center rounded-lg border dark:border-white/[0.12] bg-background px-3 cursor-pointer"
                         onClick={() => {
                           setTopicDropdownOpen(true);
                           setTimeout(() => topicInputRef.current?.focus(), 0);
@@ -873,7 +873,7 @@ function CanvasPageInner() {
                       </div>
 
                       {topicDropdownOpen && (
-                        <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-lg border bg-popover shadow-lg">
+                        <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-lg border dark:border-white/[0.12] bg-popover dark:bg-zinc-900 shadow-lg">
                           {topicsLoading ? (
                             <div className="flex items-center justify-center py-4">
                               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -933,7 +933,7 @@ function CanvasPageInner() {
               {/* Level pills */}
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">Review Level</label>
-                <div className="flex h-10 items-center rounded-full border bg-background p-0.5">
+                <div className="flex h-10 items-center rounded-full border dark:border-white/[0.12] bg-background p-0.5">
                   {LEVELS.map((lvl) => (
                     <button
                       key={lvl}
