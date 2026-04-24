@@ -64,6 +64,7 @@ function CanvasPageInner() {
   const [viewIsAuthor, setViewIsAuthor] = useState(false);
   const [viewAuthorName, setViewAuthorName] = useState<string | null>(null);
   const [viewEditMode, setViewEditMode] = useState(false);
+  const [viewError, setViewError] = useState<string | null>(null);
 
   /* ── Phase gate ──────────────────────────────────────────────── */
   const [phase, setPhase] = useState<"select" | "draw">(
@@ -263,7 +264,11 @@ function CanvasPageInner() {
       try {
         // Fetch design metadata (includes review, author, topic)
         const metaRes = await fetch(`/api/designs/${viewDesignId}`);
-        if (!metaRes.ok) return;
+        if (!metaRes.ok) {
+          const errData = (await metaRes.json().catch(() => ({}))) as { error?: string };
+          setViewError(errData.error ?? "Design not found.");
+          return;
+        }
         const metaData = (await metaRes.json()) as {
           design: {
             _id: string;
@@ -348,8 +353,8 @@ function CanvasPageInner() {
           setPanelOpen(true);
         }
         setPhase("draw");
-      } catch {
-        // Fall back to normal flow
+      } catch (err) {
+        setViewError(err instanceof Error ? err.message : "Failed to load design.");
       } finally {
         setViewModeInitialized(true);
       }
@@ -818,6 +823,31 @@ function CanvasPageInner() {
     },
     [panelWidth],
   );
+
+  if (viewError) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-4">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/10 text-3xl">
+          ❌
+        </div>
+        <p className="text-sm font-medium text-red-600 dark:text-red-400">{viewError}</p>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/library"
+            className="inline-flex items-center rounded-full bg-violet-500 px-5 h-9 text-sm font-medium text-white hover:bg-violet-600 transition-colors"
+          >
+            Go to Library
+          </Link>
+          <Link
+            href="/canvas"
+            className="inline-flex items-center rounded-full border border-border px-5 h-9 text-sm font-medium hover:bg-muted transition-colors"
+          >
+            New Design
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (initialData === null) {
     return (
