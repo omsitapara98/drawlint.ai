@@ -136,30 +136,62 @@ function CanvasPreview({ children, height = 180 }: { children: React.ReactNode; 
   );
 }
 
-/** Template layout preview */
+/** Template layout preview — full architecture diagram */
 function TemplatePreview() {
   return (
-    <CanvasPreview height={200}>
-      {/* Left column */}
-      <AnimBox x={10} y={10} w={140} h={24} label="Functional Requirements" delay={0.1} />
-      <AnimBox x={10} y={40} w={140} h={24} label="Assumptions" delay={0.2} />
-      <AnimBox x={10} y={70} w={140} h={24} label="NFRs" delay={0.3} />
-      <AnimBox x={10} y={100} w={140} h={24} label="Core Entities" delay={0.4} />
-      <AnimBox x={10} y={130} w={140} h={24} label="Capacity" delay={0.5} />
-      <AnimBox x={10} y={160} w={140} h={24} label="API Routes" delay={0.6} />
-      {/* Divider */}
-      <motion.line x1={165} y1={5} x2={165} y2={195} className="stroke-violet-500/30" strokeWidth={1} strokeDasharray="4 4"
-        initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.8, delay: 0.3 }} />
-      {/* Right area label */}
-      <motion.text x={300} y={20} textAnchor="middle" className="fill-violet-400/30 text-[11px] font-bold"
+    <CanvasPreview height={320}>
+      {/* Left column — text sections */}
+      <AnimBox x={10} y={10} w={155} h={30} label="Functional Requirements" delay={0.1} />
+      <AnimBox x={10} y={48} w={155} h={30} label="Assumptions" delay={0.2} />
+      <AnimBox x={10} y={86} w={155} h={30} label="Non-Functional Reqs" delay={0.3} />
+      <AnimBox x={10} y={124} w={155} h={30} label="Core Entities" delay={0.4} />
+      <AnimBox x={10} y={162} w={155} h={30} label="Capacity Calculations" delay={0.5} />
+      <AnimBox x={10} y={200} w={155} h={30} label="API Routes" delay={0.6} />
+
+      {/* Divider line */}
+      <motion.line x1={180} y1={5} x2={180} y2={315} className="stroke-violet-500/30" strokeWidth={1.5} strokeDasharray="6 4"
+        initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: 0.3 }} />
+
+      {/* Right area — HLD architecture */}
+      <motion.text x={315} y={18} textAnchor="middle" className="fill-violet-400/25 text-[10px] font-bold tracking-wider"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
-        HLD Diagram Area
+        HIGH-LEVEL DESIGN
       </motion.text>
-      {/* Sample boxes on right */}
-      <AnimBox x={200} y={55} w={80} h={30} label="API Gateway" delay={0.8} color="cyan" />
-      <AnimBox x={320} y={55} w={80} h={30} label="Auth Service" delay={0.9} color="emerald" />
-      <AnimBox x={260} y={130} w={80} h={30} label="PostgreSQL" delay={1.0} color="amber" />
-      <AnimArrow x1={280} y1={85} x2={280} y2={130} delay={1.1} />
+
+      {/* Client */}
+      <AnimBox x={280} y={30} w={70} h={28} label="Client" delay={0.8} color="cyan" />
+
+      {/* Load Balancer */}
+      <AnimBox x={270} y={85} w={90} h={28} label="Load Balancer" delay={1.0} color="violet" />
+      <AnimArrow x1={315} y1={58} x2={315} y2={85} delay={0.9} label="HTTPS" />
+
+      {/* Services */}
+      <AnimBox x={200} y={145} w={72} h={28} label="Auth Service" delay={1.2} color="emerald" />
+      <AnimBox x={288} y={145} w={72} h={28} label="API Server" delay={1.3} color="violet" />
+      <AnimBox x={376} y={145} w={58} h={28} label="Worker" delay={1.4} color="amber" />
+      <AnimArrow x1={295} y1={113} x2={236} y2={145} delay={1.1} />
+      <AnimArrow x1={315} y1={113} x2={324} y2={145} delay={1.15} />
+      <AnimArrow x1={335} y1={113} x2={405} y2={145} delay={1.2} />
+
+      {/* Data layer */}
+      <AnimBox x={200} y={210} w={72} h={28} label="PostgreSQL" delay={1.5} color="emerald" />
+      <AnimBox x={288} y={210} w={72} h={28} label="Redis Cache" delay={1.6} color="red" />
+      <AnimBox x={376} y={210} w={58} h={28} label="Kafka" delay={1.7} color="amber" />
+      <AnimArrow x1={236} y1={173} x2={236} y2={210} delay={1.5} />
+      <AnimArrow x1={324} y1={173} x2={324} y2={210} delay={1.55} />
+      <AnimArrow x1={405} y1={173} x2={405} y2={210} delay={1.6} />
+
+      {/* Storage */}
+      <AnimBox x={250} y={270} w={90} h={28} label="Blob Storage" delay={1.8} color="cyan" />
+      <AnimArrow x1={324} y1={238} x2={295} y2={270} delay={1.8} />
+
+      {/* Annotation */}
+      <motion.g initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 2.0, duration: 0.4 }}>
+        <rect x={10} y={252} width={155} height={55} rx={4} className="fill-amber-500/5 stroke-amber-500/20" strokeWidth={1} strokeDasharray="3 3" />
+        <text x={20} y={268} className="fill-amber-300/80 text-[7px]">💬 Design rationale goes here</text>
+        <text x={20} y={280} className="fill-amber-300/60 text-[6px]">Write notes near components</text>
+        <text x={20} y={292} className="fill-amber-300/60 text-[6px]">for AI to give credit</text>
+      </motion.g>
     </CanvasPreview>
   );
 }
@@ -167,26 +199,26 @@ function TemplatePreview() {
 /** Components preview */
 function ComponentsPreview() {
   return (
-    <CanvasPreview height={160}>
-      <AnimBox x={20} y={20} w={90} h={35} label="API Gateway" delay={0.1} color="cyan" />
-      <AnimBox x={140} y={20} w={90} h={35} label="User Service" delay={0.2} color="violet" />
-      <AnimBox x={260} y={20} w={90} h={35} label="Redis Cache" delay={0.3} color="red" />
-      <AnimBox x={20} y={90} w={90} h={35} label="Kafka Queue" delay={0.4} color="amber" />
-      <AnimBox x={140} y={90} w={90} h={35} label="PostgreSQL" delay={0.5} color="emerald" />
-      <AnimBox x={260} y={90} w={90} h={35} label="CDN" delay={0.6} color="cyan" />
-      {/* Auto-detected type labels */}
-      <motion.text x={65} y={70} textAnchor="middle" className="fill-cyan-500/60 text-[7px]"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>auto-detected: gateway</motion.text>
-      <motion.text x={185} y={70} textAnchor="middle" className="fill-violet-500/60 text-[7px]"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}>auto-detected: service</motion.text>
-      <motion.text x={305} y={70} textAnchor="middle" className="fill-red-500/60 text-[7px]"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0 }}>auto-detected: cache</motion.text>
-      <motion.text x={65} y={140} textAnchor="middle" className="fill-amber-500/60 text-[7px]"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}>auto-detected: queue</motion.text>
-      <motion.text x={185} y={140} textAnchor="middle" className="fill-emerald-500/60 text-[7px]"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>auto-detected: database</motion.text>
-      <motion.text x={305} y={140} textAnchor="middle" className="fill-cyan-500/60 text-[7px]"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3 }}>auto-detected: cdn</motion.text>
+    <CanvasPreview height={200}>
+      <AnimBox x={20} y={25} w={110} h={40} label="API Gateway" delay={0.1} color="cyan" />
+      <AnimBox x={160} y={25} w={110} h={40} label="User Service" delay={0.2} color="violet" />
+      <AnimBox x={300} y={25} w={110} h={40} label="Redis Cache" delay={0.3} color="red" />
+      <AnimBox x={20} y={115} w={110} h={40} label="Kafka Queue" delay={0.4} color="amber" />
+      <AnimBox x={160} y={115} w={110} h={40} label="PostgreSQL" delay={0.5} color="emerald" />
+      <AnimBox x={300} y={115} w={110} h={40} label="CDN" delay={0.6} color="cyan" />
+      {/* Auto-detected labels with arrow indicator */}
+      <motion.text x={75} y={82} textAnchor="middle" className="fill-cyan-500/70 text-[8px] font-medium"
+        initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>↑ auto-detected: gateway</motion.text>
+      <motion.text x={215} y={82} textAnchor="middle" className="fill-violet-500/70 text-[8px] font-medium"
+        initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>↑ auto-detected: service</motion.text>
+      <motion.text x={355} y={82} textAnchor="middle" className="fill-red-500/70 text-[8px] font-medium"
+        initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.0 }}>↑ auto-detected: cache</motion.text>
+      <motion.text x={75} y={172} textAnchor="middle" className="fill-amber-500/70 text-[8px] font-medium"
+        initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.1 }}>↑ auto-detected: queue</motion.text>
+      <motion.text x={215} y={172} textAnchor="middle" className="fill-emerald-500/70 text-[8px] font-medium"
+        initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2 }}>↑ auto-detected: database</motion.text>
+      <motion.text x={355} y={172} textAnchor="middle" className="fill-cyan-500/70 text-[8px] font-medium"
+        initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.3 }}>↑ auto-detected: cdn</motion.text>
     </CanvasPreview>
   );
 }
@@ -194,14 +226,16 @@ function ComponentsPreview() {
 /** Data flow preview */
 function DataFlowPreview() {
   return (
-    <CanvasPreview height={140}>
-      <AnimBox x={20} y={50} w={80} h={35} label="Client" delay={0.1} color="cyan" />
-      <AnimBox x={140} y={50} w={80} h={35} label="API Server" delay={0.2} color="violet" />
-      <AnimBox x={260} y={20} w={80} h={35} label="Cache" delay={0.3} color="red" />
-      <AnimBox x={260} y={85} w={80} h={35} label="Database" delay={0.4} color="emerald" />
-      <AnimArrow x1={100} y1={67} x2={140} y2={67} delay={0.5} label="1. REST" />
-      <AnimArrow x1={220} y1={57} x2={260} y2={40} delay={0.7} label="2. Check" />
-      <AnimArrow x1={220} y1={77} x2={260} y2={100} delay={0.9} label="3. Query" />
+    <CanvasPreview height={200}>
+      <AnimBox x={20} y={75} w={95} h={40} label="Client" delay={0.1} color="cyan" />
+      <AnimBox x={170} y={75} w={95} h={40} label="API Server" delay={0.2} color="violet" />
+      <AnimBox x={320} y={30} w={95} h={40} label="Redis Cache" delay={0.3} color="red" />
+      <AnimBox x={320} y={120} w={95} h={40} label="PostgreSQL" delay={0.4} color="emerald" />
+      <AnimArrow x1={115} y1={95} x2={170} y2={95} delay={0.5} label="1. REST API" />
+      <AnimArrow x1={265} y1={82} x2={320} y2={55} delay={0.7} label="2. Cache check" />
+      <AnimArrow x1={265} y1={108} x2={320} y2={138} delay={0.9} label="3. Query DB" />
+      {/* Response arrow */}
+      <AnimArrow x1={320} y1={65} x2={265} y2={88} delay={1.1} label="4. Return" />
     </CanvasPreview>
   );
 }
@@ -209,24 +243,24 @@ function DataFlowPreview() {
 /** Annotations preview */
 function AnnotationsPreview() {
   return (
-    <CanvasPreview height={130}>
-      <AnimBox x={140} y={40} w={100} h={40} label="Redis Cache" delay={0.1} color="red" />
+    <CanvasPreview height={170}>
+      <AnimBox x={180} y={50} w={120} h={50} label="Redis Cache" delay={0.1} color="red" />
       {/* Annotation text box */}
       <motion.g initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5, duration: 0.4 }}>
-        <rect x={20} y={25} width={100} height={70} rx={4} className="fill-amber-500/5 stroke-amber-500/30" strokeWidth={1} strokeDasharray="3 3" />
-        <text x={30} y={42} className="fill-amber-300 text-[7px]">Using sorted sets</text>
-        <text x={30} y={54} className="fill-amber-300 text-[7px]">for leaderboard.</text>
-        <text x={30} y={66} className="fill-amber-300 text-[7px]">TTL=3600 for</text>
-        <text x={30} y={78} className="fill-amber-300 text-[7px]">session cache.</text>
+        <rect x={20} y={20} width={130} height={90} rx={6} className="fill-amber-500/5 stroke-amber-500/30" strokeWidth={1} strokeDasharray="4 4" />
+        <text x={32} y={42} className="fill-amber-300 text-[9px] font-medium">Using sorted sets</text>
+        <text x={32} y={56} className="fill-amber-300 text-[9px]">for leaderboard.</text>
+        <text x={32} y={72} className="fill-amber-300 text-[9px]">TTL=3600 for</text>
+        <text x={32} y={86} className="fill-amber-300 text-[9px]">session cache.</text>
       </motion.g>
       {/* Dotted line connecting annotation to component */}
-      <motion.line x1={120} y1={60} x2={140} y2={60} className="stroke-amber-500/40" strokeWidth={1} strokeDasharray="3 3"
+      <motion.line x1={150} y1={70} x2={180} y2={70} className="stroke-amber-500/40" strokeWidth={1.5} strokeDasharray="4 4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} />
       {/* Credit indicator */}
       <motion.g initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.9, type: "spring" }}>
-        <circle cx={310} cy={60} r={18} className="fill-emerald-500/10 stroke-emerald-500/50" strokeWidth={1} />
-        <text x={310} y={57} textAnchor="middle" className="fill-emerald-400 text-[7px] font-bold">AI gives</text>
-        <text x={310} y={67} textAnchor="middle" className="fill-emerald-400 text-[7px] font-bold">credit ✓</text>
+        <rect x={330} y={40} width={90} height={50} rx={10} className="fill-emerald-500/10 stroke-emerald-500/50" strokeWidth={1.5} />
+        <text x={375} y={62} textAnchor="middle" className="fill-emerald-400 text-[9px] font-bold">AI gives</text>
+        <text x={375} y={76} textAnchor="middle" className="fill-emerald-400 text-[9px] font-bold">credit ✓</text>
       </motion.g>
     </CanvasPreview>
   );
@@ -235,22 +269,22 @@ function AnnotationsPreview() {
 /** Clusters preview */
 function ClustersPreview() {
   return (
-    <CanvasPreview height={130}>
+    <CanvasPreview height={170}>
       {/* Outer cluster box */}
-      <motion.rect x={50} y={15} width={200} height={100} rx={8} className="fill-violet-500/5 stroke-violet-500/30" strokeWidth={1.5} strokeDasharray="6 3"
+      <motion.rect x={30} y={20} width={260} height={130} rx={10} className="fill-violet-500/5 stroke-violet-500/30" strokeWidth={1.5} strokeDasharray="6 4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} />
-      <motion.text x={150} y={12} textAnchor="middle" className="fill-violet-400/60 text-[8px] font-medium"
+      <motion.text x={160} y={17} textAnchor="middle" className="fill-violet-400/60 text-[9px] font-medium"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>WS Server Cluster (×4)</motion.text>
       {/* Inner instances */}
-      <AnimBox x={65} y={30} w={75} h={30} label="WS Server" delay={0.3} />
-      <AnimBox x={160} y={30} w={75} h={30} label="WS Server" delay={0.4} />
-      <AnimBox x={65} y={70} w={75} h={30} label="WS Server" delay={0.5} />
-      <AnimBox x={160} y={70} w={75} h={30} label="WS Server" delay={0.6} />
+      <AnimBox x={50} y={35} w={100} h={40} label="WS Server" delay={0.3} />
+      <AnimBox x={170} y={35} w={100} h={40} label="WS Server" delay={0.4} />
+      <AnimBox x={50} y={90} w={100} h={40} label="WS Server" delay={0.5} />
+      <AnimBox x={170} y={90} w={100} h={40} label="WS Server" delay={0.6} />
       {/* Count badge */}
       <motion.g initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8, type: "spring" }}>
-        <circle cx={330} cy={65} r={20} className="fill-violet-500/15 stroke-violet-500/50" strokeWidth={1} />
-        <text x={330} y={62} textAnchor="middle" className="fill-violet-300 text-[10px] font-bold">×4</text>
-        <text x={330} y={74} textAnchor="middle" className="fill-violet-400/60 text-[7px]">auto-detected</text>
+        <rect x={320} y={55} width={90} height={50} rx={10} className="fill-violet-500/15 stroke-violet-500/50" strokeWidth={1.5} />
+        <text x={365} y={75} textAnchor="middle" className="fill-violet-300 text-[14px] font-bold">×4</text>
+        <text x={365} y={92} textAnchor="middle" className="fill-violet-400/60 text-[8px]">auto-detected</text>
       </motion.g>
     </CanvasPreview>
   );
@@ -267,18 +301,18 @@ function WriteupPreview() {
   ];
 
   return (
-    <CanvasPreview height={150}>
+    <CanvasPreview height={190}>
       {lines.map((line, i) => (
         <motion.g key={line.label}
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: line.delay, duration: 0.4 }}
         >
-          <text x={15} y={25 + i * 28} className={`${line.color} text-[9px] font-bold`}>{line.label}</text>
-          <text x={100} y={25 + i * 28} className="fill-muted-foreground text-[8px]">{line.text}</text>
+          <text x={15} y={30 + i * 32} className={`${line.color} text-[10px] font-bold`}>{line.label}</text>
+          <text x={110} y={30 + i * 32} className="fill-muted-foreground text-[9px]">{line.text}</text>
           {/* Typing cursor on last item */}
           {i === lines.length - 1 && (
-            <motion.rect x={365} y={17 + i * 28} width={2} height={12} className="fill-violet-500"
+            <motion.rect x={385} y={21 + i * 32} width={2} height={14} className="fill-violet-500"
               animate={{ opacity: [1, 0, 1] }} transition={{ duration: 1, repeat: Infinity, delay: line.delay + 0.5 }} />
           )}
         </motion.g>
