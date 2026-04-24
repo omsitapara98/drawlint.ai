@@ -127,7 +127,7 @@ function Dropdown({
         <ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-20 mt-1 w-40 rounded-lg border border-border dark:border-white/[0.08] bg-card dark:bg-card/90 shadow-lg py-1">
+        <div className="absolute left-0 top-full z-20 mt-1 w-40 rounded-lg border border-border dark:border-white/[0.08] bg-background dark:bg-zinc-900 shadow-xl py-1">
           {options.map((o) => (
             <button
               key={o.value}
