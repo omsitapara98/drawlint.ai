@@ -109,6 +109,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
       const updated = (await res.json()) as AiSettings;
       setSettings(updated);
       onOpenChange(false);
+      window.dispatchEvent(new CustomEvent("drawlint:settings-changed"));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save settings.");
     } finally {
@@ -119,6 +120,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
   const handleClearByo = useCallback(() => {
     try { localStorage.removeItem(BYO_STORAGE_KEY); } catch { /* noop */ }
     setHasLocalKey(false);
+    window.dispatchEvent(new CustomEvent("drawlint:settings-changed"));
     if (apiKeyRef.current) apiKeyRef.current.value = "";
     if (endpointRef.current) endpointRef.current.value = "";
     if (deploymentRef.current) deploymentRef.current.value = "";

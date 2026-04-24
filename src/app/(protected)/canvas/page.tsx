@@ -146,6 +146,33 @@ function CanvasPageInner() {
       .catch(() => { /* leave null — don't block submit on fetch error */ });
   }, [authStatus]);
 
+  /* ── Sync settings after SettingsModal saves ─────────────────── */
+  useEffect(() => {
+    const handler = () => {
+      // Re-read BYO key presence from localStorage
+      try {
+        const raw = localStorage.getItem("drawlint:byo-key");
+        if (raw) {
+          const creds = JSON.parse(raw) as { apiKey?: string };
+          setHasByoKey(!!creds.apiKey);
+        } else {
+          setHasByoKey(false);
+        }
+      } catch { setHasByoKey(false); }
+
+      // Re-fetch aiMode from server
+      fetch("/api/user/settings")
+        .then((r) => r.ok ? r.json() : null)
+        .then((data: { emailVerified?: boolean; aiMode?: "managed" | "byo" } | null) => {
+          if (data?.aiMode) setAiMode(data.aiMode);
+        })
+        .catch(() => {});
+    };
+
+    window.addEventListener("drawlint:settings-changed", handler);
+    return () => window.removeEventListener("drawlint:settings-changed", handler);
+  }, []);
+
   /* ── Fetch pseudonym when anonymous mode is toggled on ──────── */
   useEffect(() => {
     if (!anonymousMode || pseudonym) return;
