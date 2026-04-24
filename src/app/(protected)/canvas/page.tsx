@@ -108,6 +108,8 @@ function CanvasPageInner() {
   });
   const resizingRef = useRef(false);
   const prevFingerprintRef = useRef("");
+  const draftSavedFingerprintRef = useRef("");
+  const [draftToast, setDraftToast] = useState<string | null>(null);
   const streamReaderRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const activeStreamRef = useRef(false);
 
@@ -541,6 +543,7 @@ function CanvasPageInner() {
   const hasDrawnShapes = visibleElements.some((el) =>
     ["rectangle", "diamond", "ellipse", "arrow", "line"].includes(el.type),
   );
+  const canvasDirty = elementFingerprint !== draftSavedFingerprintRef.current;
 
   // Cancel any in-progress stream on unmount
   useEffect(() => {
@@ -742,8 +745,7 @@ function CanvasPageInner() {
       return;
     }
 
-    setAiStatus("loading" as AnalysisStatus);
-    setAiError(undefined);
+    setDraftToast(null);
 
     try {
       const isUpdate = !!(editDesignId || submittedDesignId);
@@ -769,18 +771,17 @@ function CanvasPageInner() {
 
       const data = (await res.json()) as { designId: string; version: number; status: string };
       setSubmittedDesignId(data.designId);
-      setAiStatus("idle");
-      setAiError("Draft saved successfully!");
+      draftSavedFingerprintRef.current = elementFingerprint;
+      setDraftToast("Draft saved ✓");
 
-      // Clear the success message after a few seconds
       setTimeout(() => {
-        setAiError((prev) => prev === "Draft saved successfully!" ? undefined : prev);
+        setDraftToast((prev) => prev === "Draft saved ✓" ? null : prev);
       }, 3000);
     } catch (err) {
-      setAiStatus("error");
-      setAiError(err instanceof Error ? err.message : "Failed to save draft.");
+      setDraftToast(err instanceof Error ? err.message : "Failed to save draft.");
+      setTimeout(() => setDraftToast(null), 5000);
     }
-  }, [selectedTopic, authStatus, router, elements, reviewLevel, editDesignId, submittedDesignId]);
+  }, [selectedTopic, authStatus, router, elements, reviewLevel, editDesignId, submittedDesignId, elementFingerprint]);
 
   /** Retry a failed submission. */
   const handleRetrySubmit = useCallback(async () => {
@@ -1116,7 +1117,7 @@ function CanvasPageInner() {
                   const byoBlocked = aiMode === "byo" && !hasByoKey;
                   const isAnalyzing = aiStatus === "analyzing";
                   const submitDisabled = isAnalyzing ? false : (!hasDrawnShapes || emailBlocked || byoBlocked);
-                  const draftDisabled = isAnalyzing || !hasDrawnShapes;
+                  const draftDisabled = isAnalyzing || !hasDrawnShapes || !canvasDirty;
                   const tooltip = emailBlocked
                     ? "Email not verified — cannot submit"
                     : byoBlocked
@@ -1133,6 +1134,16 @@ function CanvasPageInner() {
                         <Save className="h-3 w-3" />
                         Save Draft
                       </button>
+                      {/* Draft save toast */}
+                      {draftToast && (
+                        <span className={`inline-flex h-6 items-center rounded-full px-2.5 text-[0.65rem] font-semibold ${
+                          draftToast.startsWith("Draft saved")
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800"
+                            : "bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
+                        }`}>
+                          {draftToast}
+                        </span>
+                      )}
                       {/* Post + AI Review button */}
                       <button
                         onClick={isAnalyzing ? () => setPanelOpen(p => !p) : handleSubmitDesign}
