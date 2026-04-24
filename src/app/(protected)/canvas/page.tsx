@@ -1057,12 +1057,12 @@ function CanvasPageInner() {
                 {/* Topic + Level group */}
                 <div className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-100/80 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/30 px-2 py-0.5">
                   <span className="text-xs shrink-0">📋</span>
-                  <span className="text-[0.7rem] font-medium truncate max-w-[320px]">{selectedTopic?.name}</span>
+                  <span className="text-sm font-medium truncate max-w-[320px]">{selectedTopic?.name}</span>
                   {viewDesignId && viewAuthorName && (
-                    <span className="text-[0.65rem] text-muted-foreground truncate">by {viewAuthorName}</span>
+                    <span className="text-xs text-muted-foreground truncate">by {viewAuthorName}</span>
                   )}
                   <span className="h-3.5 w-px bg-zinc-300 dark:bg-zinc-600 shrink-0" />
-                  <span className="text-[0.65rem] font-semibold text-violet-600 dark:text-violet-400 shrink-0">
+                  <span className="text-xs font-semibold text-violet-600 dark:text-violet-400 shrink-0">
                     {levelLabel(reviewLevel)}
                   </span>
                   {!viewDesignId && !submitted && !editDesignId && (
