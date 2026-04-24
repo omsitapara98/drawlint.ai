@@ -16,7 +16,7 @@ import { hasAnyCredentials, getCredentialsForRequest, getAIConfig } from "@/lib/
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
-import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save, Pencil } from "lucide-react";
+import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save, Pencil, Zap } from "lucide-react";
 import Link from "next/link";
 
 /* ── Topic gate types ─────────────────────────────────────────── */
@@ -98,7 +98,7 @@ function CanvasPageInner() {
   const [pseudonym, setPseudonym] = useState<string | null>(null);
   const [isEmailVerified, setIsEmailVerified] = useState<boolean | null>(null);
   const [hasByoKey, setHasByoKey] = useState(false);
-  const [aiMode, setAiMode] = useState<"managed" | "byo" | null>(null);
+  const [aiMode, setAiMode] = useState<"managed" | "gemini" | "azure" | null>(null);
   const [reviewerProgress, setReviewerProgress] = useState<ReviewerProgress>({
     nfrReview: "pending",
     entitiesReview: "pending",
@@ -139,7 +139,7 @@ function CanvasPageInner() {
       .then((data: { emailVerified?: boolean; aiMode?: string } | null) => {
         if (data) {
           setIsEmailVerified(data.emailVerified ?? true);
-          if (data.aiMode) setAiMode(data.aiMode as "managed" | "byo");
+          if (data.aiMode) setAiMode(data.aiMode as "managed" | "gemini" | "azure");
         }
       })
       .catch(() => { /* leave null — don't block submit on fetch error */ });
@@ -157,7 +157,7 @@ function CanvasPageInner() {
       fetch("/api/user/settings")
         .then((r) => r.ok ? r.json() : null)
         .then((data: { emailVerified?: boolean; aiMode?: string } | null) => {
-          if (data?.aiMode) setAiMode(data.aiMode as "managed" | "byo");
+          if (data?.aiMode) setAiMode(data.aiMode as "managed" | "gemini" | "azure");
         })
         .catch(() => {});
     };
@@ -1046,8 +1046,8 @@ function CanvasPageInner() {
                   )}
                 </div>
 
-                {/* Identity chip — only in draw/edit modes, not view */}
-                {!viewDesignId && authStatus === "authenticated" && (
+                {/* Identity chip — show in draw/edit modes, not view-only */}
+                {(!viewDesignId || viewEditMode || editDesignId) && authStatus === "authenticated" && (
                   <button
                     onClick={handleToggleAnonymous}
                     className={`inline-flex h-6 items-center gap-1.5 rounded-lg px-2.5 text-[0.7rem] font-medium border transition-all shrink-0 ${
@@ -1071,24 +1071,31 @@ function CanvasPageInner() {
                   </button>
                 )}
 
-                {/* Review mode chip — only in draw/edit modes, not view */}
-                {!viewDesignId && authStatus === "authenticated" && aiMode && (
+                {/* AI mode chip — show in draw/edit modes, not view-only */}
+                {(!viewDesignId || viewEditMode || editDesignId) && authStatus === "authenticated" && aiMode && (
                   <span
                     className={`inline-flex h-6 items-center gap-1.5 rounded-lg px-2.5 text-[0.7rem] font-medium border transition-all shrink-0 ${
-                      aiMode === "byo"
+                      aiMode === "azure"
+                        ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
+                        : aiMode === "gemini"
                         ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800"
                         : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800"
                     }`}
                   >
-                    {aiMode === "byo" ? (
+                    {aiMode === "azure" ? (
                       <>
                         <Key className="h-3 w-3" />
-                        BYO Key
+                        Azure OpenAI
+                      </>
+                    ) : aiMode === "gemini" ? (
+                      <>
+                        <Zap className="h-3 w-3" />
+                        Gemini AI
                       </>
                     ) : (
                       <>
                         <Cpu className="h-3 w-3" />
-                        Managed AI
+                        DrawLint AI
                       </>
                     )}
                   </span>
@@ -1100,14 +1107,14 @@ function CanvasPageInner() {
                 {/* Drawing mode: Save Draft + Post + AI Review */}
                 {((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode)) && (() => {
                   const emailBlocked = isEmailVerified === false;
-                  const byoBlocked = aiMode === "byo" && !hasByoKey;
+                  const byoBlocked = (aiMode === "azure" || aiMode === "gemini") && !hasByoKey;
                   const isAnalyzing = aiStatus === "analyzing";
                   const submitDisabled = isAnalyzing ? false : (!hasDrawnShapes || emailBlocked || byoBlocked);
                   const draftDisabled = isAnalyzing || !hasDrawnShapes || !canvasDirty;
                   const tooltip = emailBlocked
                     ? "Email not verified — cannot submit"
                     : byoBlocked
-                    ? "Add your Azure OpenAI credentials in Settings to submit"
+                    ? "Add your AI credentials in Settings to submit"
                     : undefined;
                   return (
                     <>
