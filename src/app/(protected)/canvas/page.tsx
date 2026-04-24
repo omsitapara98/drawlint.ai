@@ -16,7 +16,7 @@ import { hasAnyCredentials, getCredentialsForRequest, getAIConfig } from "@/lib/
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
-import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save, Pencil, Zap } from "lucide-react";
+import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save, Pencil, Zap, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 /* ── Topic gate types ─────────────────────────────────────────── */
@@ -112,6 +112,8 @@ function CanvasPageInner() {
   const prevFingerprintRef = useRef("");
   const draftSavedFingerprintRef = useRef("");
   const [draftToast, setDraftToast] = useState<string | null>(null);
+  const [showDeleteDraftConfirm, setShowDeleteDraftConfirm] = useState(false);
+  const [deletingDraft, setDeletingDraft] = useState(false);
   const streamReaderRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const activeStreamRef = useRef(false);
 
@@ -790,6 +792,27 @@ function CanvasPageInner() {
     }
   }, [selectedTopic, authStatus, router, elements, reviewLevel, editDesignId, submittedDesignId, viewDesignId, elementFingerprint]);
 
+  /** Delete the current draft/design. */
+  const handleDeleteDraft = useCallback(async () => {
+    const targetId = editDesignId || submittedDesignId || viewDesignId;
+    if (!targetId) return;
+    setDeletingDraft(true);
+    try {
+      const res = await fetch(`/api/designs/${targetId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error ?? "Delete failed");
+      }
+      // Navigate to library
+      router.push("/library");
+    } catch (err) {
+      setDraftToast(err instanceof Error ? err.message : "Delete failed.");
+      setTimeout(() => setDraftToast(null), 5000);
+      setDeletingDraft(false);
+      setShowDeleteDraftConfirm(false);
+    }
+  }, [editDesignId, submittedDesignId, viewDesignId, router]);
+
   /** Retry a failed submission. */
   const handleRetrySubmit = useCallback(async () => {
     await handleSubmitDesign();
@@ -1155,6 +1178,16 @@ function CanvasPageInner() {
                     : undefined;
                   return (
                     <>
+                      {/* Delete button — only for existing designs */}
+                      {(editDesignId || submittedDesignId || viewDesignId) && (
+                        <button
+                          onClick={() => setShowDeleteDraftConfirm(true)}
+                          className="inline-flex h-7 items-center gap-1 rounded-lg border border-red-300 dark:border-red-700 px-2.5 text-xs font-medium text-red-600 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/30"
+                          title="Delete this design"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      )}
                       {/* Save Draft button */}
                       <button
                         onClick={handleSaveDraft}
@@ -1248,6 +1281,34 @@ function CanvasPageInner() {
                 )}
               </div>
             </div>
+
+            {/* Delete draft confirmation dialog */}
+            {showDeleteDraftConfirm && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                <div className="w-full max-w-sm rounded-xl border bg-background p-6 shadow-xl space-y-4">
+                  <h3 className="text-sm font-semibold">Delete this design?</h3>
+                  <p className="text-xs text-muted-foreground">
+                    This will permanently delete this design and any associated review. This cannot be undone.
+                  </p>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => setShowDeleteDraftConfirm(false)}
+                      disabled={deletingDraft}
+                      className="inline-flex h-8 items-center rounded-lg border px-3 text-xs font-medium hover:bg-muted transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleDeleteDraft}
+                      disabled={deletingDraft}
+                      className="inline-flex h-8 items-center rounded-lg bg-red-500 px-3 text-xs font-medium text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+                    >
+                      {deletingDraft ? "Deleting…" : "Delete"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Full-width Excalidraw canvas — NO floating controls */}
             <div className="relative flex-1 min-h-0">
