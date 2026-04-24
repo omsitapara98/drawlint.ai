@@ -507,7 +507,7 @@ function CanvasPageInner() {
     setPanelWidth(loadPanelWidth());
   }, []);
 
-  // Track element changes — clear cache when diagram shapes are added/removed
+  // Track element changes — clear cache when diagram shapes are added/removed/edited
   const elementFingerprint = useMemo(() => {
     return elements
       .filter(
@@ -515,7 +515,14 @@ function CanvasPageInner() {
           !el.isDeleted &&
           ["rectangle", "diamond", "ellipse", "arrow", "line", "text"].includes(el.type),
       )
-      .map((el) => el.id)
+      .map((el) => {
+        // Include content-sensitive fields so text edits are detected
+        const base = el.id;
+        if (el.type === "text" && "text" in el) {
+          return `${base}:${(el as { text: string }).text}`;
+        }
+        return base;
+      })
       .sort()
       .join(",");
   }, [elements]);
@@ -607,8 +614,8 @@ function CanvasPageInner() {
     activeStreamRef.current = true;
 
     try {
-      const isUpdate = !!(editDesignId || submittedDesignId);
-      const targetId = editDesignId || submittedDesignId;
+      const isUpdate = !!(editDesignId || submittedDesignId || viewDesignId);
+      const targetId = editDesignId || submittedDesignId || viewDesignId;
       const url = isUpdate ? `/api/designs/${targetId}` : "/api/designs";
       const method = isUpdate ? "PUT" : "POST";
 
@@ -734,7 +741,7 @@ function CanvasPageInner() {
       stopReviewerProgress("error");
       activeStreamRef.current = false;
     }
-  }, [selectedTopic, authStatus, router, elements, reviewLevel, anonymousMode, editDesignId, submittedDesignId, startReviewerProgress, stopReviewerProgress]);
+  }, [selectedTopic, authStatus, router, elements, reviewLevel, anonymousMode, editDesignId, submittedDesignId, viewDesignId, startReviewerProgress, stopReviewerProgress]);
 
   /** Save design as a draft — no AI review, stays private. */
   const handleSaveDraft = useCallback(async () => {
@@ -748,8 +755,8 @@ function CanvasPageInner() {
     setDraftToast(null);
 
     try {
-      const isUpdate = !!(editDesignId || submittedDesignId);
-      const targetId = editDesignId || submittedDesignId;
+      const isUpdate = !!(editDesignId || submittedDesignId || viewDesignId);
+      const targetId = editDesignId || submittedDesignId || viewDesignId;
       const url = isUpdate ? `/api/designs/${targetId}` : "/api/designs";
       const method = isUpdate ? "PUT" : "POST";
 
@@ -781,7 +788,7 @@ function CanvasPageInner() {
       setDraftToast(err instanceof Error ? err.message : "Failed to save draft.");
       setTimeout(() => setDraftToast(null), 5000);
     }
-  }, [selectedTopic, authStatus, router, elements, reviewLevel, editDesignId, submittedDesignId, elementFingerprint]);
+  }, [selectedTopic, authStatus, router, elements, reviewLevel, editDesignId, submittedDesignId, viewDesignId, elementFingerprint]);
 
   /** Retry a failed submission. */
   const handleRetrySubmit = useCallback(async () => {
