@@ -18,7 +18,8 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
 export default function SignInPage() {
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/canvas";
+  const rawCallback = searchParams.get("callbackUrl");
+  const callbackUrl = rawCallback && rawCallback.startsWith("/") && !rawCallback.startsWith("//") ? rawCallback : "/canvas";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

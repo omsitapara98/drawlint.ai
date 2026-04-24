@@ -22,12 +22,9 @@ export async function POST() {
     { projection: { email: 1, emailVerified: 1, emailVerificationSentAt: 1 } },
   );
 
-  if (!user) {
-    return NextResponse.json({ error: "User not found." }, { status: 404 });
-  }
-
-  if (user.emailVerified) {
-    return NextResponse.json({ error: "Email is already verified." }, { status: 400 });
+  if (!user || user.emailVerified) {
+    // Generic response to prevent enumeration
+    return NextResponse.json({ message: "If your email needs verification, a new link has been sent.", emailSent: true });
   }
 
   // Rate-limit: must wait 60s between sends

@@ -155,6 +155,13 @@ export async function PUT(
       { status: 400 },
     );
   }
+  const MAX_ELEMENTS = 5000;
+  if (body.elements.length > MAX_ELEMENTS) {
+    return NextResponse.json(
+      { error: `Design exceeds maximum of ${MAX_ELEMENTS} elements.` },
+      { status: 413 },
+    );
+  }
 
   const reviewLevel: ReviewLevel =
     body.reviewLevel && VALID_LEVELS.includes(body.reviewLevel)

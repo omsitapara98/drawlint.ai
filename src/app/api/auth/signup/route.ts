@@ -45,9 +45,10 @@ export async function POST(request: Request) {
       .findOne({ email: email.toLowerCase() });
 
     if (existingUser) {
+      // Return same shape as success to prevent account enumeration
       return NextResponse.json(
-        { error: "An account with this email already exists" },
-        { status: 409 },
+        { message: "Account created", emailSent: true },
+        { status: 201 },
       );
     }
 
