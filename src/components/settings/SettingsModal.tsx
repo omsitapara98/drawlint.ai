@@ -373,6 +373,30 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
                         Monthly limit reached. Switch to Free AI or bring your own key.
                       </p>
                     )}
+
+                    {/* Pro teaser */}
+                    <div className="rounded-lg border border-violet-200 dark:border-violet-800/50 bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 p-3 space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm">✦</span>
+                        <span className="text-xs font-bold bg-gradient-to-r from-violet-600 to-indigo-600 dark:from-violet-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                          Pro Plan — Coming Soon
+                        </span>
+                      </div>
+                      <ul className="space-y-1 text-[0.7rem] text-muted-foreground">
+                        <li className="flex items-center gap-1.5">
+                          <span className="text-violet-500">→</span> More AI reviews per month
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="text-violet-500">→</span> Deeper evaluation depth
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="text-violet-500">→</span> Priority processing
+                        </li>
+                      </ul>
+                      <p className="text-[0.65rem] text-violet-600/70 dark:text-violet-400/70 font-medium">
+                        Starting at ₹99/month
+                      </p>
+                    </div>
                   </>
                 )}
               </div>
