@@ -7,20 +7,28 @@ import {
 } from "./types";
 import { extractJson } from "./base";
 
-/** Validate that an endpoint URL is a legitimate Azure OpenAI endpoint. */
+/** Valid Azure endpoint hostname suffixes. */
+const VALID_AZURE_HOSTS = [
+  ".openai.azure.com",
+  ".cognitiveservices.azure.com",
+  ".services.ai.azure.com",
+];
+
+/** Validate that an endpoint URL is a legitimate Azure OpenAI or Azure AI Foundry endpoint. */
 function validateAzureEndpoint(endpoint: string): void {
   let parsed: URL;
   try {
     parsed = new URL(endpoint);
   } catch {
-    throw new ProviderError("Invalid Azure OpenAI endpoint URL.", "azure", 400, "invalid_endpoint");
+    throw new ProviderError("Invalid Azure endpoint URL.", "azure", 400, "invalid_endpoint");
   }
   if (parsed.protocol !== "https:") {
-    throw new ProviderError("Azure OpenAI endpoint must use HTTPS.", "azure", 400, "invalid_endpoint");
+    throw new ProviderError("Azure endpoint must use HTTPS.", "azure", 400, "invalid_endpoint");
   }
-  if (!parsed.hostname.endsWith(".openai.azure.com")) {
+  const isValid = VALID_AZURE_HOSTS.some((suffix) => parsed.hostname.endsWith(suffix));
+  if (!isValid) {
     throw new ProviderError(
-      "Azure OpenAI endpoint must be an *.openai.azure.com host.",
+      "Endpoint must be an Azure OpenAI (*.openai.azure.com) or Azure AI Foundry (*.cognitiveservices.azure.com) host.",
       "azure",
       400,
       "invalid_endpoint",
@@ -97,7 +105,8 @@ export class AzureOpenAIProvider implements AIProvider {
     validateDeploymentName(deployment);
 
     this.apiKey = apiKey;
-    const apiVersion = "2025-01-01-preview";
+    const apiVersion = "2025-04-01-preview";
+    // Strip any trailing path — users may paste full URLs from Azure portal
     const baseUrl = endpoint.replace(/\/+$/, "").replace(/\/openai\/.*$/, "");
     this.url = `${baseUrl}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
   }
