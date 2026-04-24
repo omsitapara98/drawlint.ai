@@ -67,6 +67,79 @@ function Divider() {
 const SETUP_STEPS = [
   {
     step: "1",
+    title: "Open Settings from the top navigation bar",
+    description:
+      "Click the gear icon or your avatar in the top-right corner to open AI Review Settings.",
+  },
+  {
+    step: "2",
+    title: "Choose your AI provider",
+    description: (
+      <>
+        Pick one of three options:{" "}
+        <strong>DrawLint AI</strong> (recommended, no setup),{" "}
+        <strong>Gemini AI</strong> (free, needs a Google API key), or{" "}
+        <strong>Azure OpenAI</strong> (advanced, needs Azure credentials).
+      </>
+    ),
+  },
+  {
+    step: "3",
+    title: "Enter credentials (Gemini or Azure only)",
+    description:
+      "For Gemini: paste your API key. For Azure: paste your API key, endpoint URL, and deployment name.",
+  },
+  {
+    step: "4",
+    title: "Test your connection",
+    description:
+      'Click "Test Connection" to verify your credentials work before saving.',
+  },
+  {
+    step: "5",
+    title: "Save and start reviewing",
+    description:
+      "Click Save. Your AI provider is now active — go draw a design and submit it for review!",
+  },
+];
+
+const GEMINI_STEPS = [
+  {
+    step: "1",
+    title: "Get a free Gemini API key",
+    description: (
+      <>
+        Go to{" "}
+        <a
+          href="https://aistudio.google.com/app/apikey"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-violet-600 dark:text-violet-400 underline underline-offset-2 hover:text-violet-700 dark:hover:text-violet-300 transition-colors inline-flex items-center gap-1"
+        >
+          Google AI Studio
+          <ExternalLink className="h-3 w-3" />
+        </a>{" "}
+        and create an API key. It&apos;s free and takes about 30 seconds.
+      </>
+    ),
+  },
+  {
+    step: "2",
+    title: "Open Settings → Select Gemini AI",
+    description:
+      'In DrawLint, open Settings and click the "Gemini AI" card.',
+  },
+  {
+    step: "3",
+    title: "Paste your key → Test → Save",
+    description:
+      'Enter your API key, click "Test Connection" to verify it works, then click Save.',
+  },
+];
+
+const AZURE_STEPS = [
+  {
+    step: "1",
     title: "Create an Azure OpenAI resource",
     description: (
       <>
@@ -89,7 +162,7 @@ const SETUP_STEPS = [
     title: "Deploy a model",
     description: (
       <>
-        In your Azure OpenAI resource, deploy a model such as{" "}
+        Deploy a model such as{" "}
         <code className="rounded-lg bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 px-2 py-0.5 text-xs font-mono text-violet-700 dark:text-violet-300 font-medium">
           gpt-4o
         </code>{" "}
@@ -97,46 +170,54 @@ const SETUP_STEPS = [
         <code className="rounded-lg bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 px-2 py-0.5 text-xs font-mono text-violet-700 dark:text-violet-300 font-medium">
           gpt-5.4
         </code>
-        . Note the deployment name you choose.
+        . Note the deployment name.
       </>
     ),
   },
   {
     step: "3",
-    title: "Copy your credentials",
+    title: "Copy credentials from Azure Portal",
     description:
-      "From the Azure portal, copy your API key, endpoint URL, and deployment name.",
+      'Under "Keys and Endpoint", copy your API key, endpoint URL, and deployment name.',
   },
   {
     step: "4",
-    title: 'Open Settings → Switch to "Bring Your Own Key" mode',
+    title: 'Open Settings → Select "Azure OpenAI"',
     description:
-      'Click your avatar in the top-right corner, open Settings, and toggle the AI mode to "Bring Your Own Key".',
+      'In DrawLint, open Settings and click the "Azure OpenAI" card.',
   },
   {
     step: "5",
-    title: "Paste credentials → Save",
+    title: "Paste credentials → Test → Save",
     description:
-      "Enter your API key, endpoint, and deployment name in the fields that appear, then click Save.",
+      'Enter all three fields, click "Test Connection" to verify, then click Save.',
   },
 ];
 
 const FAQ = [
   {
     q: "What if I clear my browser data?",
-    a: "Your key is stored in localStorage, so clearing browser data removes it. Simply re-enter your credentials in Settings.",
+    a: "Your keys are stored in localStorage, so clearing browser data removes them. Simply re-enter your credentials in Settings.",
   },
   {
-    q: "Can I switch back to managed mode?",
-    a: 'Yes — anytime. Open Settings and toggle back to "Managed". Your BYO credentials stay saved locally until you explicitly clear them.',
+    q: "Can I switch between providers?",
+    a: "Yes — anytime. Open Settings and select a different provider. Your saved credentials for each provider persist until you explicitly clear them.",
   },
   {
-    q: "Does BYO mode cost me anything on DrawLint?",
-    a: "No. BYO mode is free on DrawLint — you only pay for the Azure OpenAI usage on your own Azure subscription.",
+    q: "Does using Gemini or Azure cost me anything on DrawLint?",
+    a: "No. Using your own key is free on DrawLint — you only pay for the API usage on your own Google or Azure account.",
   },
   {
-    q: "Which models are supported?",
+    q: "Which Gemini model is used?",
+    a: "DrawLint uses Gemini 3.1 Flash Lite — a fast, cost-efficient model optimized for high-volume tasks.",
+  },
+  {
+    q: "Which Azure models are supported?",
     a: "Any chat-completion model deployed on Azure OpenAI (GPT-4o, GPT-4.1, GPT-5.4, etc.).",
+  },
+  {
+    q: "Is Gemini as good as DrawLint AI?",
+    a: "DrawLint AI (managed) uses larger models and is tuned for best results. Gemini is free and good, but may be slightly less accurate on complex reviews. Azure BYO quality depends on the model you deploy.",
   },
 ];
 
@@ -163,14 +244,13 @@ export default function ByoKeysGuidePage() {
             variants={item}
             className="font-heading text-4xl sm:text-5xl font-bold tracking-tight"
           >
-            Bring Your Own Key
+            AI Setup Guide
           </motion.h1>
           <motion.p
             variants={item}
             className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto"
           >
-            Use your own Azure OpenAI credentials for unlimited, private design
-            reviews
+            Choose your AI provider — from free to fully managed to bring-your-own
           </motion.p>
         </motion.div>
       </section>
@@ -180,22 +260,30 @@ export default function ByoKeysGuidePage() {
         {/* Section 1 — What is BYO Mode? */}
         <section>
           <div className="rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm p-8 shadow-md shadow-black/[0.04] dark:shadow-none space-y-4">
-            <SectionHeading emoji="🔑" title="What is BYO Mode?" />
+            <SectionHeading emoji="🤖" title="Choose Your AI Provider" />
             <p className="text-base leading-7 text-muted-foreground">
-              By default, DrawLint uses a{" "}
-              <strong className="text-foreground">managed AI quota</strong> —
-              every account gets{" "}
-              <strong className="text-foreground">10 free reviews per month</strong>.
+              DrawLint offers three ways to power your AI design reviews:
             </p>
-            <p className="text-base leading-7 text-muted-foreground">
-              <strong className="text-foreground">BYO (Bring Your Own) mode</strong>{" "}
-              lets you plug in your own Azure OpenAI API key instead. Your
-              reviews go directly through your Azure subscription — no limits
-              from us.
-            </p>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 space-y-2">
+                <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">⭐ DrawLint AI</p>
+                <p className="text-xs text-muted-foreground">Best quality, no setup. 10 free reviews/month.</p>
+              </div>
+              <div className="rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-950/20 p-4 space-y-2">
+                <p className="text-sm font-bold text-amber-700 dark:text-amber-300">💡 Gemini AI</p>
+                <p className="text-xs text-muted-foreground">Free &amp; unlimited with a Google API key. ~30 sec setup.</p>
+              </div>
+              <div className="rounded-xl border border-blue-200 dark:border-blue-800/50 bg-blue-50/50 dark:bg-blue-950/20 p-4 space-y-2">
+                <p className="text-sm font-bold text-blue-700 dark:text-blue-300">⚙️ Azure OpenAI</p>
+                <p className="text-xs text-muted-foreground">Full control with your own Azure deployment. ~10-15 min setup.</p>
+              </div>
+            </div>
+
             <Tip>
-              BYO mode is perfect for power users who want unlimited practice
-              sessions or need to use a specific model version.
+              Start with <strong>DrawLint AI</strong> if you just want to try it out.
+              Switch to <strong>Gemini AI</strong> for free unlimited reviews, or
+              <strong> Azure OpenAI</strong> if you need a specific model.
             </Tip>
           </div>
         </section>
@@ -205,7 +293,7 @@ export default function ByoKeysGuidePage() {
         {/* Section 2 — Why use it? */}
         <section>
           <div className="rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm p-8 shadow-md shadow-black/[0.04] dark:shadow-none space-y-4">
-            <SectionHeading emoji="🚀" title="Why Use BYO Mode?" />
+            <SectionHeading emoji="🚀" title="Why Use Your Own Key?" />
             <ul className="space-y-3 text-base text-muted-foreground">
               <li className="flex items-start gap-2.5">
                 <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-violet-500 inline-block" />
@@ -217,22 +305,22 @@ export default function ByoKeysGuidePage() {
               <li className="flex items-start gap-2.5">
                 <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-violet-500 inline-block" />
                 <span>
-                  <strong className="text-foreground">Your own models</strong>{" "}
-                  — choose GPT-4o, GPT-5.4, or any model you&apos;ve deployed
+                  <strong className="text-foreground">Free option available</strong>{" "}
+                  — Gemini AI costs nothing, just a Google API key
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-violet-500 inline-block" />
                 <span>
-                  <strong className="text-foreground">Data residency</strong>{" "}
-                  — your data stays in your chosen Azure region
+                  <strong className="text-foreground">Your own models</strong>{" "}
+                  — choose GPT-4o, GPT-5.4, or any model you&apos;ve deployed (Azure)
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-violet-500 inline-block" />
                 <span>
                   <strong className="text-foreground">Zero cost on DrawLint</strong>{" "}
-                  — you only pay your own Azure OpenAI bill
+                  — you only pay your own API usage (or nothing with Gemini free tier)
                 </span>
               </li>
             </ul>
@@ -299,14 +387,42 @@ export default function ByoKeysGuidePage() {
 
         <Divider />
 
-        {/* Section 4 — Step-by-step setup */}
+        {/* Section 4 — Quick Setup: Gemini AI */}
         <section>
           <div className="rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm p-8 shadow-md shadow-black/[0.04] dark:shadow-none space-y-4">
-            <SectionHeading emoji="⚡" title="Step-by-Step Setup" />
+            <SectionHeading emoji="⚡" title="Quick Setup: Gemini AI (Free)" />
+            <p className="text-base leading-7 text-muted-foreground">
+              The fastest way to get unlimited AI reviews — takes about 30 seconds.
+            </p>
             <ol className="space-y-5 text-base text-muted-foreground">
-              {SETUP_STEPS.map((s) => (
+              {GEMINI_STEPS.map((s) => (
                 <li key={s.step} className="flex gap-4">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-500/10 dark:bg-violet-500/15 text-sm font-bold text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-500/20">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/10 dark:bg-amber-500/15 text-sm font-bold text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
+                    {s.step}
+                  </span>
+                  <div className="pt-0.5">
+                    <p className="font-semibold text-foreground">{s.title}</p>
+                    <p className="mt-1 text-muted-foreground">{s.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <Divider />
+
+        {/* Section 5 — Advanced Setup: Azure OpenAI */}
+        <section>
+          <div className="rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm p-8 shadow-md shadow-black/[0.04] dark:shadow-none space-y-4">
+            <SectionHeading emoji="🔧" title="Advanced Setup: Azure OpenAI" />
+            <p className="text-base leading-7 text-muted-foreground">
+              For power users who want full control — takes about 10-15 minutes.
+            </p>
+            <ol className="space-y-5 text-base text-muted-foreground">
+              {AZURE_STEPS.map((s) => (
+                <li key={s.step} className="flex gap-4">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500/10 dark:bg-blue-500/15 text-sm font-bold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">
                     {s.step}
                   </span>
                   <div className="pt-0.5">

@@ -64,14 +64,15 @@ const FAQ_ITEMS: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "How many free reviews do I get?",
-    a: "Free tier users get 10 AI reviews per month. Upgrade to premium or use your own Azure OpenAI key (BYO mode) for unlimited reviews.",
+    a: "Free tier users get 10 AI reviews per month with DrawLint AI. You can also use Gemini AI (free, unlimited with your own key) or bring your own Azure OpenAI key for unlimited reviews.",
   },
   {
-    q: "What is BYO (Bring Your Own Key) mode?",
+    q: "What AI providers are supported?",
     a: (
       <>
-        BYO mode lets you use your own Azure OpenAI API key for unlimited
-        reviews. Your key is stored only in your browser.{" "}
+        DrawLint supports three AI options: <strong>DrawLint AI</strong> (managed, best quality),{" "}
+        <strong>Gemini AI</strong> (free, quick setup with a Google API key), and{" "}
+        <strong>Azure OpenAI</strong> (advanced, bring your own key).{" "}
         <Link
           href="/guide/byo-keys"
           className="text-violet-500 hover:text-violet-400 underline underline-offset-2 transition-colors"
@@ -82,8 +83,25 @@ const FAQ_ITEMS: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
+    q: "How do I set up Gemini AI (free)?",
+    a: (
+      <>
+        Get a free API key from{" "}
+        <a
+          href="https://aistudio.google.com/app/apikey"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-violet-500 hover:text-violet-400 underline underline-offset-2 transition-colors"
+        >
+          Google AI Studio
+        </a>
+        , open Settings, select &quot;Gemini AI&quot;, paste your key, and click Save. Takes about 30 seconds.
+      </>
+    ),
+  },
+  {
     q: "Is my data secure?",
-    a: "Yes. Your designs are stored securely in our database. BYO API keys are stored only in your browser\u2019s localStorage and are never persisted on our server. Our codebase is open source \u2014 you can verify it yourself.",
+    a: "Yes. Your designs are stored securely in our database. API keys (Gemini or Azure) are stored only in your browser\u2019s localStorage and are never persisted on our server. Our codebase is open source \u2014 you can verify it yourself.",
   },
   {
     q: "Can others see my drafts?",
@@ -91,7 +109,7 @@ const FAQ_ITEMS: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "What models does the AI use?",
-    a: "DrawLint uses Azure OpenAI models (GPT-4o, GPT-5.4, etc.) for reviews. In BYO mode, you can choose any chat-completion model deployed on your Azure subscription.",
+    a: "DrawLint AI uses Azure OpenAI (GPT-4o / GPT-5.4). Gemini AI uses Google\u2019s Gemini 3.1 Flash Lite. In Azure BYO mode, you can choose any chat-completion model deployed on your Azure subscription.",
   },
   {
     q: "How do I delete my account or data?",
