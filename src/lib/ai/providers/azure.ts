@@ -78,6 +78,30 @@ function extractContent(json: unknown): string {
   );
 }
 
+/** Extract text content from Responses API output. */
+function extractResponsesContent(json: unknown): string {
+  if (typeof json !== "object" || json === null) {
+    throw new ProviderError("Empty response from Azure.", "azure", undefined, "malformed_response");
+  }
+  const data = json as Record<string, unknown>;
+
+  // Responses API returns { output: [ { type: "message", content: [ { type: "output_text", text: "..." } ] } ] }
+  if (Array.isArray(data.output)) {
+    for (const item of data.output as Record<string, unknown>[]) {
+      if (item.type === "message" && Array.isArray(item.content)) {
+        for (const part of item.content as Record<string, unknown>[]) {
+          if (part.type === "output_text" && typeof part.text === "string") {
+            return part.text;
+          }
+        }
+      }
+    }
+  }
+
+  // Fallback: try chat completions format
+  return extractContent(json);
+}
+
 export class AzureOpenAIProvider implements AIProvider {
   readonly type = "azure" as const;
   readonly capabilities: ProviderCapabilities = {
@@ -88,7 +112,8 @@ export class AzureOpenAIProvider implements AIProvider {
   };
 
   private readonly apiKey: string;
-  private readonly url: string;
+  private readonly deployment: string;
+  private readonly baseUrl: string;
   private readonly isFoundry: boolean;
 
   constructor(apiKey: string, endpoint: string, deployment: string) {
@@ -106,46 +131,76 @@ export class AzureOpenAIProvider implements AIProvider {
     validateDeploymentName(deployment);
 
     this.apiKey = apiKey;
-    const apiVersion = "2025-04-01-preview";
-    const baseUrl = endpoint.replace(/\/+$/, "").replace(/\/openai\/.*$/, "");
-    this.url = `${baseUrl}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
-    // Foundry endpoints may not support response_format or max_completion_tokens
+    this.deployment = deployment;
+    this.baseUrl = endpoint.replace(/\/+$/, "").replace(/\/openai\/.*$/, "");
     this.isFoundry = !new URL(endpoint).hostname.endsWith(".openai.azure.com");
   }
 
   async generate(options: GenerateOptions): Promise<GenerateResult> {
-    // For Foundry endpoints without native JSON mode, add stricter JSON instructions
-    const systemPrompt = this.isFoundry
-      ? options.systemPrompt + "\n\nCRITICAL: Return ONLY a single valid JSON object. No markdown fences, no text before or after the JSON."
-      : options.systemPrompt;
+    // Foundry endpoints: try Responses API first, then fall back to Chat Completions
+    if (this.isFoundry) {
+      return this.generateViaResponses(options);
+    }
+    return this.generateViaChatCompletions(options);
+  }
 
-    const body: Record<string, unknown> = {
+  /** Standard Azure OpenAI Chat Completions API */
+  private async generateViaChatCompletions(options: GenerateOptions): Promise<GenerateResult> {
+    const apiVersion = "2025-04-01-preview";
+    const url = `${this.baseUrl}/openai/deployments/${encodeURIComponent(this.deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
+
+    const body = {
       messages: [
+        { role: "system", content: options.systemPrompt },
+        { role: "user", content: options.userContent },
+      ],
+      temperature: options.temperature ?? 0.3,
+      max_completion_tokens: options.maxTokens ?? 2048,
+      response_format: { type: "json_object" },
+    };
+
+    const json = await this.doFetch(url, body, options.signal);
+    const raw = extractContent(json);
+    const parsed = extractJson(raw);
+    return { parsed, raw };
+  }
+
+  /** Azure AI Foundry Responses API */
+  private async generateViaResponses(options: GenerateOptions): Promise<GenerateResult> {
+    const apiVersion = "2025-04-01-preview";
+    const url = `${this.baseUrl}/openai/responses?api-version=${encodeURIComponent(apiVersion)}`;
+
+    const systemPrompt = options.systemPrompt +
+      "\n\nCRITICAL: Return ONLY a single valid JSON object. No markdown fences, no text before or after the JSON.";
+
+    const body = {
+      model: this.deployment,
+      input: [
         { role: "system", content: systemPrompt },
         { role: "user", content: options.userContent },
       ],
       temperature: options.temperature ?? 0.3,
+      max_output_tokens: options.maxTokens ?? 2048,
     };
 
-    if (this.isFoundry) {
-      // Foundry/AI Services: use max_tokens (widely supported)
-      body.max_tokens = options.maxTokens ?? 2048;
-    } else {
-      // Azure OpenAI: use newer params + JSON mode
-      body.max_completion_tokens = options.maxTokens ?? 2048;
-      body.response_format = { type: "json_object" };
-    }
+    const json = await this.doFetch(url, body, options.signal);
+    const raw = extractResponsesContent(json);
+    const parsed = extractJson(raw);
+    return { parsed, raw };
+  }
 
+  /** Shared fetch + error handling */
+  private async doFetch(url: string, body: unknown, signal?: AbortSignal): Promise<unknown> {
     let response: Response;
     try {
-      response = await fetch(this.url, {
+      response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "api-key": this.apiKey,
         },
         body: JSON.stringify(body),
-        signal: options.signal,
+        signal,
       });
     } catch (err) {
       throw new ProviderError(
@@ -172,24 +227,18 @@ export class AzureOpenAIProvider implements AIProvider {
         throw new ProviderError("Rate limit exceeded.", "azure", 429, "rate_limit");
       }
       throw new ProviderError(
-        `Azure OpenAI request failed (HTTP ${status}): ${errorBody}`,
+        `Azure request failed (HTTP ${status}): ${errorBody}`,
         "azure",
         status,
         "api_error",
       );
     }
 
-    let json: unknown;
     try {
-      json = await response.json();
+      return await response.json();
     } catch {
       throw new ProviderError("Failed to parse response as JSON.", "azure", undefined, "parse_error");
     }
-
-    const raw = extractContent(json);
-    const parsed = extractJson(raw);
-
-    return { parsed, raw };
   }
 
   async testConnection(signal?: AbortSignal): Promise<boolean> {
