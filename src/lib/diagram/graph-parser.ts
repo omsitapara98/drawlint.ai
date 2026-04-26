@@ -246,6 +246,10 @@ function extractEdges(
       if (match) sequence = parseInt(match[1], 10);
     }
 
+    // Skip edges where either endpoint couldn't be resolved to a node —
+    // these are typically annotation connector lines, not real data flows
+    if (!fromId || !toId) continue;
+
     edges.push({
       id: el.id,
       from: fromId,
