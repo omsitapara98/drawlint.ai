@@ -79,6 +79,17 @@ export async function POST(
     return NextResponse.json({ error: "Invalid issue index." }, { status: 400 });
   }
 
+  // Rate limit: max 20 responses per design per hour
+  const recentResponses = await getResponsesByDesignId(designId);
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const recentCount = recentResponses.filter((r) => r.createdAt > oneHourAgo).length;
+  if (recentCount >= 20) {
+    return NextResponse.json(
+      { error: "Rate limit reached. Try again later." },
+      { status: 429 },
+    );
+  }
+
   // Validate response text
   const responseText = body.response?.trim();
   if (!responseText || responseText.length < 10) {
@@ -170,7 +181,7 @@ export async function POST(
   } catch (err) {
     console.error("Response evaluation failed:", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Evaluation failed." },
+      { error: "Response evaluation failed. Please try again." },
       { status: 500 },
     );
   }
@@ -182,6 +193,11 @@ export async function GET(
   { params }: { params: Promise<{ designId: string }> },
 ) {
   const { designId } = await params;
+
+  // Validate ObjectId format
+  if (!/^[a-f0-9]{24}$/.test(designId)) {
+    return NextResponse.json({ responses: [] });
+  }
 
   const responses = await getResponsesByDesignId(designId);
 

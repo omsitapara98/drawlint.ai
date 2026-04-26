@@ -26,6 +26,19 @@ export async function POST(request: Request) {
 
   let credentials: ProviderCredentials;
 
+  // Input length validation
+  const MAX_KEY_LEN = 256;
+  const MAX_URL_LEN = 512;
+  if (body.apiKey && body.apiKey.length > MAX_KEY_LEN) {
+    return NextResponse.json({ error: "API key is too long." }, { status: 400 });
+  }
+  if (body.endpoint && body.endpoint.length > MAX_URL_LEN) {
+    return NextResponse.json({ error: "Endpoint URL is too long." }, { status: 400 });
+  }
+  if (body.deployment && body.deployment.length > MAX_KEY_LEN) {
+    return NextResponse.json({ error: "Deployment name is too long." }, { status: 400 });
+  }
+
   switch (body.provider) {
     case "gemini":
       if (!body.apiKey) {

@@ -66,6 +66,23 @@ export async function POST(
     return NextResponse.json({ error: "No review found." }, { status: 404 });
   }
 
+  // Rate limit: max 5 re-evaluations per design
+  const existingReeval = await getReEvalSignal(review._id.toString());
+  if (existingReeval) {
+    // Check if created recently (within 5 minutes)
+    const client = await import("@/lib/db/mongodb").then((m) => m.default);
+    const reevalDoc = await client.db("drawlint-db").collection("reeval_signals").findOne({ reviewId: review._id });
+    if (reevalDoc?.createdAt) {
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+      if (new Date(reevalDoc.createdAt as string) > fiveMinAgo) {
+        return NextResponse.json(
+          { error: "Please wait a few minutes before re-evaluating again." },
+          { status: 429 },
+        );
+      }
+    }
+  }
+
   const responses = await getResponsesByReviewId(review._id.toString());
   if (responses.length === 0) {
     return NextResponse.json({ error: "No responses to evaluate." }, { status: 400 });
@@ -157,7 +174,7 @@ export async function POST(
   } catch (err) {
     console.error("Re-evaluation failed:", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Re-evaluation failed." },
+      { error: "Re-evaluation failed. Please try again." },
       { status: 500 },
     );
   }
@@ -169,6 +186,11 @@ export async function GET(
   { params }: { params: Promise<{ designId: string }> },
 ) {
   const { designId } = await params;
+
+  // Validate ObjectId format
+  if (!/^[a-f0-9]{24}$/.test(designId)) {
+    return NextResponse.json({ reeval: null });
+  }
 
   const review = await getReviewByDesignId(designId);
   if (!review) {
