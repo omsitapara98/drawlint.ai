@@ -246,6 +246,13 @@ export default function SignUpPage() {
             Sign in
           </Link>
         </p>
+
+        <p className="text-[0.7rem] text-muted-foreground/60 max-w-xs text-center leading-relaxed">
+          By signing up, you agree to our{" "}
+          <Link href="/terms" className="text-muted-foreground hover:text-foreground underline transition-colors">Terms of Service</Link>
+          {" "}and{" "}
+          <Link href="/privacy" className="text-muted-foreground hover:text-foreground underline transition-colors">Privacy Policy</Link>.
+        </p>
       </motion.div>
     </div>
   );

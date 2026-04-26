@@ -584,6 +584,10 @@ export default function LandingPage() {
             Drawing Guide
           </Link>
           <span className="text-muted-foreground/30">·</span>
+          <Link href="/support" className="hover:text-foreground transition-colors">
+            Support
+          </Link>
+          <span className="text-muted-foreground/30">·</span>
           <a
             href="https://github.com/omsitapara98/drawlint.ai"
             target="_blank"
@@ -596,6 +600,12 @@ export default function LandingPage() {
             GitHub
           </a>
         </div>
+        <div className="mt-3 flex items-center justify-center gap-3 text-xs text-muted-foreground/60">
+          <Link href="/privacy" className="hover:text-muted-foreground transition-colors">Privacy Policy</Link>
+          <span>·</span>
+          <Link href="/terms" className="hover:text-muted-foreground transition-colors">Terms of Service</Link>
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground/40">© {new Date().getFullYear()} DrawLint.ai. All rights reserved.</p>
       </footer>
     </div>
   );

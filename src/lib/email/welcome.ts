@@ -85,6 +85,10 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<void> 
       Built for system design interview practice.<br>
       <a href="https://github.com/omsitapara98/drawlint.ai" style="color: #666;">Open source on GitHub</a>
     </p>
+    <p style="margin: 12px 0 0; color: #444; font-size: 11px; text-align: center; line-height: 1.5;">
+      DrawLint.ai · <a href="${appUrl}/privacy" style="color: #555;">Privacy Policy</a> · <a href="${appUrl}/terms" style="color: #555;">Terms of Service</a><br>
+      You received this email because you created a DrawLint.ai account. This is a one-time welcome email.
+    </p>
   </div>
 </body>
 </html>`,

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import SessionProvider from "@/components/providers/SessionProvider";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { CookieBanner } from "@/components/ui/cookie-banner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -87,6 +88,7 @@ export default function RootLayout({
           <ThemeProvider attribute="class" defaultTheme="dark" storageKey="drawlint-theme" enableSystem={false} disableTransitionOnChange>
             <ScrollProgress />
             {children}
+            <CookieBanner />
           </ThemeProvider>
         </SessionProvider>
       </body>

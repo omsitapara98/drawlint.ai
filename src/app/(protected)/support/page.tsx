@@ -298,6 +298,12 @@ export default function SupportPage() {
             GitHub
           </a>
         </div>
+        <div className="mt-3 flex items-center justify-center gap-3 text-xs text-muted-foreground/60">
+          <Link href="/privacy" className="hover:text-muted-foreground transition-colors">Privacy Policy</Link>
+          <span>·</span>
+          <Link href="/terms" className="hover:text-muted-foreground transition-colors">Terms of Service</Link>
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground/40">© {new Date().getFullYear()} DrawLint.ai. All rights reserved.</p>
       </footer>
     </div>
   );

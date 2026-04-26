@@ -15,7 +15,7 @@ export default function LandingHero() {
         finding bottlenecks, SPOFs, and scalability issues instantly.
       </p>
       <a
-        href="/"
+        href="/canvas"
         className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5"
       >
         Start Drawing →
