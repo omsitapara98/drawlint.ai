@@ -101,7 +101,7 @@ const scaleIn = {
 
 /* ── Data ─────────────────────────────────────────────────── */
 const TECH = [
-  { icon: Code2, label: "Next.js & React", desc: "App Router, RSC, SSR", color: "text-white" },
+  { icon: Code2, label: "Next.js & React", desc: "App Router, RSC, SSR", color: "text-sky-400" },
   { icon: Layers, label: "Tailwind CSS", desc: "Utility-first styling", color: "text-cyan-400" },
   { icon: Brain, label: "AI Providers", desc: "Azure OpenAI, Gemini", color: "text-violet-400" },
   { icon: Database, label: "Cosmos DB", desc: "MongoDB API, global", color: "text-emerald-400" },
