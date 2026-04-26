@@ -441,6 +441,64 @@ function AIReviewContent({
       return null;
     }
   }, [designId]);
+  // Re-evaluation state
+  const [reeval, setReeval] = useState<{
+    originalSignal: string;
+    updatedSignal: string;
+    updatedSignalReason: string;
+    resolvedCount: number;
+  } | null>(null);
+  const [reevaling, setReevaling] = useState(false);
+
+  // Load existing re-evaluation
+  useEffect(() => {
+    if (!designId) return;
+    fetch(`/api/designs/${designId}/re-evaluate`)
+      .then((r) => r.ok ? r.json() : { reeval: null })
+      .then((data: { reeval: typeof reeval }) => {
+        if (data.reeval) setReeval(data.reeval);
+      })
+      .catch(() => {});
+  }, [designId]);
+
+  const resolvedCount = [...responses.values()].filter((r) => r.verdict === "resolved").length;
+  const partialCount = [...responses.values()].filter((r) => r.verdict === "partially-addressed").length;
+  const canReEval = canRespond && (resolvedCount + partialCount) >= 1;
+
+  const handleReEvaluate = useCallback(async () => {
+    if (!designId) return;
+    setReevaling(true);
+
+    let creds: Record<string, string> = {};
+    try {
+      const { getCredentialsForRequest, getAIConfig } = await import("@/lib/storage/ai-config");
+      const config = getAIConfig();
+      let provider: "managed" | "gemini" | "azure" = "managed";
+      if (config.gemini?.apiKey) provider = "gemini";
+      if (config.azure?.apiKey) provider = "azure";
+      creds = getCredentialsForRequest(provider);
+    } catch {}
+
+    try {
+      const res = await fetch(`/api/designs/${designId}/re-evaluate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(creds),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(data.error ?? "Re-evaluation failed.");
+        return;
+      }
+      const data = (await res.json()) as typeof reeval;
+      setReeval(data);
+    } catch {
+      alert("Network error.");
+    } finally {
+      setReevaling(false);
+    }
+  }, [designId]);
+
   // No BYO key configured
   if (!hasBYOKey && status === "idle") {
     return (
@@ -566,15 +624,46 @@ function AIReviewContent({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Hire Signal */}
+              {/* Hire Signal — original */}
               <div className="flex items-center gap-3">
-                <Badge className={`text-sm px-3 py-1 font-bold ${SIGNAL_STYLES[review.leadReviewer.signal] ?? "bg-gray-400 text-white"}`}>
+                <Badge className={`text-sm px-3 py-1 font-bold ${reeval ? "opacity-50 line-through" : ""} ${SIGNAL_STYLES[review.leadReviewer.signal] ?? "bg-gray-400 text-white"}`}>
                   {SIGNAL_LABELS[review.leadReviewer.signal] ?? review.leadReviewer.signal}
                 </Badge>
-                {review.leadReviewer.signalReason && (
+                {!reeval && review.leadReviewer.signalReason && (
                   <p className="text-xs text-muted-foreground flex-1">{review.leadReviewer.signalReason}</p>
                 )}
+                {reeval && (
+                  <span className="text-[10px] text-muted-foreground">Original</span>
+                )}
               </div>
+
+              {/* Updated signal after re-evaluation */}
+              {reeval && (
+                <div className="rounded-lg border-2 border-violet-500/30 bg-violet-500/5 p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">After Responses</span>
+                    <span className="text-[10px] text-muted-foreground">({reeval.resolvedCount} resolved)</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge className={`text-sm px-3 py-1 font-bold ${SIGNAL_STYLES[reeval.updatedSignal] ?? "bg-gray-400 text-white"}`}>
+                      {SIGNAL_LABELS[reeval.updatedSignal] ?? reeval.updatedSignal}
+                    </Badge>
+                    <p className="text-xs text-foreground flex-1">{reeval.updatedSignalReason}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Re-evaluate button */}
+              {canReEval && (
+                <button
+                  onClick={handleReEvaluate}
+                  disabled={reevaling}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-4 py-2 text-xs font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {reevaling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  {reevaling ? "Re-evaluating..." : reeval ? "Re-evaluate Again" : "Re-evaluate Signal"}
+                </button>
+              )}
 
               {/* Top Strengths */}
               {review.leadReviewer.topStrengths.length > 0 && (

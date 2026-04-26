@@ -80,6 +80,20 @@ export interface IssueResponse {
   updatedAt: Date;
 }
 
+/** Re-evaluated hire signal after candidate responses */
+export interface ReEvaluatedSignal {
+  _id: ObjectId;
+  designId: ObjectId;
+  reviewId: ObjectId;
+  originalSignal: string;
+  updatedSignal: string;
+  updatedSignalReason: string;
+  resolvedCount: number;
+  partialCount: number;
+  totalResponses: number;
+  createdAt: Date;
+}
+
 /* ── Composite ───────────────────────────────────────────────── */
 
 export interface DesignWithReview {
