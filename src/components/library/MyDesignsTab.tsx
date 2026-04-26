@@ -15,9 +15,23 @@ interface UserDesign {
   reviewLevel: string;
   hasReview: boolean;
   reviewedBy: string | null;
+  signal: string | null;
   createdAt: string;
   updatedAt: string;
 }
+
+const SIGNAL_STYLES: Record<string, string> = {
+  "strong-hire": "bg-emerald-500 text-white",
+  hire: "bg-emerald-400 text-white",
+  "lean-hire": "bg-yellow-400 text-yellow-900",
+  "lean-no-hire": "bg-orange-400 text-white",
+  "no-hire": "bg-red-500 text-white",
+};
+
+const SIGNAL_LABELS: Record<string, string> = {
+  "strong-hire": "Strong Hire", hire: "Hire", "lean-hire": "Lean Hire",
+  "lean-no-hire": "Lean No Hire", "no-hire": "No Hire",
+};
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   draft: {
@@ -187,17 +201,24 @@ export function MyDesignsTab() {
               )}
             </div>
 
-            <div className="mt-3 flex items-center gap-1 text-xs font-medium text-violet-600 dark:text-violet-400 transition-all group-hover:gap-2">
-              {d.status === "draft" ? (
-                <>
-                  <Pencil className="h-3 w-3" />
-                  Continue editing
-                </>
-              ) : (
-                <>
-                  <Eye className="h-3 w-3" />
-                  View design
-                </>
+            <div className="mt-3 flex items-center justify-between">
+              <div className="flex items-center gap-1 text-xs font-medium text-violet-600 dark:text-violet-400 transition-all group-hover:gap-2">
+                {d.status === "draft" ? (
+                  <>
+                    <Pencil className="h-3 w-3" />
+                    Continue editing
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-3 w-3" />
+                    View design
+                  </>
+                )}
+              </div>
+              {d.signal && SIGNAL_LABELS[d.signal] && (
+                <span className={`rounded-full px-2 py-0.5 text-[0.6rem] font-bold ${SIGNAL_STYLES[d.signal] ?? "bg-muted text-muted-foreground"}`}>
+                  {SIGNAL_LABELS[d.signal]}
+                </span>
               )}
             </div>
           </Link>
