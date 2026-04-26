@@ -46,10 +46,10 @@ interface FeedbackPanelProps {
   reviewerProgress?: ReviewerProgress;
   onRetry?: () => void;
   onOpenSettings?: () => void;
-  /** Design ID — needed for respond feature */
   designId?: string | null;
-  /** Whether the current user owns this design */
   isAuthor?: boolean;
+  /** Pre-loaded responses from initial design fetch */
+  initialResponses?: { section: string; issueIndex: number; userResponse: string; verdict: string; explanation: string }[];
 }
 
 const SEVERITY_STYLES: Record<string, string> = {
@@ -357,6 +357,7 @@ function AIReviewContent({
   hasBYOKey,
   designId,
   isAuthor,
+  initialResponses,
 }: {
   review: AIReviewResponse | null;
   status: AnalysisStatus;
@@ -367,25 +368,38 @@ function AIReviewContent({
   hasBYOKey: boolean;
   designId?: string | null;
   isAuthor?: boolean;
+  initialResponses?: { section: string; issueIndex: number; userResponse: string; verdict: string; explanation: string }[];
 }) {
-  // Response state
-  const [responses, setResponses] = useState<Map<string, StoredResponse>>(new Map());
+  // Response state — initialize from pre-loaded data if available
+  const [responses, setResponses] = useState<Map<string, StoredResponse>>(() => {
+    const map = new Map<string, StoredResponse>();
+    if (initialResponses) {
+      for (const r of initialResponses) {
+        map.set(`${r.section}:${r.issueIndex}`, r as StoredResponse);
+      }
+    }
+    return map;
+  });
   const canRespond = !!isAuthor && !!designId && status === "complete";
 
-  // Load existing responses when designId is available
+  // Also fetch responses when designId changes (for cases where initialResponses wasn't available)
   useEffect(() => {
     if (!designId) return;
+    // Skip fetch if we already have initial responses loaded
+    if (initialResponses && initialResponses.length > 0) return;
     fetch(`/api/designs/${designId}/respond`)
       .then((r) => r.ok ? r.json() : { responses: [] })
       .then((data: { responses: StoredResponse[] }) => {
-        const map = new Map<string, StoredResponse>();
-        for (const r of data.responses) {
-          map.set(`${r.section}:${r.issueIndex}`, r);
+        if (data.responses.length > 0) {
+          const map = new Map<string, StoredResponse>();
+          for (const r of data.responses) {
+            map.set(`${r.section}:${r.issueIndex}`, r);
+          }
+          setResponses(map);
         }
-        setResponses(map);
       })
       .catch(() => {});
-  }, [designId]);
+  }, [designId, initialResponses]);
 
   // Handle submitting a response
   const handleRespond = useCallback(async (section: string, issueIndex: number, text: string): Promise<StoredResponse | null> => {
@@ -755,6 +769,7 @@ export function FeedbackPanel({
   onOpenSettings,
   designId,
   isAuthor,
+  initialResponses,
 }: FeedbackPanelProps) {
   const hasBYOKey = (() => {
     try {
@@ -785,6 +800,7 @@ export function FeedbackPanel({
       hasBYOKey={hasBYOKey}
       designId={designId}
       isAuthor={isAuthor}
+      initialResponses={initialResponses}
     />
   );
 }

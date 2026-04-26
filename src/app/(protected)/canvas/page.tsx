@@ -100,6 +100,7 @@ function CanvasPageInner() {
   const [isEmailVerified, setIsEmailVerified] = useState<boolean | null>(null);
   const [hasByoKey, setHasByoKey] = useState(false);
   const [aiMode, setAiMode] = useState<"managed" | "gemini" | "azure" | null>(null);
+  const [initialResponses, setInitialResponses] = useState<{ section: string; issueIndex: number; userResponse: string; verdict: string; explanation: string }[]>([]);
   const [reviewerProgress, setReviewerProgress] = useState<ReviewerProgress>({
     nfrReview: "pending",
     entitiesReview: "pending",
@@ -284,7 +285,13 @@ function CanvasPageInner() {
           review: AIReviewResponse | null;
           author: { _id: string; name?: string } | null;
           topic: { _id: string; name: string; slug: string } | null;
+          responses?: { section: string; issueIndex: number; userResponse: string; verdict: string; explanation: string }[];
         };
+
+        // Load responses if available
+        if (metaData.responses && metaData.responses.length > 0) {
+          setInitialResponses(metaData.responses);
+        }
 
         // Set topic from design metadata
         if (metaData.topic) {
@@ -1373,6 +1380,7 @@ function CanvasPageInner() {
                       onOpenSettings={() => {}}
                       designId={submittedDesignId || editDesignId || viewDesignId}
                       isAuthor={viewDesignId ? viewIsAuthor : true}
+                      initialResponses={initialResponses}
                     />
                   </div>
                 </div>

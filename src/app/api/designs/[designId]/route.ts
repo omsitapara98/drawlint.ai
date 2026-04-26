@@ -54,6 +54,10 @@ export async function GET(
 
   const review = await getReviewByDesignId(designId);
 
+  // Fetch responses for the design
+  const { getResponsesByDesignId } = await import("@/lib/db/responses");
+  const issueResponses = await getResponsesByDesignId(designId);
+
   // Fetch author info
   const client = await clientPromise;
   const db = client.db(DB_NAME);
@@ -67,7 +71,19 @@ export async function GET(
     .collection<Topic>("topics")
     .findOne({ _id: new ObjectId(design.topicId) });
 
-  return NextResponse.json({ design, review, author, topic });
+  return NextResponse.json({
+    design,
+    review,
+    author,
+    topic,
+    responses: issueResponses.map((r) => ({
+      section: r.section,
+      issueIndex: r.issueIndex,
+      userResponse: r.userResponse,
+      verdict: r.verdict,
+      explanation: r.explanation,
+    })),
+  });
 }
 
 export async function DELETE(
