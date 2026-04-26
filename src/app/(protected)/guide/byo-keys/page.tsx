@@ -213,7 +213,7 @@ const FAQ = [
   },
   {
     q: "Which Azure models are supported?",
-    a: "Any chat-completion model deployed on Azure OpenAI (GPT-4o, GPT-4.1, GPT-5.4, etc.).",
+    a: "Any chat-completion model deployed on Azure OpenAI or Azure AI Foundry (GPT, Claude, etc.).",
   },
   {
     q: "Is Gemini as good as DrawLint AI?",
@@ -313,7 +313,7 @@ export default function ByoKeysGuidePage() {
                 <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-violet-500 inline-block" />
                 <span>
                   <strong className="text-foreground">Your own models</strong>{" "}
-                  — choose GPT-4o, GPT-5.4, or any model you&apos;ve deployed (Azure)
+                  — choose GPT, Claude, or any model you&apos;ve deployed (Azure)
                 </span>
               </li>
               <li className="flex items-start gap-2.5">

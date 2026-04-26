@@ -121,7 +121,7 @@ const FAQ_ITEMS: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "What models does the AI use?",
-    a: "DrawLint AI uses Azure OpenAI (GPT-4o / GPT-5.4). Gemini AI uses Google\u2019s Gemini 3.1 Flash Lite. In Azure BYO mode, you can choose any chat-completion model deployed on your Azure subscription.",
+    a: "DrawLint AI uses pro-grade GPT and Claude models for the best review quality. Gemini AI uses Google\u2019s Gemini 3.1 Flash Lite. In Azure BYO mode, you can choose any chat-completion model deployed on your Azure subscription.",
   },
   {
     q: "How do I delete my account or data?",
