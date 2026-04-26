@@ -260,9 +260,87 @@ function extractEdges(
 
 /* ── Pass 3: Annotation association ─────────────────────────── */
 
+/**
+ * Build a map of element connections via arrows/lines.
+ * For each element, returns the set of element IDs it's connected to.
+ */
+function buildConnectionMap(
+  active: readonly ExcalidrawElement[],
+): Map<string, Set<string>> {
+  const connections = new Map<string, Set<string>>();
+
+  const addConnection = (a: string, b: string) => {
+    if (!a || !b) return;
+    if (!connections.has(a)) connections.set(a, new Set());
+    if (!connections.has(b)) connections.set(b, new Set());
+    connections.get(a)!.add(b);
+    connections.get(b)!.add(a);
+  };
+
+  for (const el of active) {
+    if (el.type !== "arrow" && el.type !== "line") continue;
+    const raw = el as Record<string, unknown>;
+    const startId = (raw.startBinding as { elementId?: string } | null)?.elementId;
+    const endId = (raw.endBinding as { elementId?: string } | null)?.elementId;
+    if (startId && endId) {
+      addConnection(startId, endId);
+    }
+  }
+
+  return connections;
+}
+
+/**
+ * Find the node an annotation is linked to.
+ * Priority: 1) explicit arrow/line connection 2) nearest by distance
+ */
+function findLinkedNode(
+  elementId: string,
+  cx: number,
+  cy: number,
+  nodes: GraphNode[],
+  connectionMap: Map<string, Set<string>>,
+): string {
+  const nodeIdSet = new Set(nodes.map((n) => n.id));
+
+  // Check for explicit connections via arrows/lines
+  const connected = connectionMap.get(elementId);
+  if (connected) {
+    // Find the connected element that is a known node
+    for (const connId of connected) {
+      if (nodeIdSet.has(connId)) return connId;
+    }
+    // Connected element might be a container that holds a node —
+    // check if any connected element contains a node
+    for (const connId of connected) {
+      const innerConnections = connectionMap.get(connId);
+      if (innerConnections) {
+        for (const innerId of innerConnections) {
+          if (nodeIdSet.has(innerId)) return innerId;
+        }
+      }
+    }
+  }
+
+  // Fallback: nearest node by distance
+  let nearestNodeId = "";
+  let bestDist = Infinity;
+  for (const node of nodes) {
+    const ncx = node.position.x + node.dimensions.width / 2;
+    const ncy = node.position.y + node.dimensions.height / 2;
+    const dist = euclideanDistance(cx, cy, ncx, ncy);
+    if (dist < bestDist) {
+      bestDist = dist;
+      nearestNodeId = node.id;
+    }
+  }
+  return nearestNodeId;
+}
+
 function extractAnnotations(
   active: readonly ExcalidrawElement[],
   nodes: GraphNode[],
+  connectionMap: Map<string, Set<string>>,
 ): GraphAnnotation[] {
   const annotations: GraphAnnotation[] = [];
 
@@ -287,22 +365,11 @@ function extractAnnotations(
     const text = ((el as Record<string, unknown>).text as string) ?? "";
     if (!text.trim()) continue;
 
-    // Find nearest node by center-to-center distance
-    let nearestNodeId = "";
-    let bestDist = Infinity;
     const raw = el as Record<string, unknown>;
     const elCx = el.x + ((raw.width as number) ?? 0) / 2;
     const elCy = el.y + ((raw.height as number) ?? 0) / 2;
 
-    for (const node of nodes) {
-      const ncx = node.position.x + node.dimensions.width / 2;
-      const ncy = node.position.y + node.dimensions.height / 2;
-      const dist = euclideanDistance(elCx, elCy, ncx, ncy);
-      if (dist < bestDist) {
-        bestDist = dist;
-        nearestNodeId = node.id;
-      }
-    }
+    const nearestNodeId = findLinkedNode(el.id, elCx, elCy, nodes, connectionMap);
 
     annotations.push({
       id: el.id,
@@ -401,23 +468,14 @@ export function parseDiagram(
   const { clusters, updatedNodes: nodes } = detectClusters(rawNodes, active);
 
   const edges = extractEdges(active, nodes);
-  const annotations = extractAnnotations(active, nodes);
+  const connectionMap = buildConnectionMap(active);
+  const annotations = extractAnnotations(active, nodes, connectionMap);
 
   // Merge logic description boxes into annotations
   for (const box of logicBoxes) {
     const cx = box.x + box.w / 2;
     const cy = box.y + box.h / 2;
-    let nearestNodeId = "";
-    let bestDist = Infinity;
-    for (const node of nodes) {
-      const ncx = node.position.x + node.dimensions.width / 2;
-      const ncy = node.position.y + node.dimensions.height / 2;
-      const dist = euclideanDistance(cx, cy, ncx, ncy);
-      if (dist < bestDist) {
-        bestDist = dist;
-        nearestNodeId = node.id;
-      }
-    }
+    const nearestNodeId = findLinkedNode(box.id, cx, cy, nodes, connectionMap);
     annotations.push({
       id: box.id,
       text: box.label,
