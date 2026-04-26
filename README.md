@@ -153,7 +153,7 @@ Deployed via GitHub Actions → Docker → Azure App Service.
 | Tier | AI Provider | Reviews | Cost |
 |------|-------------|---------|------|
 | **Free** | DrawLint AI | 10/month | $0 |
-| **Pro** | DrawLint AI | More reviews + deeper evaluation | ₹99/month *(coming soon)* |
+| **Pro** | DrawLint AI | More reviews + deeper evaluation | *Coming soon* |
 | **BYO Gemini** | Your Gemini key | Unlimited | Free (your API usage) |
 | **BYO Azure** | Your Azure key | Unlimited | Your Azure costs |
 

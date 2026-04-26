@@ -423,7 +423,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
                         </li>
                       </ul>
                       <p className="text-[0.65rem] text-violet-600/70 dark:text-violet-400/70 font-medium">
-                        Starting at ₹99/month
+                        Pricing to be announced
                       </p>
                     </div>
                   </>

@@ -69,7 +69,7 @@
 
 | Feature | Description | Priority |
 |---------|-------------|----------|
-| **Pro tier (Stripe)** | ₹99/month — more reviews, deeper evaluation, priority processing | P0 |
+| **Pro tier (Stripe)** | More reviews, deeper evaluation, priority processing — pricing TBD | P0 |
 | **Usage analytics** | Track reviews per provider, quality metrics, trends | P0 |
 | **Test Review button** | Try a review without submitting to library | P1 |
 | **Error tracking** | Sentry integration for production monitoring | P1 |
