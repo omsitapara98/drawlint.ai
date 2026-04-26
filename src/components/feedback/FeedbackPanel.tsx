@@ -159,6 +159,34 @@ function DimensionCard({
           <span className="text-sm font-semibold">{meta.label}</span>
         </div>
         <div className="flex items-center gap-2">
+          {/* Count badges when collapsed */}
+          {!expanded && (
+            <>
+              {dimension.highlights.length > 0 && (
+                <span className="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 dark:text-emerald-300">
+                  ✓ {dimension.highlights.length}
+                </span>
+              )}
+              {dimension.issues.filter((i) => i.severity === "critical").length > 0 && (
+                <span className="inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 text-[9px] font-medium text-red-700 dark:text-red-300">
+                  {dimension.issues.filter((i) => i.severity === "critical").length} critical
+                </span>
+              )}
+              {dimension.issues.filter((i) => i.severity === "warning").length > 0 && (
+                <span className="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 text-[9px] font-medium text-amber-700 dark:text-amber-300">
+                  {dimension.issues.filter((i) => i.severity === "warning").length} warning
+                </span>
+              )}
+              {dimension.issues.filter((i) => i.severity === "info").length > 0 && (
+                <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-[9px] font-medium text-blue-700 dark:text-blue-300">
+                  {dimension.issues.filter((i) => i.severity === "info").length} info
+                </span>
+              )}
+              {!hasContent && (
+                <span className="text-[9px] text-emerald-600 dark:text-emerald-400">All good ✅</span>
+              )}
+            </>
+          )}
           {expanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
         </div>
       </button>
