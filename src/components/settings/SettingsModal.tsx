@@ -68,6 +68,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
   // Test connection state
   const [testStatus, setTestStatus] = useState<TestStatus>("idle");
   const [testMessage, setTestMessage] = useState<string>("");
+  const [keyModified, setKeyModified] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -298,7 +299,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
             <div className="grid grid-cols-3 gap-2">
               {/* DrawLint AI */}
               <button
-                onClick={() => { setSelectedMode("managed"); setTestStatus("idle"); }}
+                onClick={() => { setSelectedMode("managed"); setTestStatus("idle"); setKeyModified(false); }}
                 className={`rounded-xl border-2 p-3 text-left transition-all ${
                   selectedMode === "managed"
                     ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20"
@@ -319,7 +320,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
 
               {/* Gemini (Free) */}
               <button
-                onClick={() => { setSelectedMode("gemini"); setTestStatus("idle"); }}
+                onClick={() => { setSelectedMode("gemini"); setTestStatus("idle"); setKeyModified(false); }}
                 className={`rounded-xl border-2 p-3 text-left transition-all ${
                   selectedMode === "gemini"
                     ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20"
@@ -340,7 +341,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
 
               {/* Azure OpenAI (Advanced) */}
               <button
-                onClick={() => { setSelectedMode("azure"); setAzureExpanded(true); setTestStatus("idle"); }}
+                onClick={() => { setSelectedMode("azure"); setAzureExpanded(true); setTestStatus("idle"); setKeyModified(false); }}
                 className={`rounded-xl border-2 p-3 text-left transition-all ${
                   selectedMode === "azure"
                     ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20"
@@ -451,7 +452,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
 
                 <label className="flex flex-col gap-1">
                   <span className="text-xs font-medium">API Key</span>
-                  <input ref={geminiKeyRef} type="password" className={inputClass} placeholder="Enter your Gemini API key…" />
+                  <input ref={geminiKeyRef} type="password" className={inputClass} placeholder="Enter your Gemini API key…" onChange={() => { setKeyModified(true); setTestStatus("idle"); }} />
                 </label>
 
                 {/* Test Connection */}
@@ -521,7 +522,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
 
                     <label className="flex flex-col gap-1">
                       <span className="text-xs font-medium">API Key</span>
-                      <input ref={azureKeyRef} type="password" className={inputClass} placeholder="Enter new key to update…" />
+                      <input ref={azureKeyRef} type="password" className={inputClass} placeholder="Enter new key to update…" onChange={() => { setKeyModified(true); setTestStatus("idle"); }} />
                     </label>
                     <label className="flex flex-col gap-1">
                       <span className="text-xs font-medium">Endpoint URL</span>
@@ -572,10 +573,16 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
               Clear Key
             </Button>
           )}
-          <Button onClick={handleSave} disabled={loading || saving}>
-            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-            Save
-          </Button>
+          {(() => {
+            // Save requires test connection for BYO modes with new/modified keys
+            const needsTest = selectedMode !== "managed" && keyModified && testStatus !== "success";
+            return (
+              <Button onClick={handleSave} disabled={loading || saving || needsTest}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                {needsTest ? "Test Connection First" : "Save"}
+              </Button>
+            );
+          })()}
         </DialogFooter>
       </DialogContent>
     </Dialog>
