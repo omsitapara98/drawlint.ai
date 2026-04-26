@@ -38,23 +38,24 @@ const NFR_DEEP = [
 ];
 
 const ENTITIES_MID = [
-  "Key entities listed (1-word nouns)",
-  "Basic attributes present",
+  "Key entities listed (1-word nouns relevant to the system)",
 ];
 const ENTITIES_SENIOR = [
   ...ENTITIES_MID,
-  "Relationships between entities defined",
-  "Read vs write access patterns identified",
-  "Indexing strategy considered",
+  "All entities needed for the core flow are present (no missing domain concepts)",
+  "Relationships between entities defined (1:1, 1:N, N:N)",
 ];
 const ENTITIES_STAFF = [
   ...ENTITIES_SENIOR,
+  "Basic attributes present on each entity",
+  "Read vs write access patterns identified",
+  "Indexing strategy considered",
   "Data partitioning/sharding strategy",
   "Hot key awareness",
-  "Denormalization rationale discussed",
 ];
 const ENTITIES_DEEP = [
   ...ENTITIES_STAFF,
+  "Denormalization rationale discussed",
   "GDPR/data retention concerns",
   "Cross-region replication strategy",
   "Schema evolution plan",
