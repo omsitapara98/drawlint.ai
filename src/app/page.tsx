@@ -579,6 +579,7 @@ export default function LandingPage() {
       <div className="mx-auto h-px w-full max-w-4xl bg-gradient-to-r from-transparent via-border to-transparent" />
       <footer className="px-4 py-10 text-center text-sm text-muted-foreground">
         <p className="font-medium">Built for system design interview practice</p>
+        <p className="mt-1 text-xs text-muted-foreground/50 italic">For developers, by developers.</p>
         <div className="mt-3 flex items-center justify-center gap-4">
           <Link href="/guide" className="hover:text-foreground transition-colors">
             Drawing Guide

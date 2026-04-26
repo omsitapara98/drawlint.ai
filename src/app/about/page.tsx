@@ -15,6 +15,7 @@ export default function AboutPage() {
             ← Back to Home
           </Link>
           <h1 className="mt-4 text-3xl font-bold tracking-tight">About DrawLint.ai</h1>
+          <p className="mt-2 text-sm italic text-muted-foreground/70">For developers, by developers.</p>
         </div>
 
         <div className="space-y-10 text-sm leading-relaxed text-muted-foreground">
