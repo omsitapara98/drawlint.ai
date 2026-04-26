@@ -63,6 +63,16 @@ export async function getResponsesByReviewId(
     .toArray();
 }
 
+/** Get all responses for a design (latest responses regardless of review version). */
+export async function getResponsesByDesignId(
+  designId: string,
+): Promise<IssueResponse[]> {
+  const col = await collection();
+  return col
+    .find({ designId: new ObjectId(designId) })
+    .toArray();
+}
+
 /** Delete all responses for a review (called on re-review or design delete). */
 export async function deleteResponsesByReviewId(
   reviewId: string,

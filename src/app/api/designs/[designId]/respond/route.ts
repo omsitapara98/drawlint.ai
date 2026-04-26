@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getDesignById } from "@/lib/db/designs";
 import { getReviewByDesignId } from "@/lib/db/reviews";
-import { upsertResponse, getResponsesByReviewId } from "@/lib/db/responses";
+import { upsertResponse, getResponsesByDesignId } from "@/lib/db/responses";
 import { getUserAiSettings } from "@/lib/db/users";
 import { resolveAnalysisProvider, isResolutionError } from "@/lib/ai/resolve-provider";
 import { createProvider } from "@/lib/ai";
@@ -168,20 +168,14 @@ export async function POST(
   }
 }
 
-/** GET — fetch all responses for a design's current review (public — peer library) */
+/** GET — fetch all responses for a design (public — peer library) */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ designId: string }> },
 ) {
   const { designId } = await params;
 
-  // Get the review
-  const review = await getReviewByDesignId(designId);
-  if (!review) {
-    return NextResponse.json({ responses: [] });
-  }
-
-  const responses = await getResponsesByReviewId(review._id.toString());
+  const responses = await getResponsesByDesignId(designId);
 
   return NextResponse.json({
     responses: responses.map((r) => ({
