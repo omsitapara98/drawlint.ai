@@ -248,7 +248,7 @@ const REVIEWER_NAMES: Record<ReviewerSection, string> = {
 
 const REVIEWER_FOCUS: Record<ReviewerSection, string> = {
   nfr: "non-functional requirements quality (latency targets, availability SLAs, consistency model). Do NOT comment on HLD component choices or infrastructure.",
-  entities: "data models, entity relationships, access patterns, and indexing strategies. Do NOT comment on infrastructure or API design.",
+  entities: "core domain entities and their relationships. At Mid/Senior level, focus ONLY on whether the right nouns are listed and relationships defined — do NOT demand attributes, fields, access patterns, indexing, or join/associative entities at these levels. Those are Staff+ criteria. Do NOT comment on infrastructure or API design.",
   capacity: "capacity calculations, projections, sizing, and whether numbers are methodical. Do NOT comment on component design or API routes.",
   api: "endpoint/message design, protocols, REST conventions or WebSocket patterns. Do NOT comment on backend architecture or data modeling.",
   hld: "component choices, architecture patterns, scalability, redundancy, and operational readiness. This is where infrastructure and design pattern feedback belongs.",
