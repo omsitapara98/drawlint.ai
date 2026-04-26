@@ -4,7 +4,7 @@
 
 AI-powered system design review platform. Draw your architecture, get expert-level feedback on scalability, reliability, and best practices.
 
-**Live:** https://drawlint-ai.azurewebsites.net
+**Live:** https://drawlint-ai.in
 
 ---
 

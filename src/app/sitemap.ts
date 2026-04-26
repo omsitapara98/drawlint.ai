@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://drawlint-ai.azurewebsites.net";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://drawlint-ai.in";
   const now = new Date();
 
   return [

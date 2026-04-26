@@ -21,7 +21,7 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
 });
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://drawlint-ai.azurewebsites.net";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://drawlint-ai.in";
 
 export const metadata: Metadata = {
   title: "DrawLint.ai — AI-Powered System Design Review",

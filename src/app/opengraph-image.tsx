@@ -131,7 +131,7 @@ export default function OGImage() {
             color: "#52525b",
           }}
         >
-          drawlint-ai.azurewebsites.net
+          drawlint-ai.in
         </div>
       </div>
     ),
