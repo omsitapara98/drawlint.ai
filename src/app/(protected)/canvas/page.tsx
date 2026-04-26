@@ -1371,6 +1371,8 @@ function CanvasPageInner() {
                       reviewerProgress={reviewerProgress}
                       onRetry={handleRetrySubmit}
                       onOpenSettings={() => {}}
+                      designId={submittedDesignId || editDesignId || viewDesignId}
+                      isAuthor={viewDesignId ? viewIsAuthor : true}
                     />
                   </div>
                 </div>

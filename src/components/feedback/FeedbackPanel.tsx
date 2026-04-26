@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type { AIReviewResponse, AnalysisStatus, FeedbackItem, ReviewHighlight, ReviewDimension, ReviewLevel, ReviewerProgress, ReviewerKey, ReviewerStatus } from "@/types/feedback";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +25,19 @@ import {
   TrendingUp,
   XCircle,
   Circle,
+  MessageSquare,
+  Send,
 } from "lucide-react";
+
+/* ── Response types ──────────────────────────────────────────── */
+
+interface StoredResponse {
+  section: string;
+  issueIndex: number;
+  userResponse: string;
+  verdict: "resolved" | "partially-addressed" | "not-addressed";
+  explanation: string;
+}
 
 interface FeedbackPanelProps {
   aiReview?: AIReviewResponse | null;
@@ -34,6 +46,10 @@ interface FeedbackPanelProps {
   reviewerProgress?: ReviewerProgress;
   onRetry?: () => void;
   onOpenSettings?: () => void;
+  /** Design ID — needed for respond feature */
+  designId?: string | null;
+  /** Whether the current user owns this design */
+  isAuthor?: boolean;
 }
 
 const SEVERITY_STYLES: Record<string, string> = {
@@ -103,7 +119,21 @@ const SIGNAL_LABELS: Record<string, string> = {
 // All 4 section reviewers always shown at every level
 const SECTION_DIMENSIONS = ["nfrReview", "entitiesReview", "capacityReview", "apiReview", "hldReview"] as const;
 
-function DimensionCard({ name, dimension }: { name: string; dimension: ReviewDimension }) {
+function DimensionCard({
+  name,
+  dimension,
+  designId,
+  canRespond,
+  responses,
+  onRespond,
+}: {
+  name: string;
+  dimension: ReviewDimension;
+  designId?: string | null;
+  canRespond?: boolean;
+  responses: Map<string, StoredResponse>;
+  onRespond?: (section: string, issueIndex: number, text: string) => Promise<StoredResponse | null>;
+}) {
   const [expanded, setExpanded] = useState(true);
   const meta = DIMENSION_META[name] ?? { icon: null, label: name, emoji: "" };
   const hasContent = dimension.highlights.length > 0 || dimension.issues.length > 0;
@@ -130,7 +160,15 @@ function DimensionCard({ name, dimension }: { name: string; dimension: ReviewDim
               <HighlightRow key={`h-${i}`} highlight={h} />
             ))}
             {dimension.issues.map((issue, i) => (
-              <IssueRow key={`i-${i}`} issue={issue} />
+              <IssueRow
+                key={`i-${i}`}
+                issue={issue}
+                section={name}
+                issueIndex={i}
+                canRespond={!!canRespond && !!designId}
+                existingResponse={responses.get(`${name}:${i}`)}
+                onRespond={onRespond}
+              />
             ))}
           </div>
         </CardContent>
@@ -160,16 +198,110 @@ function HighlightRow({ highlight }: { highlight: ReviewHighlight }) {
   );
 }
 
-function IssueRow({ issue }: { issue: FeedbackItem }) {
+const VERDICT_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  resolved: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", label: "✅ Resolved" },
+  "partially-addressed": { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-300", label: "🟡 Partially Addressed" },
+  "not-addressed": { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-300", label: "❌ Not Addressed" },
+};
+
+function IssueRow({
+  issue,
+  section,
+  issueIndex,
+  canRespond,
+  existingResponse,
+  onRespond,
+}: {
+  issue: FeedbackItem;
+  section: string;
+  issueIndex: number;
+  canRespond: boolean;
+  existingResponse?: StoredResponse;
+  onRespond?: (section: string, issueIndex: number, text: string) => Promise<StoredResponse | null>;
+}) {
+  const [showInput, setShowInput] = useState(false);
+  const [text, setText] = useState(existingResponse?.userResponse ?? "");
+  const [submitting, setSubmitting] = useState(false);
+  const [localVerdict, setLocalVerdict] = useState<StoredResponse | null>(existingResponse ?? null);
+
+  const handleSubmit = useCallback(async () => {
+    if (!onRespond || !text.trim()) return;
+    setSubmitting(true);
+    const result = await onRespond(section, issueIndex, text.trim());
+    if (result) {
+      setLocalVerdict(result);
+      setShowInput(false);
+    }
+    setSubmitting(false);
+  }, [onRespond, section, issueIndex, text]);
+
+  const verdict = localVerdict;
+  const verdictStyle = verdict ? VERDICT_STYLES[verdict.verdict] : null;
+
   return (
-    <div className={`rounded-lg border p-3 ${SEVERITY_STYLES[issue.severity] ?? ""}`}>
+    <div className={`rounded-lg border p-3 ${verdict?.verdict === "resolved" ? "border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20" : SEVERITY_STYLES[issue.severity] ?? ""}`}>
       <div className="flex items-start gap-2">
-        <Badge className={`text-[10px] px-1.5 py-0 shrink-0 ${SEVERITY_BADGE[issue.severity] ?? ""}`}>
-          {SEVERITY_LABEL[issue.severity] ?? issue.severity}
+        <Badge className={`text-[10px] px-1.5 py-0 shrink-0 ${verdict?.verdict === "resolved" ? "bg-emerald-500 text-white" : SEVERITY_BADGE[issue.severity] ?? ""}`}>
+          {verdict?.verdict === "resolved" ? "resolved" : (SEVERITY_LABEL[issue.severity] ?? issue.severity)}
         </Badge>
-        <div className="min-w-0">
-          <p className="text-sm font-medium">{issue.title}</p>
+        <div className="min-w-0 flex-1">
+          <p className={`text-sm font-medium ${verdict?.verdict === "resolved" ? "line-through opacity-60" : ""}`}>{issue.title}</p>
           <p className="mt-1 text-xs opacity-80">{issue.description}</p>
+
+          {/* Existing verdict display */}
+          {verdict && (
+            <div className={`mt-2 rounded-md ${verdictStyle?.bg} p-2`}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className={`text-[10px] font-bold ${verdictStyle?.text}`}>{verdictStyle?.label}</span>
+              </div>
+              <p className={`text-xs ${verdictStyle?.text} opacity-80`}>{verdict.explanation}</p>
+              {verdict.userResponse && (
+                <p className="mt-1.5 text-[10px] text-muted-foreground italic">Your response: &ldquo;{verdict.userResponse}&rdquo;</p>
+              )}
+            </div>
+          )}
+
+          {/* Respond button / input */}
+          {canRespond && !showInput && (
+            <button
+              onClick={() => setShowInput(true)}
+              className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+            >
+              <MessageSquare className="h-3 w-3" />
+              {verdict ? "Respond again" : "Respond"}
+            </button>
+          )}
+
+          {showInput && (
+            <div className="mt-2 space-y-2">
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Explain how you'd address this concern (like in a real interview)..."
+                className="w-full rounded-md border border-border dark:border-white/[0.08] bg-background px-3 py-2 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all"
+                rows={3}
+                maxLength={2000}
+                autoFocus
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting || text.trim().length < 10}
+                  className="inline-flex items-center gap-1 rounded-md bg-violet-500 px-3 py-1.5 text-[10px] font-medium text-white hover:bg-violet-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                  {submitting ? "Evaluating..." : "Submit Response"}
+                </button>
+                <button
+                  onClick={() => { setShowInput(false); setText(existingResponse?.userResponse ?? ""); }}
+                  className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Cancel
+                </button>
+                <span className="text-[10px] text-muted-foreground ml-auto">{text.length}/2000</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -223,6 +355,8 @@ function AIReviewContent({
   onRetry,
   onOpenSettings,
   hasBYOKey,
+  designId,
+  isAuthor,
 }: {
   review: AIReviewResponse | null;
   status: AnalysisStatus;
@@ -231,7 +365,82 @@ function AIReviewContent({
   onRetry?: () => void;
   onOpenSettings?: () => void;
   hasBYOKey: boolean;
+  designId?: string | null;
+  isAuthor?: boolean;
 }) {
+  // Response state
+  const [responses, setResponses] = useState<Map<string, StoredResponse>>(new Map());
+  const canRespond = !!isAuthor && !!designId && status === "complete";
+
+  // Load existing responses on mount
+  useEffect(() => {
+    if (!designId || !isAuthor) return;
+    fetch(`/api/designs/${designId}/respond`)
+      .then((r) => r.ok ? r.json() : { responses: [] })
+      .then((data: { responses: StoredResponse[] }) => {
+        const map = new Map<string, StoredResponse>();
+        for (const r of data.responses) {
+          map.set(`${r.section}:${r.issueIndex}`, r);
+        }
+        setResponses(map);
+      })
+      .catch(() => {});
+  }, [designId, isAuthor]);
+
+  // Handle submitting a response
+  const handleRespond = useCallback(async (section: string, issueIndex: number, text: string): Promise<StoredResponse | null> => {
+    if (!designId) return null;
+
+    // Get BYO credentials
+    let creds: Record<string, string> = {};
+    try {
+      const { getCredentialsForRequest, getAIConfig } = await import("@/lib/storage/ai-config");
+      const config = getAIConfig();
+      let provider: "managed" | "gemini" | "azure" = "managed";
+      if (config.gemini?.apiKey) provider = "gemini";
+      if (config.azure?.apiKey) provider = "azure";
+      creds = getCredentialsForRequest(provider);
+    } catch {}
+
+    try {
+      const res = await fetch(`/api/designs/${designId}/respond`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          section,
+          issueIndex,
+          response: text,
+          ...creds,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(data.error ?? "Failed to submit response.");
+        return null;
+      }
+
+      const data = (await res.json()) as { verdict: string; explanation: string };
+      const stored: StoredResponse = {
+        section,
+        issueIndex,
+        userResponse: text,
+        verdict: data.verdict as StoredResponse["verdict"],
+        explanation: data.explanation,
+      };
+
+      setResponses((prev) => {
+        const next = new Map(prev);
+        next.set(`${section}:${issueIndex}`, stored);
+        return next;
+      });
+
+      return stored;
+    } catch {
+      alert("Network error — try again.");
+      return null;
+    }
+  }, [designId]);
   // No BYO key configured
   if (!hasBYOKey && status === "idle") {
     return (
@@ -335,9 +544,17 @@ function AIReviewContent({
           </CardContent>
         </Card>
 
-        {/* Section Reviewer Cards — always all 4 */}
+        {/* Section Reviewer Cards */}
         {SECTION_DIMENSIONS.map((dim) => (
-          <DimensionCard key={dim} name={dim} dimension={review[dim]} />
+          <DimensionCard
+            key={dim}
+            name={dim}
+            dimension={review[dim]}
+            designId={designId}
+            canRespond={canRespond}
+            responses={responses}
+            onRespond={handleRespond}
+          />
         ))}
 
         {/* Lead Reviewer Card */}
@@ -447,10 +664,11 @@ export function FeedbackPanel({
   reviewerProgress,
   onRetry,
   onOpenSettings,
+  designId,
+  isAuthor,
 }: FeedbackPanelProps) {
   const hasBYOKey = (() => {
     try {
-      // Check both old and new storage formats
       const v2Raw = localStorage.getItem("drawlint:ai-config:v2");
       if (v2Raw) {
         const config = JSON.parse(v2Raw) as { gemini?: { apiKey?: string }; azure?: { apiKey?: string } };
@@ -476,6 +694,8 @@ export function FeedbackPanel({
       onRetry={onRetry}
       onOpenSettings={onOpenSettings}
       hasBYOKey={hasBYOKey}
+      designId={designId}
+      isAuthor={isAuthor}
     />
   );
 }

@@ -55,6 +55,31 @@ export interface Review {
   createdAt: Date;
 }
 
+/* ── Issue Response (user responds to AI feedback) ────────── */
+
+export type IssueVerdict = "resolved" | "partially-addressed" | "not-addressed";
+export type ReviewSection = "nfrReview" | "entitiesReview" | "capacityReview" | "apiReview" | "hldReview";
+
+export interface IssueResponse {
+  _id: ObjectId;
+  designId: ObjectId;
+  reviewId: ObjectId;
+  userId: ObjectId;
+  section: ReviewSection;
+  issueIndex: number;
+  originalIssue: {
+    severity: "critical" | "warning" | "info";
+    title: string;
+    description: string;
+  };
+  userResponse: string;
+  verdict: IssueVerdict;
+  explanation: string;
+  evaluatedBy?: "drawlint" | "gemini" | "azure";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 /* ── Composite ───────────────────────────────────────────────── */
 
 export interface DesignWithReview {

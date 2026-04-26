@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getDesignById, deleteDesign, updateDesignBlob, updateDesignStatus } from "@/lib/db/designs";
 import { getReviewByDesignId, deleteReviewByDesignId, createReview } from "@/lib/db/reviews";
+import { deleteResponsesByDesignId } from "@/lib/db/responses";
 import { decrementSubmissionCount, incrementSubmissionCount } from "@/lib/db/topics";
 import { uploadDesign, deleteDesign as deleteBlob } from "@/lib/blob/storage";
 import {
@@ -103,8 +104,9 @@ export async function DELETE(
     console.error("Failed to delete blob:", err);
   }
 
-  // Delete review
+  // Delete review + responses
   await deleteReviewByDesignId(designId);
+  await deleteResponsesByDesignId(designId);
 
   // Delete design doc
   await deleteDesign(designId);
@@ -328,8 +330,9 @@ export async function PUT(
   // Track if this was a draft being published (for submission count)
   const wasDraft = design.status === "draft";
 
-  // 4. Delete old review
+  // 4. Delete old review + responses
   await deleteReviewByDesignId(designId);
+  await deleteResponsesByDesignId(designId);
 
   // 5. Parse diagram for AI
   const diagram = parseDiagram(body.elements as ExcalidrawElement[]);
