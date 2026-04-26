@@ -472,6 +472,7 @@ function AIReviewContent({
     updatedSignal: string;
     updatedSignalReason: string;
     resolvedCount: number;
+    partialCount: number;
   } | null>(null);
   const [reevaling, setReevaling] = useState(false);
 
@@ -488,7 +489,10 @@ function AIReviewContent({
 
   const resolvedCount = [...responses.values()].filter((r) => r.verdict === "resolved" && r.section !== "followUpQuestions").length;
   const partialCount = [...responses.values()].filter((r) => r.verdict === "partially-addressed" && r.section !== "followUpQuestions").length;
-  const canReEval = canRespond && (resolvedCount + partialCount) >= 1;
+  const currentResponseCount = resolvedCount + partialCount;
+  // Enable re-eval only when there are new responses since last re-eval
+  const lastReEvalCount = reeval ? (reeval.resolvedCount + reeval.partialCount) : 0;
+  const canReEval = canRespond && currentResponseCount >= 1 && currentResponseCount > lastReEvalCount;
 
   const handleReEvaluate = useCallback(async () => {
     if (!designId) return;
