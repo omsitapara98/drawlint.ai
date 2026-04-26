@@ -110,7 +110,26 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
       .finally(() => setLoading(false));
   }, [open]);
 
-  const handleTestConnection = useCallback(async () => {
+  // Populate input refs when mode changes (refs only exist when section is rendered)
+  useEffect(() => {
+    const config = getAIConfig();
+    if (selectedMode === "gemini" && geminiKeyRef.current && !geminiKeyRef.current.value && config.gemini?.apiKey) {
+      geminiKeyRef.current.value = "••••••••";
+    }
+    if (selectedMode === "azure") {
+      if (azureKeyRef.current && !azureKeyRef.current.value && config.azure?.apiKey) {
+        azureKeyRef.current.value = "••••••••";
+      }
+      if (azureEndpointRef.current && !azureEndpointRef.current.value && config.azure?.endpoint) {
+        azureEndpointRef.current.value = config.azure.endpoint;
+      }
+      if (azureDeploymentRef.current && !azureDeploymentRef.current.value && config.azure?.deployment) {
+        azureDeploymentRef.current.value = config.azure.deployment;
+      }
+    }
+  }, [selectedMode]);
+
+  const handleTestConnection= useCallback(async () => {
     setTestStatus("testing");
     setTestMessage("");
 
