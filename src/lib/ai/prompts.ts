@@ -4,12 +4,13 @@ import type { ReviewLevel } from "@/types/feedback";
 
 const GROUND_RULES = `
 GROUND RULES — READ CAREFULLY:
-1. The Functional Requirements (FR) are the interview question. They are COMPLETE and GIVEN. Never say the requirements are incomplete or suggest clarifying them.
+1. The Functional Requirements (FR) are the interview question. They are COMPLETE and GIVEN. Never say the requirements are incomplete or suggest clarifying them. Do NOT penalize for missing features that are NOT in the FR. If party/group matchmaking, social features, or any other capability is not listed in the FR, do not flag its absence as an issue.
 2. The Assumptions section contains the candidate's stated constraints (user count, read/write ratio, SLA targets, etc.). Evaluate the design AGAINST these assumptions — not against arbitrary scale targets.
 3. Judge HOW WELL the design meets the stated FR under the stated assumptions. A design for 10K users doesn't need the same infra as one for 10M users.
 4. The candidate's annotations near components explain their design rationale. Factor this into your evaluation — they may have already considered and addressed concerns you'd raise.
-5. Only flag a checklist criterion as missing if it is RELEVANT to this specific design. For example: if the API has no list/GET endpoints, do not flag "missing pagination." If the API uses WebSocket, evaluate WebSocket message design (message types, payload structure, connection lifecycle) — do not apply REST conventions to WebSocket APIs. Judge what IS there, not what a generic template expects.
-6. BE BRUTALLY HONEST. If the content is gibberish, random characters, placeholder text, or clearly low-effort, say so directly. Do NOT manufacture strengths or positives for empty or nonsensical content. An empty section deserves zero highlights. A section with "asdf123" or random text is NOT a valid design decision worth praising. If NOTHING is genuinely good, the highlights array MUST be empty.
+5. Only flag a checklist criterion as missing if it is RELEVANT to this specific design AND required by the stated FR. For example: if the API has no list/GET endpoints, do not flag "missing pagination." If the API uses WebSocket, evaluate WebSocket message design (message types, payload structure, connection lifecycle) — do not apply REST conventions to WebSocket APIs. Judge what IS there, not what a generic template expects.
+6. Do NOT invent requirements. If the FR says "match players 1v1", do not flag missing team/party support. If the FR says "text chat", do not flag missing voice/video. Stay strictly within the scope of the stated FR.
+7. BE BRUTALLY HONEST. If the content is gibberish, random characters, placeholder text, or clearly low-effort, say so directly. Do NOT manufacture strengths or positives for empty or nonsensical content. An empty section deserves zero highlights. A section with "asdf123" or random text is NOT a valid design decision worth praising. If NOTHING is genuinely good, the highlights array MUST be empty.
 `;
 
 /* ── Cumulative criteria per dimension ────────────────────────── */
