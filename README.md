@@ -21,6 +21,9 @@ AI-powered system design review platform. Draw your architecture, get expert-lev
 - 📈 **4 Review Levels** — Mid (L4-L5), Senior (L5-L6), Staff (L6+), Deep Analysis
 - ✅ **Highlights + Issues** — Strengths (strong/good) and issues (critical/warning/info)
 - 🎓 **Hire Signal** — Lead Reviewer assessment (strong-hire → no-hire)
+- 💬 **Respond to Feedback** — Address warnings verbally, like in a real interview
+- 🔄 **Re-evaluate Signal** — AI re-assesses hire signal after your responses
+- ❓ **Follow-up Questions** — Answer AI-generated probing questions with AI evaluation
 
 ### AI Providers
 - ⭐ **DrawLint AI** — Managed, best quality, 10 free reviews/month
@@ -30,10 +33,12 @@ AI-powered system design review platform. Draw your architecture, get expert-lev
 
 ### Platform
 - 🎨 **Excalidraw Canvas** — Structured whiteboard template with locked sections
-- 📚 **Community Library** — Browse, fork, and learn from other designers
+- 📚 **Community Library** — Browse, filter, sort, and learn from other designers
 - 💾 **Draft System** — Auto-save drafts, continue editing anytime
+- 🔗 **Share Designs** — Copy link to share your design + review with anyone
 - 🔒 **Auth** — GitHub + Google OAuth via NextAuth.js v5
 - 👤 **Anonymous Mode** — Post designs with a pseudonym
+- 👑 **Premium Badges** — Premium users highlighted in the library
 - 🌙 **Dark Mode** — Full theme support
 - 🎛️ **Resizable Panels** — Adjust workspace layout
 

@@ -26,16 +26,16 @@ const steps = [
   },
   {
     number: "02",
-    title: "Analyze",
+    title: "Review",
     emoji: "🤖",
-    description: "Five specialized AI reviewers dissect your NFRs, entities, capacity planning, APIs, and HLD in parallel.",
+    description: "Six specialized AI reviewers analyze your NFRs, entities, capacity, APIs, and HLD — then a Lead Reviewer gives your hire signal.",
     color: "cyan",
   },
   {
     number: "03",
-    title: "Improve",
-    emoji: "🚀",
-    description: "Receive a structured review with highlights for strong decisions and actionable feedback on gaps.",
+    title: "Respond",
+    emoji: "💬",
+    description: "Address feedback verbally — just like in a real interview. The AI re-evaluates your signal based on your responses.",
     color: "emerald",
   },
 ];
@@ -49,8 +49,8 @@ const features = [
   },
   {
     icon: Sparkles,
-    title: "5 Parallel Reviewers",
-    description: "Each reviewer gets isolated context for accurate, focused feedback on one dimension of your design.",
+    title: "6 AI Reviewers",
+    description: "5 section reviewers + 1 Lead Reviewer work in parallel for accurate, focused feedback on every dimension.",
   },
   {
     icon: Shield,
@@ -59,8 +59,8 @@ const features = [
   },
   {
     icon: Star,
-    title: "Beyond Bug-Finding",
-    description: "Get credit for strong design choices, not just a list of problems. Highlights + issues = balanced review.",
+    title: "Interview Simulation",
+    description: "Respond to feedback verbally, answer follow-up questions, and get your hire signal re-evaluated — just like a real panel.",
   },
 ];
 

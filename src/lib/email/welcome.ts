@@ -60,7 +60,7 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<void> 
         <div style="width: 28px; height: 28px; min-width: 28px; border-radius: 50%; background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #a78bfa;">3</div>
         <div>
           <p style="margin: 0; font-size: 14px; color: #fff; font-weight: 600;">Get your hire signal</p>
-          <p style="margin: 4px 0 0; font-size: 13px; color: #888;">From Strong Hire to No Hire — with actionable feedback</p>
+          <p style="margin: 4px 0 0; font-size: 13px; color: #888;">From Strong Hire to No Hire — respond to feedback to improve your score</p>
         </div>
       </div>
     </div>

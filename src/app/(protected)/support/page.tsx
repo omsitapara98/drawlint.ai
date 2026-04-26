@@ -108,6 +108,18 @@ const FAQ_ITEMS: { q: string; a: React.ReactNode }[] = [
     a: 'No. Draft designs are private and only visible to you. Only designs submitted via "Post + AI Review" are visible in the public library.',
   },
   {
+    q: "What is the Respond feature?",
+    a: "After getting an AI review, you can respond to individual warnings and follow-up questions — just like in a real interview. The AI evaluates your response and marks it as resolved, partially addressed, or not addressed.",
+  },
+  {
+    q: "Can I improve my hire signal after the review?",
+    a: "Yes. After responding to warnings, click \"Re-evaluate Signal\" and the Lead Reviewer re-assesses your design considering your verbal responses. You can go from Lean Hire to Hire or even Strong Hire.",
+  },
+  {
+    q: "Can others see my responses?",
+    a: "Yes. Responses and verdicts are visible to everyone in the community library — it\u2019s like reading an interview transcript. Only the author can submit responses.",
+  },
+  {
     q: "What models does the AI use?",
     a: "DrawLint AI uses Azure OpenAI (GPT-4o / GPT-5.4). Gemini AI uses Google\u2019s Gemini 3.1 Flash Lite. In Azure BYO mode, you can choose any chat-completion model deployed on your Azure subscription.",
   },

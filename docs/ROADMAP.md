@@ -48,6 +48,16 @@
 | **Client-Side Key Migration** — versioned localStorage schema with auto-migration | ✅ |
 | **AI Setup Guide** — step-by-step for Gemini (~30s) and Azure (~10-15 min) | ✅ |
 | **Pro Plan Teaser** — coming soon card in settings | ✅ |
+| **Respond to Feedback** — address warnings verbally with AI evaluation | ✅ |
+| **Re-evaluate Signal** — Lead Reviewer re-assesses after responses | ✅ |
+| **Follow-up Q&A** — answer AI-generated probing questions | ✅ |
+| **Share Design Link** — copy link to share design + review | ✅ |
+| **SEO + OG Image** — meta tags, OpenGraph, Twitter cards | ✅ |
+| **Welcome Email** — onboarding email for new users | ✅ |
+| **Premium Badges** — 👑 for premium/admin users in library + header | ✅ |
+| **Collapse/Expand All** — toggle all review sections at once | ✅ |
+| **Login Rate Limiting** — 5 attempts per 15 min per email | ✅ |
+| **AI Disclaimer** — "AI-generated · Use your own judgment" | ✅ |
 
 ---
 
