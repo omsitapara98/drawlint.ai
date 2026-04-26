@@ -474,6 +474,25 @@ export default function GuidePage() {
 
         <Divider />
 
+        {/* Example */}
+        <section>
+          <div className="rounded-xl border border-border p-6 text-center">
+            <p className="text-lg font-semibold text-foreground mb-2">📋 See a Real Example</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              View a completed system design with full AI review, responses, and re-evaluation.
+            </p>
+            <Link
+              href="/canvas?view=69e9f217a0b69e6c9446a7ea"
+              className="inline-flex items-center rounded-lg border border-violet-500/30 bg-violet-500/5 px-5 h-10 text-sm font-medium text-violet-400 transition-all hover:bg-violet-500/10 hover:border-violet-500/50"
+            >
+              View Example Design
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </div>
+        </section>
+
+        <Divider />
+
         {/* CTA */}
         <section>
           <div className="relative overflow-hidden rounded-2xl border border-border dark:border-white/[0.08] bg-gradient-to-br from-violet-500/5 via-card to-cyan-500/3 dark:from-violet-500/10 dark:via-card dark:to-cyan-500/5 p-12 text-center">
