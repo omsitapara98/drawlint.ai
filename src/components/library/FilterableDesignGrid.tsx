@@ -73,6 +73,7 @@ interface EnrichedDesign {
   status: string;
   date: string;
   reviewedBy: string | null;
+  isPremium?: boolean;
 }
 
 const container = {
@@ -231,7 +232,10 @@ export function FilterableDesignGrid({ designs }: { designs: EnrichedDesign[] })
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{design.displayName}</p>
+                    <p className="truncate text-sm font-medium flex items-center gap-1">
+                      {design.displayName}
+                      {design.isPremium && <span title="Premium member" className="text-amber-500 text-xs">👑</span>}
+                    </p>
                     <p className="text-xs text-muted-foreground">{design.date}</p>
                   </div>
                 </div>

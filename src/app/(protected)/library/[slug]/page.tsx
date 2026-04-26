@@ -34,7 +34,7 @@ export default async function TopicDesignsPage({ params }: PageProps) {
       const [author, review] = await Promise.all([
         db.collection("users").findOne(
           { _id: new ObjectId(design.userId) },
-          { projection: { _id: 1, name: 1, image: 1 } },
+          { projection: { _id: 1, name: 1, image: 1, role: 1 } },
         ),
         getReviewByDesignId(design._id.toString()),
       ]);
@@ -98,6 +98,7 @@ export default async function TopicDesignsPage({ params }: PageProps) {
               reviewedBy: review?.reviewedBy ?? null,
               status: design.status,
               date: new Date(design.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+              isPremium: author?.role === "premium" || author?.role === "admin",
             }))}
           />
         )}
