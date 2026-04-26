@@ -168,16 +168,11 @@ export async function POST(
   }
 }
 
-/** GET — fetch all responses for a design's current review */
+/** GET — fetch all responses for a design's current review (public — peer library) */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ designId: string }> },
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { designId } = await params;
 
   // Get the review
@@ -186,14 +181,14 @@ export async function GET(
     return NextResponse.json({ responses: [] });
   }
 
-  // Only the owner can see responses
+  // Only show responses for non-draft designs
   let design;
   try {
     design = await getDesignById(designId);
   } catch {
     return NextResponse.json({ responses: [] });
   }
-  if (!design || design.userId.toString() !== session.user.id) {
+  if (!design || design.status === "draft") {
     return NextResponse.json({ responses: [] });
   }
 

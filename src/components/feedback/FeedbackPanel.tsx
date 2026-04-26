@@ -372,9 +372,9 @@ function AIReviewContent({
   const [responses, setResponses] = useState<Map<string, StoredResponse>>(new Map());
   const canRespond = !!isAuthor && !!designId && status === "complete";
 
-  // Load existing responses on mount
+  // Load existing responses on mount (visible to everyone)
   useEffect(() => {
-    if (!designId || !isAuthor) return;
+    if (!designId) return;
     fetch(`/api/designs/${designId}/respond`)
       .then((r) => r.ok ? r.json() : { responses: [] })
       .then((data: { responses: StoredResponse[] }) => {
@@ -385,7 +385,7 @@ function AIReviewContent({
         setResponses(map);
       })
       .catch(() => {});
-  }, [designId, isAuthor]);
+  }, [designId]);
 
   // Handle submitting a response
   const handleRespond = useCallback(async (section: string, issueIndex: number, text: string): Promise<StoredResponse | null> => {
