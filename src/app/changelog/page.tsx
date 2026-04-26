@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 const CHANGELOG = [
   {
-    date: "April 26, 2026",
+    date: "April 2026",
     tag: "Launch",
     items: [
       {
