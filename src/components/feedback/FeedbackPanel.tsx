@@ -261,8 +261,8 @@ function IssueRow({
             </div>
           )}
 
-          {/* Respond button / input */}
-          {canRespond && !showInput && (
+          {/* Respond button / input — not for resolved issues or critical severity */}
+          {canRespond && !showInput && issue.severity !== "critical" && verdict?.verdict !== "resolved" && (
             <button
               onClick={() => setShowInput(true)}
               className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
@@ -270,6 +270,13 @@ function IssueRow({
               <MessageSquare className="h-3 w-3" />
               {verdict ? "Respond again" : "Respond"}
             </button>
+          )}
+
+          {/* Critical issues — show fix-in-design hint instead */}
+          {canRespond && issue.severity === "critical" && !verdict && (
+            <p className="mt-2 text-[10px] text-muted-foreground italic">
+              ⚠️ Critical issues should be fixed in the design, not addressed verbally.
+            </p>
           )}
 
           {showInput && (

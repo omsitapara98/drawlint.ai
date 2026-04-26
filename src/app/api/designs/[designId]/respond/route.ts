@@ -91,6 +91,14 @@ export async function POST(
   // Get the original issue
   const originalIssue = dimension.issues[body.issueIndex] as FeedbackItem;
 
+  // Block responses to critical issues — those should be fixed in the design
+  if (originalIssue.severity === "critical") {
+    return NextResponse.json(
+      { error: "Critical issues should be addressed by updating your design, not via verbal response." },
+      { status: 400 },
+    );
+  }
+
   // Resolve AI provider (same as analyze routes)
   const userSettings = await getUserAiSettings(session.user.id);
   const providerResult = resolveAnalysisProvider(userSettings, body);
