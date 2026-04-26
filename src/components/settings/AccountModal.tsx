@@ -25,6 +25,7 @@ interface AccountInfo {
   name: string;
   email: string;
   hasPassword: boolean;
+  emailVerified: boolean;
   providers: string[];
   createdAt: string;
 }
@@ -132,8 +133,15 @@ export default function AccountModal({ open, onOpenChange }: AccountModalProps) 
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-violet-400">
                 <User className="h-4 w-4" />
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{info.name || "—"}</p>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium truncate">{info.name || "—"}</p>
+                  {!info.emailVerified && (
+                    <span className="shrink-0 rounded-full bg-amber-500/15 text-amber-400 px-2 py-0.5 text-[0.55rem] font-bold">
+                      Pending Verification
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground truncate">{info.email}</p>
               </div>
             </div>

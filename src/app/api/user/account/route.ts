@@ -18,7 +18,7 @@ export async function GET() {
 
     const user = await db.collection("users").findOne(
       { _id: new ObjectId(userId) },
-      { projection: { name: 1, email: 1, hashedPassword: 1, createdAt: 1 } },
+      { projection: { name: 1, email: 1, hashedPassword: 1, emailVerified: 1, createdAt: 1 } },
     );
 
     if (!user) {
@@ -32,11 +32,14 @@ export async function GET() {
     ).toArray();
 
     const providers = accounts.map((a) => a.provider as string);
+    // OAuth-only users (no password) are implicitly verified
+    const emailVerified = !user.hashedPassword || !!user.emailVerified;
 
     return NextResponse.json({
       name: user.name,
       email: user.email,
       hasPassword: !!user.hashedPassword,
+      emailVerified,
       providers,
       createdAt: user.createdAt,
     });
