@@ -94,6 +94,17 @@ export default function AboutPage() {
           </section>
 
           <section>
+            <h2 className="text-lg font-semibold text-foreground mb-3">👤 Built By</h2>
+            <p>
+              DrawLint.ai is built and maintained by{" "}
+              <a href="https://omsitapara.com" target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:underline font-medium">
+                Om Sitapara
+              </a>
+              {" "}— a software engineer passionate about making system design practice more accessible.
+            </p>
+          </section>
+
+          <section>
             <h2 className="text-lg font-semibold text-foreground mb-3">📬 Contact</h2>
             <p>
               Questions, feedback, or feature requests? Reach out at{" "}
