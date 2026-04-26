@@ -7,13 +7,14 @@ import { useTheme } from "next-themes";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { SignInButton, UserMenu } from "@/components/auth";
-import { SettingsModal } from "@/components/settings";
+import { SettingsModal, AccountModal } from "@/components/settings";
 import { Moon, Sun } from "lucide-react";
 
 export default function Header() {
   const { theme, setTheme } = useTheme();
   const { data: session, status } = useSession();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -83,11 +84,12 @@ export default function Header() {
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
           </motion.button>
           {status !== "loading" && (
-            session ? <UserMenu session={session} onOpenSettings={() => setSettingsOpen(true)} /> : <SignInButton />
+            session ? <UserMenu session={session} onOpenSettings={() => setSettingsOpen(true)} onOpenAccount={() => setAccountOpen(true)} /> : <SignInButton />
           )}
         </div>
       </header>
       <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <AccountModal open={accountOpen} onOpenChange={setAccountOpen} />
     </>
   );
 }

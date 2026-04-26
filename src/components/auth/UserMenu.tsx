@@ -4,15 +4,16 @@ import { useState, useRef, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, User } from "lucide-react";
 import type { Session } from "next-auth";
 
 interface UserMenuProps {
   session: Session;
   onOpenSettings?: () => void;
+  onOpenAccount?: () => void;
 }
 
-export default function UserMenu({ session, onOpenSettings }: UserMenuProps) {
+export default function UserMenu({ session, onOpenSettings, onOpenAccount }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -87,7 +88,18 @@ export default function UserMenu({ session, onOpenSettings }: UserMenuProps) {
                 onClick={() => { onOpenSettings(); setOpen(false); }}
               >
                 <Settings className="h-3.5 w-3.5" />
-                API Settings
+                AI Settings
+              </Button>
+            )}
+            {onOpenAccount && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2 text-xs"
+                onClick={() => { onOpenAccount(); setOpen(false); }}
+              >
+                <User className="h-3.5 w-3.5" />
+                Account
               </Button>
             )}
             <Button

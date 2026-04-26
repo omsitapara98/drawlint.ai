@@ -22,8 +22,6 @@ import {
   ChevronDown,
   ChevronRight,
   AlertCircle,
-  User,
-  Trash2,
 } from "lucide-react";
 import {
   getAIConfig,
@@ -48,20 +46,7 @@ interface SettingsModalProps {
 
 type TestStatus = "idle" | "testing" | "success" | "error";
 
-type SettingsTab = "ai" | "account";
-
-interface AccountInfo {
-  name: string;
-  email: string;
-  hasPassword: boolean;
-  providers: string[];
-  createdAt: string;
-}
-
 export default function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
-  // Tab
-  const [activeTab, setActiveTab] = useState<SettingsTab>("ai");
-
   // Gemini refs
   const geminiKeyRef = useRef<HTMLInputElement>(null);
   // Azure refs
@@ -84,17 +69,6 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
   const [testStatus, setTestStatus] = useState<TestStatus>("idle");
   const [testMessage, setTestMessage] = useState<string>("");
   const [keyModified, setKeyModified] = useState(false);
-
-  // Account state
-  const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
-  const [accountLoading, setAccountLoading] = useState(false);
-  const [changePwCurrent, setChangePwCurrent] = useState("");
-  const [changePwNew, setChangePwNew] = useState("");
-  const [changePwConfirm, setChangePwConfirm] = useState("");
-  const [changePwStatus, setChangePwStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [changePwMessage, setChangePwMessage] = useState("");
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -155,82 +129,6 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
       }
     }
   }, [selectedMode]);
-
-  // Load account info when switching to account tab
-  useEffect(() => {
-    if (!open || activeTab !== "account" || accountInfo) return;
-    setAccountLoading(true);
-    fetch("/api/user/account")
-      .then((r) => r.json())
-      .then((data) => setAccountInfo(data))
-      .catch(() => {})
-      .finally(() => setAccountLoading(false));
-  }, [open, activeTab, accountInfo]);
-
-  // Reset account state on close
-  useEffect(() => {
-    if (!open) {
-      setActiveTab("ai");
-      setAccountInfo(null);
-      setChangePwCurrent("");
-      setChangePwNew("");
-      setChangePwConfirm("");
-      setChangePwStatus("idle");
-      setChangePwMessage("");
-      setDeleteConfirm(false);
-    }
-  }, [open]);
-
-  async function handleChangePassword() {
-    if (changePwNew.length < 8) {
-      setChangePwStatus("error");
-      setChangePwMessage("New password must be at least 8 characters");
-      return;
-    }
-    if (changePwNew !== changePwConfirm) {
-      setChangePwStatus("error");
-      setChangePwMessage("Passwords do not match");
-      return;
-    }
-    setChangePwStatus("loading");
-    try {
-      const res = await fetch("/api/user/change-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword: changePwCurrent, newPassword: changePwNew }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setChangePwStatus("error");
-        setChangePwMessage(data.error);
-      } else {
-        setChangePwStatus("success");
-        setChangePwMessage("Password changed successfully!");
-        setChangePwCurrent("");
-        setChangePwNew("");
-        setChangePwConfirm("");
-      }
-    } catch {
-      setChangePwStatus("error");
-      setChangePwMessage("Something went wrong");
-    }
-  }
-
-  async function handleDeleteAccount() {
-    setDeleting(true);
-    try {
-      const res = await fetch("/api/user/account", { method: "DELETE" });
-      if (res.ok) {
-        window.location.href = "/";
-      } else {
-        setError("Failed to delete account");
-        setDeleting(false);
-      }
-    } catch {
-      setError("Something went wrong");
-      setDeleting(false);
-    }
-  }
 
   const handleTestConnection= useCallback(async () => {
     setTestStatus("testing");
@@ -374,182 +272,13 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
         </DialogHeader>
 
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle>AI Review Settings</DialogTitle>
           <DialogDescription>
-            Manage your AI review settings and account.
+            Choose how DrawLint runs AI reviews for your designs.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Tabs */}
-        <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
-          <button
-            onClick={() => setActiveTab("ai")}
-            className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-              activeTab === "ai" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Sparkles className="inline h-3.5 w-3.5 mr-1.5 -mt-0.5" />
-            AI Provider
-          </button>
-          <button
-            onClick={() => setActiveTab("account")}
-            className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-              activeTab === "account" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <User className="inline h-3.5 w-3.5 mr-1.5 -mt-0.5" />
-            Account
-          </button>
-        </div>
-
-        {activeTab === "account" && (
-          /* ── Account Tab ─────────────────────────────────────── */
-          <div className="flex flex-col gap-4">
-            {accountLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : accountInfo ? (
-              <>
-                {/* Profile */}
-                <div className="rounded-lg border border-border p-4 space-y-2">
-                  <h3 className="text-sm font-semibold flex items-center gap-2">
-                    <User className="h-4 w-4 text-violet-400" /> Profile
-                  </h3>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-muted-foreground">Name</span>
-                      <p className="font-medium">{accountInfo.name || "—"}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Email</span>
-                      <p className="font-medium">{accountInfo.email}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Connected Accounts */}
-                <div className="rounded-lg border border-border p-4 space-y-3">
-                  <h3 className="text-sm font-semibold flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-violet-400" /> Connected Accounts
-                  </h3>
-                  <div className="space-y-2">
-                    {accountInfo.hasPassword && (
-                      <div className="flex items-center justify-between rounded-md bg-muted/30 px-3 py-2">
-                        <div className="flex items-center gap-2 text-xs">
-                          <span>✉️</span>
-                          <span className="font-medium">Email / Password</span>
-                        </div>
-                        <span className="text-[0.65rem] text-emerald-500 font-medium">Connected</span>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between rounded-md bg-muted/30 px-3 py-2">
-                      <div className="flex items-center gap-2 text-xs">
-                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-                          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                        </svg>
-                        <span className="font-medium">Google</span>
-                      </div>
-                      <span className={`text-[0.65rem] font-medium ${accountInfo.providers.includes("google") ? "text-emerald-500" : "text-muted-foreground/50"}`}>
-                        {accountInfo.providers.includes("google") ? "Connected" : "Not connected"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-md bg-muted/30 px-3 py-2">
-                      <div className="flex items-center gap-2 text-xs">
-                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-                        </svg>
-                        <span className="font-medium">GitHub</span>
-                      </div>
-                      <span className={`text-[0.65rem] font-medium ${accountInfo.providers.includes("github") ? "text-emerald-500" : "text-muted-foreground/50"}`}>
-                        {accountInfo.providers.includes("github") ? "Connected" : "Not connected"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Change Password (only for email/password users) */}
-                {accountInfo.hasPassword && (
-                  <div className="rounded-lg border border-border p-4 space-y-3">
-                    <h3 className="text-sm font-semibold flex items-center gap-2">
-                      <Key className="h-4 w-4 text-violet-400" /> Change Password
-                    </h3>
-                    <div className="space-y-2">
-                      <input
-                        type="password"
-                        placeholder="Current password"
-                        value={changePwCurrent}
-                        onChange={(e) => setChangePwCurrent(e.target.value)}
-                        className={inputClass}
-                      />
-                      <input
-                        type="password"
-                        placeholder="New password (min 8 chars)"
-                        value={changePwNew}
-                        onChange={(e) => setChangePwNew(e.target.value)}
-                        className={inputClass}
-                      />
-                      <input
-                        type="password"
-                        placeholder="Confirm new password"
-                        value={changePwConfirm}
-                        onChange={(e) => setChangePwConfirm(e.target.value)}
-                        className={inputClass}
-                      />
-                    </div>
-                    {changePwStatus === "success" && (
-                      <p className="text-xs text-emerald-500 flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> {changePwMessage}</p>
-                    )}
-                    {changePwStatus === "error" && (
-                      <p className="text-xs text-red-500 flex items-center gap-1"><AlertCircle className="h-3.5 w-3.5" /> {changePwMessage}</p>
-                    )}
-                    <Button
-                      size="sm"
-                      onClick={handleChangePassword}
-                      disabled={changePwStatus === "loading" || !changePwCurrent || !changePwNew}
-                    >
-                      {changePwStatus === "loading" ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
-                      Update Password
-                    </Button>
-                  </div>
-                )}
-
-                {/* Delete Account */}
-                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 space-y-3">
-                  <h3 className="text-sm font-semibold flex items-center gap-2 text-red-400">
-                    <Trash2 className="h-4 w-4" /> Delete Account
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Permanently delete your account, designs, reviews, and all associated data. This action cannot be undone.
-                  </p>
-                  {!deleteConfirm ? (
-                    <Button variant="outline" size="sm" className="border-red-500/30 text-red-400 hover:bg-red-500/10" onClick={() => setDeleteConfirm(true)}>
-                      Delete My Account
-                    </Button>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Button variant="destructive" size="sm" onClick={handleDeleteAccount} disabled={deleting}>
-                        {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
-                        Yes, Delete Everything
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => setDeleteConfirm(false)}>
-                        Cancel
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">Failed to load account info.</p>
-            )}
-          </div>
-        )}
-
-        {activeTab === "ai" && (
-          loading ? (
+        {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
@@ -864,7 +593,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
             })()}
           </DialogFooter>
           </>
-        ))}
+        )}
       </DialogContent>
     </Dialog>
   );
