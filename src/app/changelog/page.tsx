@@ -8,9 +8,19 @@ export const metadata: Metadata = {
 
 const CHANGELOG = [
   {
-    date: "April 2026",
-    tag: "Latest",
+    date: "April 26, 2026",
+    tag: "Launch",
     items: [
+      {
+        title: "Core Platform",
+        description: "Excalidraw-based canvas, 6 AI reviewers (NFR, Entities, Capacity, API, HLD + Lead Reviewer), peer library, draft save, share links, and authentication (email, Google, GitHub).",
+        badge: "Launch" as const,
+      },
+      {
+        title: "BYO AI Provider Support",
+        description: "Connect your own Gemini (free) or Azure OpenAI key for unlimited reviews. Three options: DrawLint AI (managed), Gemini AI (free), Azure OpenAI (advanced).",
+        badge: "Major" as const,
+      },
       {
         title: "Respond to AI Feedback",
         description: "Defend your design choices inline — explain why you picked a certain database, queue, or caching strategy. The AI evaluates your response and gives a verdict.",
@@ -20,42 +30,6 @@ const CHANGELOG = [
         title: "Signal Re-Evaluation",
         description: "After responding, request a re-evaluation. The Lead Reviewer reconsiders your hire signal based on your responses — just like a real interview debrief.",
         badge: "New" as const,
-      },
-      {
-        title: "Privacy Policy & Terms of Service",
-        description: "Added legal pages, cookie consent banner, email compliance, and signup consent language.",
-        badge: null,
-      },
-      {
-        title: "SEO & Metadata",
-        description: "Added robots.txt, sitemap, PWA manifest, and page-specific titles and descriptions for better search visibility.",
-        badge: null,
-      },
-      {
-        title: "Collapse All / Expand All",
-        description: "Toggle all feedback sections at once in the review panel. Count badges show highlights, warnings, and resolved issues per section.",
-        badge: null,
-      },
-      {
-        title: "AI Disclaimer",
-        description: "Added \u2018AI-generated \u00b7 Use your own judgment\u2019 notice with warning icon on all review results.",
-        badge: null,
-      },
-      {
-        title: "Premium Badge",
-        description: "Pro subscribers get a \ud83d\udc51 badge on their submissions in the library and header.",
-        badge: null,
-      },
-    ],
-  },
-  {
-    date: "March 2026",
-    tag: null,
-    items: [
-      {
-        title: "BYO AI Provider Support",
-        description: "Connect your own Gemini (free) or Azure OpenAI key for unlimited reviews. Three options: DrawLint AI (managed), Gemini AI (free), Azure OpenAI (advanced).",
-        badge: "Major" as const,
       },
       {
         title: "Multi-Provider Architecture",
@@ -68,8 +42,8 @@ const CHANGELOG = [
         badge: null,
       },
       {
-        title: "Landing Page Revamp",
-        description: "Animated AI Review Pipeline, count-up stats, particle background CTA, and enhanced feature cards with hover effects.",
+        title: "Landing Page & Animations",
+        description: "Animated AI Review Pipeline with respond step, count-up stats, particle background CTA, and enhanced feature cards with hover effects.",
         badge: null,
       },
       {
@@ -82,25 +56,39 @@ const CHANGELOG = [
         description: "Filter designs by level, signal, provider, and sort by date or topic.",
         badge: null,
       },
-    ],
-  },
-  {
-    date: "February 2026",
-    tag: null,
-    items: [
       {
-        title: "Core Platform Launch",
-        description: "Excalidraw-based canvas, 6 AI reviewers (NFR, Entities, Capacity, API, HLD + Lead Reviewer), peer library, draft save, and share links.",
-        badge: "Launch" as const,
-      },
-      {
-        title: "Authentication",
-        description: "Email/password signup with verification, Google OAuth, GitHub OAuth. Session management with NextAuth.js.",
+        title: "Collapse All / Expand All",
+        description: "Toggle all feedback sections at once in the review panel. Count badges show highlights, warnings, and resolved issues per section.",
         badge: null,
       },
       {
         title: "Graph Parser",
-        description: "Intelligent diagram analysis \u2014 extracts components, connections, annotations, and clusters from Excalidraw elements.",
+        description: "Intelligent diagram analysis — extracts components, connections, annotations, and clusters from Excalidraw elements. Connection-based annotation linking.",
+        badge: null,
+      },
+      {
+        title: "AI Disclaimer",
+        description: "Added \u2018AI-generated \u00b7 Use your own judgment\u2019 notice with warning icon on all review results.",
+        badge: null,
+      },
+      {
+        title: "Premium Badge",
+        description: "Pro subscribers get a \ud83d\udc51 badge on their submissions in the library and header.",
+        badge: null,
+      },
+      {
+        title: "Privacy, Terms & Compliance",
+        description: "Privacy Policy, Terms of Service, cookie consent banner, email compliance, signup consent text, and legal footer links.",
+        badge: null,
+      },
+      {
+        title: "SEO & Metadata",
+        description: "robots.txt, sitemap, PWA manifest, JSON-LD structured data, and page-specific titles and descriptions.",
+        badge: null,
+      },
+      {
+        title: "About & Changelog Pages",
+        description: "About page with mission, tech stack, and contact info. Changelog page with full feature timeline.",
         badge: null,
       },
     ],
