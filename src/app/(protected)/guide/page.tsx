@@ -235,15 +235,15 @@ function ComponentsPreview() {
 /** Data flow preview */
 function DataFlowPreview() {
   return (
-    <CanvasPreview height={240}>
-      <AnimBox x={30} y={95} w={120} h={45} label="Client" delay={0.1} color="cyan" />
-      <AnimBox x={230} y={95} w={120} h={45} label="API Server" delay={0.2} color="violet" />
-      <AnimBox x={430} y={25} w={120} h={45} label="Redis Cache" delay={0.3} color="red" />
-      <AnimBox x={430} y={165} w={120} h={45} label="PostgreSQL" delay={0.4} color="emerald" />
-      <AnimArrow x1={150} y1={117} x2={230} y2={117} delay={0.5} label="1. REST API" />
-      <AnimArrow x1={350} y1={100} x2={430} y2={50} delay={0.7} label="2. Cache check" />
-      <AnimArrow x1={350} y1={135} x2={430} y2={185} delay={0.9} label="3. Query DB" />
-      <AnimArrow x1={430} y1={60} x2={350} y2={105} delay={1.1} label="4. Return" />
+    <CanvasPreview height={280}>
+      <AnimBox x={30} y={115} w={120} h={45} label="Client" delay={0.1} color="cyan" />
+      <AnimBox x={230} y={115} w={120} h={45} label="API Server" delay={0.2} color="violet" />
+      <AnimBox x={440} y={15} w={120} h={45} label="Redis Cache" delay={0.3} color="red" />
+      <AnimBox x={440} y={210} w={120} h={45} label="PostgreSQL" delay={0.4} color="emerald" />
+      <AnimArrow x1={150} y1={137} x2={230} y2={137} delay={0.5} label="1. REST API" />
+      <AnimArrow x1={350} y1={120} x2={440} y2={42} delay={0.7} label="2. Cache check" />
+      <AnimArrow x1={350} y1={155} x2={440} y2={230} delay={0.9} label="3. Query DB" />
+      <AnimArrow x1={440} y1={55} x2={350} y2={125} delay={1.1} label="4. Return" />
     </CanvasPreview>
   );
 }
@@ -301,11 +301,11 @@ function ClustersPreview() {
 /** Writeup preview showing text sections */
 function WriteupPreview() {
   const lines = [
-    { label: "FR:", text: "Design a URL shortener that handles 100M URLs", delay: 0.1, color: "text-cyan-400" },
-    { label: "Assumptions:", text: "10K DAU, 100:1 read/write, 99.9% SLA", delay: 0.3, color: "text-violet-400" },
-    { label: "NFRs:", text: "p99 < 200ms, eventual consistency OK", delay: 0.5, color: "text-amber-400" },
-    { label: "Entities:", text: "URL { shortCode, originalUrl, userId, createdAt }", delay: 0.7, color: "text-emerald-400" },
-    { label: "Capacity:", text: "10K writes/day → 0.12 QPS write, 12 QPS read", delay: 0.9, color: "text-red-400" },
+    { label: "FR:", text: "Design a URL shortener that handles 100M URLs", delay: 0.1, color: "fill-cyan-400" },
+    { label: "Assumptions:", text: "10K DAU, 100:1 read/write, 99.9% SLA", delay: 0.3, color: "fill-violet-400" },
+    { label: "NFRs:", text: "p99 < 200ms, eventual consistency OK", delay: 0.5, color: "fill-amber-400" },
+    { label: "Entities:", text: "URL { shortCode, originalUrl, userId, createdAt }", delay: 0.7, color: "fill-emerald-400" },
+    { label: "Capacity:", text: "10K writes/day → 0.12 QPS write, 12 QPS read", delay: 0.9, color: "fill-red-400" },
   ];
 
   return (
