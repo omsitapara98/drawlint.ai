@@ -574,12 +574,14 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
             </Button>
           )}
           {(() => {
-            // Save requires test connection for BYO modes with new/modified keys
-            const needsTest = selectedMode !== "managed" && keyModified && testStatus !== "success";
+            // Save requires a valid key for BYO modes
+            const isByo = selectedMode !== "managed";
+            const hasKey = selectedMode === "gemini" ? hasGeminiKey : selectedMode === "azure" ? hasAzureKey : true;
+            const needsTest = isByo && (keyModified ? testStatus !== "success" : !hasKey);
             return (
               <Button onClick={handleSave} disabled={loading || saving || needsTest}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                {needsTest ? "Test Connection First" : "Save"}
+                {needsTest ? (hasKey ? "Test Connection First" : "Add & Test Key First") : "Save"}
               </Button>
             );
           })()}
