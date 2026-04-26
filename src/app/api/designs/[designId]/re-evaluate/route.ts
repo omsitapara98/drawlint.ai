@@ -83,9 +83,11 @@ export async function POST(
     }
   }
 
-  const responses = await getResponsesByReviewId(review._id.toString());
+  const allResponses = await getResponsesByReviewId(review._id.toString());
+  // Only count design review responses, not follow-up questions
+  const responses = allResponses.filter((r) => r.section !== "followUpQuestions");
   if (responses.length === 0) {
-    return NextResponse.json({ error: "No responses to evaluate." }, { status: 400 });
+    return NextResponse.json({ error: "No review responses to evaluate." }, { status: 400 });
   }
 
   const resolvedCount = responses.filter((r) => r.verdict === "resolved").length;

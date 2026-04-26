@@ -211,6 +211,7 @@ function IssueRow({
   canRespond,
   existingResponse,
   onRespond,
+  hideServerityBadge,
 }: {
   issue: FeedbackItem;
   section: string;
@@ -218,6 +219,7 @@ function IssueRow({
   canRespond: boolean;
   existingResponse?: StoredResponse;
   onRespond?: (section: string, issueIndex: number, text: string) => Promise<StoredResponse | null>;
+  hideServerityBadge?: boolean;
 }) {
   const [showInput, setShowInput] = useState(false);
   const [text, setText] = useState(existingResponse?.userResponse ?? "");
@@ -241,9 +243,11 @@ function IssueRow({
   return (
     <div className={`rounded-lg border p-3 ${verdict?.verdict === "resolved" ? "border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20" : SEVERITY_STYLES[issue.severity] ?? ""}`}>
       <div className="flex items-start gap-2">
-        <Badge className={`text-[10px] px-1.5 py-0 shrink-0 ${verdict?.verdict === "resolved" ? "bg-emerald-500 text-white" : SEVERITY_BADGE[issue.severity] ?? ""}`}>
-          {verdict?.verdict === "resolved" ? "resolved" : (SEVERITY_LABEL[issue.severity] ?? issue.severity)}
-        </Badge>
+        {!hideServerityBadge && (
+          <Badge className={`text-[10px] px-1.5 py-0 shrink-0 ${verdict?.verdict === "resolved" ? "bg-emerald-500 text-white" : SEVERITY_BADGE[issue.severity] ?? ""}`}>
+            {verdict?.verdict === "resolved" ? "resolved" : (SEVERITY_LABEL[issue.severity] ?? issue.severity)}
+          </Badge>
+        )}
         <div className="min-w-0 flex-1">
           <p className={`text-sm font-medium ${verdict?.verdict === "resolved" ? "line-through opacity-60" : ""}`}>{issue.title}</p>
           <p className="mt-1 text-xs opacity-80">{issue.description}</p>
@@ -482,8 +486,8 @@ function AIReviewContent({
       .catch(() => {});
   }, [designId]);
 
-  const resolvedCount = [...responses.values()].filter((r) => r.verdict === "resolved").length;
-  const partialCount = [...responses.values()].filter((r) => r.verdict === "partially-addressed").length;
+  const resolvedCount = [...responses.values()].filter((r) => r.verdict === "resolved" && r.section !== "followUpQuestions").length;
+  const partialCount = [...responses.values()].filter((r) => r.verdict === "partially-addressed" && r.section !== "followUpQuestions").length;
   const canReEval = canRespond && (resolvedCount + partialCount) >= 1;
 
   const handleReEvaluate = useCallback(async () => {
@@ -755,12 +759,13 @@ function AIReviewContent({
                 {review.followUpQuestions.map((q, i) => (
                   <IssueRow
                     key={`fq-${i}`}
-                    issue={{ severity: "info", title: `Q${i + 1}`, description: q }}
+                    issue={{ severity: "question" as "info", title: `Q${i + 1}`, description: q }}
                     section="followUpQuestions"
                     issueIndex={i}
                     canRespond={canRespond}
                     existingResponse={responses.get(`followUpQuestions:${i}`)}
                     onRespond={handleRespond}
+                    hideServerityBadge
                   />
                 ))}
               </div>
