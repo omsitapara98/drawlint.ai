@@ -629,16 +629,13 @@ function CanvasPageInner() {
       const url = isUpdate ? `/api/designs/${targetId}` : "/api/designs";
       const method = isUpdate ? "PUT" : "POST";
 
-      // Read credentials from versioned AI config
+      // Only send credentials if user's aiMode is NOT managed
       let byoCreds: { apiKey?: string; endpoint?: string; deployment?: string } = {};
-      try {
-        const config = getAIConfig();
-        // Determine provider from what's available
-        let provider: "managed" | "gemini" | "azure" = "managed";
-        if (config.gemini?.apiKey) provider = "gemini";
-        if (config.azure?.apiKey) provider = "azure";
-        byoCreds = getCredentialsForRequest(provider);
-      } catch { /* noop */ }
+      if (aiMode && aiMode !== "managed") {
+        try {
+          byoCreds = getCredentialsForRequest(aiMode as "gemini" | "azure");
+        } catch { /* noop */ }
+      }
 
       const res = await fetch(url, {
         method,

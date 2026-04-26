@@ -45,22 +45,24 @@ export default function SubmitDialog({
     setStep("uploading");
     setError(null);
 
-    // Read credentials from versioned AI config
+    // Credentials are only needed for BYO modes — server reads aiMode from DB
+    // and ignores credentials when mode is managed
     let apiKey: string | undefined;
     let endpoint: string | undefined;
     let deployment: string | undefined;
     try {
       const { getCredentialsForRequest, getAIConfig } = await import("@/lib/storage/ai-config");
-      // Determine active provider from settings event or default
       const config = getAIConfig();
-      // Try to get mode from server settings; fallback to checking which credentials exist
-      let provider: "managed" | "gemini" | "azure" = "managed";
-      if (config.gemini?.apiKey) provider = "gemini";
-      if (config.azure?.apiKey) provider = "azure";
-      const creds = getCredentialsForRequest(provider);
-      apiKey = creds.apiKey;
-      endpoint = creds.endpoint;
-      deployment = creds.deployment;
+      // Only send credentials if user has BYO keys configured
+      if (config.gemini?.apiKey) {
+        const creds = getCredentialsForRequest("gemini");
+        apiKey = creds.apiKey;
+      } else if (config.azure?.apiKey) {
+        const creds = getCredentialsForRequest("azure");
+        apiKey = creds.apiKey;
+        endpoint = creds.endpoint;
+        deployment = creds.deployment;
+      }
     } catch { /* noop */ }
 
     try {
