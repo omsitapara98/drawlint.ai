@@ -20,10 +20,55 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
 });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://drawlint-ai.azurewebsites.net";
+
 export const metadata: Metadata = {
   title: "DrawLint.ai — AI-Powered System Design Review",
   description:
-    "Draw system design diagrams and get instant AI feedback on architecture, scalability, and best practices.",
+    "Draw system design diagrams and get instant AI feedback from 6 specialized reviewers. Practice for system design interviews with real-time architecture analysis.",
+  metadataBase: new URL(APP_URL),
+  keywords: [
+    "system design",
+    "architecture review",
+    "AI review",
+    "system design interview",
+    "whiteboard",
+    "excalidraw",
+    "design review",
+    "scalability",
+    "HLD",
+    "low level design",
+  ],
+  authors: [{ name: "DrawLint.ai" }],
+  creator: "DrawLint.ai",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: APP_URL,
+    siteName: "DrawLint.ai",
+    title: "DrawLint.ai — AI-Powered System Design Review",
+    description:
+      "Draw your architecture, get instant review from 6 AI reviewers. Practice system design interviews with real-time feedback.",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "DrawLint.ai — AI-Powered System Design Review",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DrawLint.ai — AI-Powered System Design Review",
+    description:
+      "Draw your architecture, get instant review from 6 AI reviewers. Free to start.",
+    images: ["/opengraph-image"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

@@ -83,6 +83,14 @@ export async function POST(request: Request) {
       emailSent = false;
     }
 
+    // Send welcome email (non-fatal)
+    try {
+      const { sendWelcomeEmail } = await import("@/lib/email/welcome");
+      await sendWelcomeEmail(email.toLowerCase(), name.trim());
+    } catch (err) {
+      console.error("Welcome email failed to send:", err);
+    }
+
     return NextResponse.json(
       { message: "Account created", emailSent },
       { status: 201 },
