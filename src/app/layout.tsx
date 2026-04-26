@@ -83,6 +83,27 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              name: "DrawLint.ai",
+              url: APP_URL,
+              description: "AI-powered system design review platform. Draw architecture diagrams and get instant feedback from 6 specialized AI reviewers.",
+              applicationCategory: "DeveloperApplication",
+              operatingSystem: "Web",
+              offers: {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "USD",
+              },
+            }),
+          }}
+        />
+      </head>
       <body className="h-full" suppressHydrationWarning>
         <SessionProvider>
           <ThemeProvider attribute="class" defaultTheme="dark" storageKey="drawlint-theme" enableSystem={false} disableTransitionOnChange>

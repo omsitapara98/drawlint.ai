@@ -601,6 +601,10 @@ export default function LandingPage() {
           </a>
         </div>
         <div className="mt-3 flex items-center justify-center gap-3 text-xs text-muted-foreground/60">
+          <Link href="/about" className="hover:text-muted-foreground transition-colors">About</Link>
+          <span>·</span>
+          <Link href="/changelog" className="hover:text-muted-foreground transition-colors">Changelog</Link>
+          <span>·</span>
           <Link href="/privacy" className="hover:text-muted-foreground transition-colors">Privacy Policy</Link>
           <span>·</span>
           <Link href="/terms" className="hover:text-muted-foreground transition-colors">Terms of Service</Link>

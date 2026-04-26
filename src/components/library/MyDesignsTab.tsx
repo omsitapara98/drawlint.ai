@@ -117,6 +117,7 @@ export function MyDesignsTab() {
       <div className="flex flex-col items-center gap-3 py-20 text-center">
         <FileEdit className="h-10 w-10 text-muted-foreground/30" />
         <p className="text-sm text-muted-foreground">No designs yet</p>
+        <p className="text-xs text-muted-foreground/60 max-w-xs">Head to the canvas, draw your system architecture, and submit for AI review.</p>
         <Link
           href="/canvas"
           className="text-sm font-medium text-violet-500 hover:underline"

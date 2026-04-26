@@ -49,6 +49,7 @@ export function LibraryTabs({ topics }: { topics: Topic[] }) {
           <div className="flex flex-col items-center gap-4 py-20 text-center">
             <BookOpen className="h-12 w-12 text-muted-foreground/40" />
             <p className="text-sm text-muted-foreground">No topics yet</p>
+            <p className="text-xs text-muted-foreground/60 max-w-xs">Be the first to submit a design review and start building the community library.</p>
             <Link
               href="/canvas"
               className="inline-flex items-center rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-6 h-9 text-sm font-medium text-white shadow-lg shadow-violet-500/25 hover:shadow-[0_0_24px_oklch(0.72_0.25_285_/_35%)] transition-all hover:-translate-y-0.5"
