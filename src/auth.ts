@@ -94,10 +94,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   events: {
     async createUser({ user }) {
       // Send welcome email to new OAuth users (non-fatal)
-      if (user.email && user.name) {
+      if (user.email) {
         try {
           const { sendWelcomeEmail } = await import("@/lib/email/welcome");
-          await sendWelcomeEmail(user.email, user.name);
+          await sendWelcomeEmail(user.email, user.name ?? "there");
         } catch (err) {
           console.error("Welcome email failed for OAuth user:", err);
         }
