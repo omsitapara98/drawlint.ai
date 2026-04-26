@@ -134,16 +134,14 @@ export default function AccountModal({ open, onOpenChange }: AccountModalProps) 
                 <User className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium truncate">{info.name || "—"}</p>
-                  {!info.emailVerified && (
-                    <span className="shrink-0 rounded-full bg-amber-500/15 text-amber-400 px-2 py-0.5 text-[0.55rem] font-bold">
-                      Pending Verification
-                    </span>
-                  )}
-                </div>
+                <p className="text-sm font-medium truncate">{info.name || "—"}</p>
                 <p className="text-xs text-muted-foreground truncate">{info.email}</p>
               </div>
+              {!info.emailVerified && (
+                <span className="shrink-0 rounded-full bg-amber-500/15 text-amber-400 px-2 py-0.5 text-[0.55rem] font-bold">
+                  Pending Verification
+                </span>
+              )}
             </div>
 
             {/* Connected accounts */}
