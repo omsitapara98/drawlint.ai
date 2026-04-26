@@ -1348,7 +1348,10 @@ function CanvasPageInner() {
                       <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-xs font-bold">
                         AI
                       </div>
-                      <span className="text-sm font-semibold">Design Review</span>
+                      <div>
+                        <span className="text-sm font-semibold">Design Review</span>
+                        <p className="text-[9px] text-muted-foreground leading-tight">AI-generated · Use your own judgment</p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-1">
 
