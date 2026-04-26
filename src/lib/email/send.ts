@@ -39,7 +39,7 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
       <h1 style="margin: 0; font-size: 22px; font-weight: 700; color: #fff;">DrawLint<span style="background: linear-gradient(90deg, #a78bfa, #67e8f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">.ai</span></h1>
     </div>
     <h2 style="margin: 0 0 8px; font-size: 20px; color: #fff;">Verify your email</h2>
-    <p style="margin: 0 0 28px; color: #999; font-size: 15px; line-height: 1.6;">Click the button below to verify your email address and unlock DrawLint AI reviews.</p>
+    <p style="margin: 0 0 28px; color: #999; font-size: 15px; line-height: 1.6;">Click the button below to verify your email address and unlock DrawLint.ai reviews.</p>
     <a href="${verifyUrl}" style="display: block; text-align: center; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; text-decoration: none; padding: 14px 24px; border-radius: 10px; font-size: 15px; font-weight: 600; margin-bottom: 24px;">Verify Email Address</a>
     <p style="margin: 0 0 8px; color: #666; font-size: 13px;">This link expires in 24 hours. If you didn't create a DrawLint.ai account, you can safely ignore this email.</p>
     <hr style="border: none; border-top: 1px solid #222; margin: 24px 0;">

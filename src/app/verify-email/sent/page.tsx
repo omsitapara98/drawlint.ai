@@ -57,7 +57,7 @@ function VerifyEmailSentContent() {
         <p className="text-white/60 text-sm mt-3 mb-6">
           We sent a verification link to{" "}
           <span className="text-purple-300 font-medium">{email}</span>.
-          Click the link in the email to activate DrawLint AI.
+          Click the link in the email to activate DrawLint.ai.
         </p>
 
         {resendState === "sent" && (
