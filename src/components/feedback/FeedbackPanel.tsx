@@ -167,28 +167,37 @@ function DimensionCard({
                   ✓ {dimension.highlights.length}
                 </span>
               )}
-              {dimension.issues.filter((i) => i.severity === "critical").length > 0 && (
-                <span className="inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 text-[9px] font-medium text-red-700 dark:text-red-300">
-                  {dimension.issues.filter((i) => i.severity === "critical").length} critical
-                </span>
-              )}
-              {dimension.issues.filter((i) => i.severity === "warning").length > 0 && (
-                <span className="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 text-[9px] font-medium text-amber-700 dark:text-amber-300">
-                  {dimension.issues.filter((i) => i.severity === "warning").length} warning
-                </span>
-              )}
-              {dimension.issues.filter((i) => i.severity === "info").length > 0 && (
-                <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-[9px] font-medium text-blue-700 dark:text-blue-300">
-                  {dimension.issues.filter((i) => i.severity === "info").length} info
-                </span>
-              )}
               {(() => {
-                const resolvedInSection = dimension.issues.filter((_: unknown, i: number) => responses.get(`${name}:${i}`)?.verdict === "resolved").length;
-                return resolvedInSection > 0 ? (
-                  <span className="inline-flex items-center rounded-full bg-violet-100 dark:bg-violet-900/30 px-1.5 py-0.5 text-[9px] font-medium text-violet-700 dark:text-violet-300">
-                    💬 {resolvedInSection} resolved
-                  </span>
-                ) : null;
+                // Exclude resolved issues from counts
+                const unresolvedIssues = dimension.issues.filter((_: unknown, i: number) => responses.get(`${name}:${i}`)?.verdict !== "resolved");
+                const resolvedCount = dimension.issues.length - unresolvedIssues.length;
+                const criticals = unresolvedIssues.filter((i) => i.severity === "critical").length;
+                const warnings = unresolvedIssues.filter((i) => i.severity === "warning").length;
+                const infos = unresolvedIssues.filter((i) => i.severity === "info").length;
+                return (
+                  <>
+                    {criticals > 0 && (
+                      <span className="inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 text-[9px] font-medium text-red-700 dark:text-red-300">
+                        {criticals} critical
+                      </span>
+                    )}
+                    {warnings > 0 && (
+                      <span className="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 text-[9px] font-medium text-amber-700 dark:text-amber-300">
+                        {warnings} warning
+                      </span>
+                    )}
+                    {infos > 0 && (
+                      <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-[9px] font-medium text-blue-700 dark:text-blue-300">
+                        {infos} info
+                      </span>
+                    )}
+                    {resolvedCount > 0 && (
+                      <span className="inline-flex items-center rounded-full bg-violet-100 dark:bg-violet-900/30 px-1.5 py-0.5 text-[9px] font-medium text-violet-700 dark:text-violet-300">
+                        💬 {resolvedCount} resolved
+                      </span>
+                    )}
+                  </>
+                );
               })()}
               {!hasContent && (
                 <span className="text-[9px] text-emerald-600 dark:text-emerald-400">All good ✅</span>
