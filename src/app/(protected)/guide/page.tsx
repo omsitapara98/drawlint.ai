@@ -243,7 +243,6 @@ function DataFlowPreview() {
       <AnimArrow x1={150} y1={137} x2={230} y2={137} delay={0.5} label="1. REST API" />
       <AnimArrow x1={350} y1={120} x2={440} y2={42} delay={0.7} label="2. Cache check" />
       <AnimArrow x1={350} y1={155} x2={440} y2={230} delay={0.9} label="3. Query DB" />
-      <AnimArrow x1={440} y1={55} x2={350} y2={125} delay={1.1} label="4. Return" />
     </CanvasPreview>
   );
 }
