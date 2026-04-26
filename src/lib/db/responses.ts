@@ -80,7 +80,6 @@ export async function getResponsesByReviewId(
   const col = await collection();
   return col
     .find({ reviewId: new ObjectId(reviewId) })
-    .sort({ section: 1, issueIndex: 1 })
     .toArray();
 }
 
