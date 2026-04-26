@@ -27,6 +27,8 @@ export default async function TopicDesignsPage({ params }: PageProps) {
   const client = await clientPromise;
   const db = client.db(DB_NAME);
 
+  const { getReEvalSignal } = await import("@/lib/db/responses");
+
   const enriched = await Promise.all(
     designs.map(async (design) => {
       const [author, review] = await Promise.all([
@@ -36,7 +38,9 @@ export default async function TopicDesignsPage({ params }: PageProps) {
         ),
         getReviewByDesignId(design._id.toString()),
       ]);
-      return { design, author, review };
+      // Check for re-evaluated signal
+      const reeval = review ? await getReEvalSignal(review._id.toString()) : null;
+      return { design, author, review, reeval };
     }),
   );
 
@@ -85,12 +89,12 @@ export default async function TopicDesignsPage({ params }: PageProps) {
           </div>
         ) : (
           <FilterableDesignGrid
-            designs={enriched.map(({ design, author, review }) => ({
+            designs={enriched.map(({ design, author, review, reeval }) => ({
               designId: design._id.toString(),
               displayName: design.anonymousName ?? String(author?.name ?? "Anonymous"),
               avatarUrl: !design.anonymousName && author?.image ? String(author.image) : null,
               reviewLevel: design.reviewLevel,
-              signal: review?.leadReviewer?.signal ?? null,
+              signal: reeval?.updatedSignal ?? review?.leadReviewer?.signal ?? null,
               reviewedBy: review?.reviewedBy ?? null,
               status: design.status,
               date: new Date(design.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
