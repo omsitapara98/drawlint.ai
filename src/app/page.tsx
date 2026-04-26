@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Zap, Shield, Star, ChevronDown, Brain, Layers, Target, Activity, Users, FileCheck } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Shield, Star, ChevronDown, Brain, Layers, Target, Activity, Users, FileCheck, MessageSquareReply, RefreshCw } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 import { Header } from "@/components/layout";
 import { ParticleBackground } from "@/components/ui/particle-background";
@@ -160,7 +160,9 @@ function AIPipelineAnimation() {
       intervals.push(setTimeout(() => setActiveStep(i), 400 * (i + 1)));
     });
     intervals.push(setTimeout(() => setActiveStep(5), 400 * 6)); // lead reviewer
-    intervals.push(setTimeout(() => setActiveStep(6), 400 * 7)); // complete
+    intervals.push(setTimeout(() => setActiveStep(6), 400 * 7)); // hire signal
+    intervals.push(setTimeout(() => setActiveStep(7), 400 * 8.5)); // respond
+    intervals.push(setTimeout(() => setActiveStep(8), 400 * 10)); // re-evaluate
     return () => intervals.forEach(clearTimeout);
   }, [inView]);
 
@@ -248,6 +250,69 @@ function AIPipelineAnimation() {
           )}
         </div>
       </motion.div>
+
+      {/* Arrow down to Respond */}
+      <div className="flex justify-center my-4">
+        <motion.div
+          animate={activeStep >= 7 ? { opacity: 1 } : { opacity: 0.15 }}
+          transition={{ duration: 0.3 }}
+        >
+          <ChevronDown className="h-5 w-5 text-sky-500" />
+        </motion.div>
+      </div>
+
+      {/* Respond + Re-Evaluate row */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Respond to Feedback */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.4, delay: 1.0 }}
+          className={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-all duration-500 ${
+            activeStep >= 7
+              ? "border-sky-500/50 bg-sky-500/5 shadow-[0_0_15px_oklch(0.72_0.2_220_/_15%)]"
+              : "border-border bg-card"
+          }`}
+        >
+          <MessageSquareReply className={`h-5 w-5 transition-colors duration-500 ${activeStep >= 7 ? "text-sky-500" : "text-muted-foreground/40"}`} />
+          <span className="text-xs font-semibold">Respond</span>
+          <span className="text-[0.55rem] text-muted-foreground text-center">Defend your choices</span>
+          {activeStep >= 7 && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="text-[0.55rem] text-sky-500 font-medium"
+            >
+              💬 3 responses
+            </motion.span>
+          )}
+        </motion.div>
+
+        {/* Re-Evaluate */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.4, delay: 1.1 }}
+          className={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-all duration-500 ${
+            activeStep >= 8
+              ? "border-amber-500/50 bg-amber-500/5 shadow-[0_0_15px_oklch(0.72_0.15_85_/_15%)]"
+              : "border-border bg-card"
+          }`}
+        >
+          <RefreshCw className={`h-5 w-5 transition-colors duration-500 ${activeStep >= 8 ? "text-amber-500" : "text-muted-foreground/40"}`} />
+          <span className="text-xs font-semibold">Re-Evaluate</span>
+          <span className="text-[0.55rem] text-muted-foreground text-center">AI updates verdict</span>
+          {activeStep >= 8 && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="inline-flex items-center rounded-full bg-emerald-500 px-2 py-0.5 text-[0.55rem] font-bold text-white"
+            >
+              Strong Hire ↑
+            </motion.span>
+          )}
+        </motion.div>
+      </div>
     </div>
   );
 }
@@ -433,7 +498,7 @@ export default function LandingPage() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="text-center text-muted-foreground mb-12 max-w-xl mx-auto"
         >
-          Watch five specialized reviewers analyze your design in parallel, then a Lead Reviewer synthesizes the final verdict.
+          Watch five specialized reviewers analyze your design in parallel, then defend your choices and get an updated verdict.
         </motion.p>
         <AIPipelineAnimation />
       </section>
