@@ -9,21 +9,7 @@ async function collection() {
   return client.db(DB_NAME).collection<IssueResponse>("responses");
 }
 
-/** Ensure unique index on (reviewId, section, issueIndex) — one response per issue. */
-async function ensureIndexes() {
-  const col = await collection();
-  await col.createIndex(
-    { reviewId: 1, section: 1, issueIndex: 1 },
-    { unique: true, background: true },
-  ).catch(() => {
-    // Index may already exist
-  });
-}
-
-// Run once on module load
-ensureIndexes().catch(console.error);
-
-/** Create or update a response for a specific issue. */
+/** Createor update a response for a specific issue. */
 export async function upsertResponse(input: {
   designId: string;
   reviewId: string;
@@ -39,38 +25,32 @@ export async function upsertResponse(input: {
   const col = await collection();
   const now = new Date();
 
-  const filter = {
+  // Delete existing response for this issue (if any)
+  await col.deleteMany({
     reviewId: new ObjectId(input.reviewId),
     section: input.section,
     issueIndex: input.issueIndex,
-  };
-
-  const doc = {
-    $set: {
-      designId: new ObjectId(input.designId),
-      reviewId: new ObjectId(input.reviewId),
-      userId: new ObjectId(input.userId),
-      section: input.section,
-      issueIndex: input.issueIndex,
-      originalIssue: input.originalIssue,
-      userResponse: input.userResponse,
-      verdict: input.verdict,
-      explanation: input.explanation,
-      evaluatedBy: input.evaluatedBy,
-      updatedAt: now,
-    },
-    $setOnInsert: {
-      _id: new ObjectId(),
-      createdAt: now,
-    },
-  };
-
-  const result = await col.findOneAndUpdate(filter, doc, {
-    upsert: true,
-    returnDocument: "after",
   });
 
-  return result!;
+  // Insert new response
+  const doc: IssueResponse = {
+    _id: new ObjectId(),
+    designId: new ObjectId(input.designId),
+    reviewId: new ObjectId(input.reviewId),
+    userId: new ObjectId(input.userId),
+    section: input.section,
+    issueIndex: input.issueIndex,
+    originalIssue: input.originalIssue,
+    userResponse: input.userResponse,
+    verdict: input.verdict,
+    explanation: input.explanation,
+    evaluatedBy: input.evaluatedBy,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await col.insertOne(doc);
+  return doc;
 }
 
 /** Get all responses for a review. */
