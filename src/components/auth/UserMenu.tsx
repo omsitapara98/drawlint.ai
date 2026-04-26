@@ -14,8 +14,19 @@ interface UserMenuProps {
 
 export default function UserMenu({ session, onOpenSettings }: UserMenuProps) {
   const [open, setOpen] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const user = session.user;
+
+  // Fetch role
+  useEffect(() => {
+    fetch("/api/user/settings")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { role?: string } | null) => {
+        if (data?.role === "premium" || data?.role === "admin") setIsPremium(true);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -50,6 +61,7 @@ export default function UserMenu({ session, onOpenSettings }: UserMenuProps) {
         <span className="max-w-[100px] truncate text-xs font-medium">
           {user?.name ?? "User"}
         </span>
+        {isPremium && <span className="text-[10px]" title="Premium">👑</span>}
       </button>
 
       <AnimatePresence>
