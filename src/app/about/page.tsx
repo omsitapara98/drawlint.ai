@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion, useInView, useMotionValue, useTransform } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
@@ -130,9 +131,9 @@ export default function AboutPage() {
             initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             transition={{ duration: 0.6, type: "spring", bounce: 0.4 }}
-            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-3xl font-bold text-white shadow-[0_0_60px_oklch(0.72_0.25_285_/_40%)]"
+            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl shadow-[0_0_60px_oklch(0.72_0.25_285_/_40%)]"
           >
-            D
+            <Image src="/logo.svg" alt="DrawLint.ai" width={80} height={80} className="rounded-2xl" />
           </motion.div>
 
           <motion.h1
