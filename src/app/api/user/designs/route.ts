@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getDesignsByUser } from "@/lib/db/designs";
 import { getReviewByDesignId } from "@/lib/db/reviews";
+import { getReEvalSignal } from "@/lib/db/responses";
 import clientPromise from "@/lib/db/mongodb";
 import { ObjectId } from "mongodb";
 
@@ -23,6 +24,17 @@ export async function GET() {
         { projection: { name: 1, slug: 1 } },
       );
       const review = await getReviewByDesignId(d._id.toString());
+      const originalSignal = review?.leadReviewer?.signal ?? null;
+
+      // Check for re-evaluated signal (takes priority)
+      let signal: string | null = originalSignal;
+      if (review) {
+        const reeval = await getReEvalSignal(review._id.toString());
+        if (reeval?.updatedSignal) {
+          signal = reeval.updatedSignal;
+        }
+      }
+
       return {
         _id: d._id,
         topicId: d.topicId,
@@ -33,7 +45,7 @@ export async function GET() {
         reviewLevel: d.reviewLevel,
         hasReview: !!review,
         reviewedBy: review?.reviewedBy ?? null,
-        signal: review?.leadReviewer?.signal ?? null,
+        signal,
         createdAt: d.createdAt,
         updatedAt: d.updatedAt,
       };
