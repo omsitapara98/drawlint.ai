@@ -97,7 +97,7 @@ function AnimArrow({ x1, y1, x2, y2, delay, label }: {
     >
       <motion.line
         x1={x1} y1={y1} x2={x2} y2={y2}
-        className="stroke-muted-foreground/50"
+        className="stroke-zinc-400/60"
         strokeWidth={1.5}
         markerEnd="url(#arrowhead)"
         initial={{ pathLength: 0 }}
@@ -105,7 +105,7 @@ function AnimArrow({ x1, y1, x2, y2, delay, label }: {
         transition={{ duration: 0.5, delay }}
       />
       {label && (
-        <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 - 6} textAnchor="middle" className="fill-muted-foreground text-[8px]">{label}</text>
+        <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 - 6} textAnchor="middle" className="fill-zinc-400 text-[8px]">{label}</text>
       )}
     </motion.g>
   );
@@ -127,7 +127,7 @@ function CanvasPreview({ children, height = 180 }: { children: React.ReactNode; 
       <svg viewBox={`0 0 600 ${height}`} className="w-full h-auto">
         <defs>
           <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" className="fill-muted-foreground/50" />
+            <polygon points="0 0, 8 3, 0 6" className="fill-zinc-400/50" />
           </marker>
         </defs>
         {inView && children}
@@ -235,15 +235,15 @@ function ComponentsPreview() {
 /** Data flow preview */
 function DataFlowPreview() {
   return (
-    <CanvasPreview height={220}>
-      <AnimBox x={30} y={85} w={120} h={45} label="Client" delay={0.1} color="cyan" />
-      <AnimBox x={230} y={85} w={120} h={45} label="API Server" delay={0.2} color="violet" />
-      <AnimBox x={430} y={30} w={120} h={45} label="Redis Cache" delay={0.3} color="red" />
-      <AnimBox x={430} y={140} w={120} h={45} label="PostgreSQL" delay={0.4} color="emerald" />
-      <AnimArrow x1={150} y1={107} x2={230} y2={107} delay={0.5} label="1. REST API" />
-      <AnimArrow x1={350} y1={95} x2={430} y2={58} delay={0.7} label="2. Cache check" />
-      <AnimArrow x1={350} y1={120} x2={430} y2={158} delay={0.9} label="3. Query DB" />
-      <AnimArrow x1={430} y1={70} x2={350} y2={100} delay={1.1} label="4. Return" />
+    <CanvasPreview height={240}>
+      <AnimBox x={30} y={95} w={120} h={45} label="Client" delay={0.1} color="cyan" />
+      <AnimBox x={230} y={95} w={120} h={45} label="API Server" delay={0.2} color="violet" />
+      <AnimBox x={430} y={25} w={120} h={45} label="Redis Cache" delay={0.3} color="red" />
+      <AnimBox x={430} y={165} w={120} h={45} label="PostgreSQL" delay={0.4} color="emerald" />
+      <AnimArrow x1={150} y1={117} x2={230} y2={117} delay={0.5} label="1. REST API" />
+      <AnimArrow x1={350} y1={100} x2={430} y2={50} delay={0.7} label="2. Cache check" />
+      <AnimArrow x1={350} y1={135} x2={430} y2={185} delay={0.9} label="3. Query DB" />
+      <AnimArrow x1={430} y1={60} x2={350} y2={105} delay={1.1} label="4. Return" />
     </CanvasPreview>
   );
 }
@@ -317,7 +317,7 @@ function WriteupPreview() {
           transition={{ delay: line.delay, duration: 0.4 }}
         >
           <text x={15} y={30 + i * 32} className={`${line.color} text-[10px] font-bold`}>{line.label}</text>
-          <text x={110} y={30 + i * 32} className="fill-muted-foreground text-[9px]">{line.text}</text>
+          <text x={110} y={30 + i * 32} className="fill-zinc-300 text-[9px]">{line.text}</text>
           {/* Typing cursor on last item */}
           {i === lines.length - 1 && (
             <motion.rect x={385} y={21 + i * 32} width={2} height={14} className="fill-violet-500"
