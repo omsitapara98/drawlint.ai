@@ -441,6 +441,8 @@ function AIReviewContent({
 
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
+        // If unauthorized/forbidden, don't show alert — user shouldn't have the button
+        if (res.status === 403 || res.status === 401) return null;
         alert(data.error ?? "Failed to submit response.");
         return null;
       }

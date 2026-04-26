@@ -315,9 +315,7 @@ function CanvasPageInner() {
 
         // Check if current user is the author
         const isOwner = !!(session?.user?.id && session.user.id === metaData.design.userId.toString());
-        if (isOwner) {
-          setViewIsAuthor(true);
-        }
+        setViewIsAuthor(isOwner);
 
         // Display name: anonymous designs show pseudonym, unless viewer is the owner
         if (metaData.design.anonymousName && !isOwner) {
