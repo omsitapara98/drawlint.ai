@@ -182,6 +182,14 @@ function DimensionCard({
                   {dimension.issues.filter((i) => i.severity === "info").length} info
                 </span>
               )}
+              {(() => {
+                const resolvedInSection = dimension.issues.filter((_: unknown, i: number) => responses.get(`${name}:${i}`)?.verdict === "resolved").length;
+                return resolvedInSection > 0 ? (
+                  <span className="inline-flex items-center rounded-full bg-violet-100 dark:bg-violet-900/30 px-1.5 py-0.5 text-[9px] font-medium text-violet-700 dark:text-violet-300">
+                    💬 {resolvedInSection} resolved
+                  </span>
+                ) : null;
+              })()}
               {!hasContent && (
                 <span className="text-[9px] text-emerald-600 dark:text-emerald-400">All good ✅</span>
               )}
