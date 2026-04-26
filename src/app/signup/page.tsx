@@ -217,7 +217,7 @@ export default function SignUpPage() {
 
         <div className="flex flex-col gap-3">
           <button
-            onClick={() => signIn("google", { callbackUrl: "/canvas" })}
+            onClick={() => signIn("google", { callbackUrl: "/" })}
             className="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border border-border/50 dark:border-white/[0.08] bg-card/50 dark:bg-white/5 backdrop-blur-sm text-sm font-medium transition-colors hover:border-primary/30"
           >
             <svg className="h-4.5 w-4.5" viewBox="0 0 24 24">
@@ -230,7 +230,7 @@ export default function SignUpPage() {
           </button>
 
           <button
-            onClick={() => signIn("github", { callbackUrl: "/canvas" })}
+            onClick={() => signIn("github", { callbackUrl: "/" })}
             className="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border border-border/50 dark:border-white/[0.08] bg-[#24292f] text-sm font-medium text-white transition-all hover:bg-[#1b1f23] hover:shadow-[0_0_12px_oklch(0.72_0.25_285_/_15%)]"
           >
             <svg className="h-4.5 w-4.5" fill="currentColor" viewBox="0 0 24 24">

@@ -120,7 +120,7 @@ export default function PrivacyPolicyPage() {
             </ul>
             <p className="mt-2">
               To exercise any of these rights, contact us at{" "}
-              <a href="mailto:support@drawlint.ai" className="text-violet-400 hover:underline">support@drawlint.ai</a>.
+              <a href="mailto:drawlint.ai.support@gmail.com" className="text-violet-400 hover:underline">drawlint.ai.support@gmail.com</a>.
             </p>
           </section>
 
@@ -144,7 +144,7 @@ export default function PrivacyPolicyPage() {
             <h2>10. Contact</h2>
             <p>
               If you have questions about this Privacy Policy, contact us at:{" "}
-              <a href="mailto:support@drawlint.ai" className="text-violet-400 hover:underline">support@drawlint.ai</a>
+              <a href="mailto:drawlint.ai.support@gmail.com" className="text-violet-400 hover:underline">drawlint.ai.support@gmail.com</a>
             </p>
           </section>
         </div>

@@ -19,7 +19,7 @@ function SignInContent() {
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
   const rawCallback = searchParams.get("callbackUrl");
-  const callbackUrl = rawCallback && rawCallback.startsWith("/") && !rawCallback.startsWith("//") ? rawCallback : "/canvas";
+  const callbackUrl = rawCallback && rawCallback.startsWith("/") && !rawCallback.startsWith("//") ? rawCallback : "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

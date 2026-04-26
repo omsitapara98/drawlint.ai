@@ -166,7 +166,7 @@ export default function TermsOfServicePage() {
             <h2>15. Contact</h2>
             <p>
               Questions about these Terms? Contact us at:{" "}
-              <a href="mailto:support@drawlint.ai" className="text-violet-400 hover:underline">support@drawlint.ai</a>
+              <a href="mailto:drawlint.ai.support@gmail.com" className="text-violet-400 hover:underline">drawlint.ai.support@gmail.com</a>
             </p>
           </section>
         </div>
