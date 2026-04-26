@@ -25,9 +25,9 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Get connected OAuth providers
+    // Get connected OAuth providers (userId may be string or ObjectId depending on auth adapter)
     const accounts = await db.collection("accounts").find(
-      { userId },
+      { $or: [{ userId }, { userId: new ObjectId(userId) }] },
       { projection: { provider: 1 } },
     ).toArray();
 
@@ -58,11 +58,11 @@ export async function DELETE() {
     const userId = session.user.id;
     const oid = new ObjectId(userId);
 
-    // Delete all user data
+    // Delete all user data (accounts/sessions may use ObjectId or string userId)
     await Promise.all([
       db.collection("users").deleteOne({ _id: oid }),
-      db.collection("accounts").deleteMany({ userId }),
-      db.collection("sessions").deleteMany({ userId }),
+      db.collection("accounts").deleteMany({ $or: [{ userId }, { userId: oid }] }),
+      db.collection("sessions").deleteMany({ $or: [{ userId }, { userId: oid }] }),
       db.collection("reviews").deleteMany({ userId }),
       db.collection("responses").deleteMany({ userId }),
       db.collection("reeval_signals").deleteMany({ userId }),
