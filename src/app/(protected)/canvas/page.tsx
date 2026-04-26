@@ -16,7 +16,7 @@ import { hasAnyCredentials, getCredentialsForRequest, getAIConfig } from "@/lib/
 import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
-import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save, Pencil, Zap, Trash2, Link2 } from "lucide-react";
+import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save, Pencil, Zap, Trash2, Link2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
 /* ── Topic gate types ─────────────────────────────────────────── */
@@ -1348,12 +1348,13 @@ function CanvasPageInner() {
                       <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-xs font-bold">
                         AI
                       </div>
-                      <div>
-                        <span className="text-sm font-semibold">Design Review</span>
-                        <p className="text-[9px] text-muted-foreground leading-tight">AI-generated · Use your own judgment</p>
-                      </div>
+                      <span className="text-sm font-semibold">Design Review</span>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-[9px] text-muted-foreground">
+                        <AlertTriangle className="h-3 w-3 text-amber-500" />
+                        AI-generated · Use your own judgment
+                      </span>
 
                       <Button
                         variant="ghost"
