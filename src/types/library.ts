@@ -58,7 +58,7 @@ export interface Review {
 /* ── Issue Response (user responds to AI feedback) ────────── */
 
 export type IssueVerdict = "resolved" | "partially-addressed" | "not-addressed";
-export type ReviewSection = "nfrReview" | "entitiesReview" | "capacityReview" | "apiReview" | "hldReview";
+export type ReviewSection = "nfrReview" | "entitiesReview" | "capacityReview" | "apiReview" | "hldReview" | "followUpQuestions";
 
 export interface IssueResponse {
   _id: ObjectId;

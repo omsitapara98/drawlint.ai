@@ -741,7 +741,7 @@ function AIReviewContent({
         )}
 
 
-        {/* Follow-up Questions */}
+        {/* Follow-up Questions — respondable */}
         {review.followUpQuestions.length > 0 && (
           <Card>
             <CardHeader className="pb-2">
@@ -751,13 +751,19 @@ function AIReviewContent({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ol className="list-decimal list-inside space-y-2">
+              <div className="space-y-2">
                 {review.followUpQuestions.map((q, i) => (
-                  <li key={i} className="text-sm text-foreground">
-                    {q}
-                  </li>
+                  <IssueRow
+                    key={`fq-${i}`}
+                    issue={{ severity: "info", title: `Q${i + 1}`, description: q }}
+                    section="followUpQuestions"
+                    issueIndex={i}
+                    canRespond={canRespond}
+                    existingResponse={responses.get(`followUpQuestions:${i}`)}
+                    onRespond={handleRespond}
+                  />
                 ))}
-              </ol>
+              </div>
             </CardContent>
           </Card>
         )}

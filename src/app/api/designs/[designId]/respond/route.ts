@@ -10,8 +10,8 @@ import { getIssueResponsePrompt } from "@/lib/ai/response-prompt";
 import type { ReviewSection } from "@/types/library";
 import type { FeedbackItem } from "@/types/feedback";
 
-const VALID_SECTIONS: ReviewSection[] = [
-  "nfrReview", "entitiesReview", "capacityReview", "apiReview", "hldReview",
+const VALID_SECTIONS: (ReviewSection | "followUpQuestions")[] = [
+  "nfrReview", "entitiesReview", "capacityReview", "apiReview", "hldReview", "followUpQuestions",
 ];
 
 interface RespondBody {
@@ -65,18 +65,34 @@ export async function POST(
   }
 
   // Validate section
-  const section = body.section as ReviewSection;
+  const section = body.section as ReviewSection | "followUpQuestions";
   if (!VALID_SECTIONS.includes(section)) {
     return NextResponse.json({ error: "Invalid section." }, { status: 400 });
   }
 
-  // Validate issue index
-  const dimension = review[section];
-  if (!dimension || !Array.isArray(dimension.issues)) {
-    return NextResponse.json({ error: "Section has no issues." }, { status: 400 });
-  }
-  if (body.issueIndex < 0 || body.issueIndex >= dimension.issues.length) {
-    return NextResponse.json({ error: "Invalid issue index." }, { status: 400 });
+  // Validate issue index + get original content
+  let originalIssue: { severity: "critical" | "warning" | "info"; title: string; description: string };
+  let isFollowUp = false;
+
+  if (section === "followUpQuestions") {
+    isFollowUp = true;
+    if (!review.followUpQuestions || body.issueIndex < 0 || body.issueIndex >= review.followUpQuestions.length) {
+      return NextResponse.json({ error: "Invalid question index." }, { status: 400 });
+    }
+    originalIssue = {
+      severity: "info",
+      title: `Follow-up Q${body.issueIndex + 1}`,
+      description: review.followUpQuestions[body.issueIndex],
+    };
+  } else {
+    const dimension = review[section];
+    if (!dimension || !Array.isArray(dimension.issues)) {
+      return NextResponse.json({ error: "Section has no issues." }, { status: 400 });
+    }
+    if (body.issueIndex < 0 || body.issueIndex >= dimension.issues.length) {
+      return NextResponse.json({ error: "Invalid issue index." }, { status: 400 });
+    }
+    originalIssue = dimension.issues[body.issueIndex] as FeedbackItem;
   }
 
   // Rate limit: max 20 responses per design per hour
@@ -99,11 +115,8 @@ export async function POST(
     return NextResponse.json({ error: "Response must be under 2000 characters." }, { status: 400 });
   }
 
-  // Get the original issue
-  const originalIssue = dimension.issues[body.issueIndex] as FeedbackItem;
-
   // Block responses to critical issues — those should be fixed in the design
-  if (originalIssue.severity === "critical") {
+  if (!isFollowUp && originalIssue.severity === "critical") {
     return NextResponse.json(
       { error: "Critical issues should be addressed by updating your design, not via verbal response." },
       { status: 400 },
@@ -127,12 +140,12 @@ export async function POST(
     capacityReview: "Capacity Calculations",
     apiReview: "API Design",
     hldReview: "High-Level Design",
+    followUpQuestions: "Follow-up Interview Question",
   };
 
-  // Get FR/Assumptions from the design's blob (not available here, use review summary as context)
   const promptCtx = getIssueResponsePrompt({
     section: sectionLabels[section] ?? section,
-    issueSeverity: originalIssue.severity,
+    issueSeverity: isFollowUp ? "question" : originalIssue.severity,
     issueTitle: originalIssue.title,
     issueDescription: originalIssue.description,
   });
