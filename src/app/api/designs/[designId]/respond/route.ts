@@ -181,17 +181,6 @@ export async function GET(
     return NextResponse.json({ responses: [] });
   }
 
-  // Only show responses for non-draft designs
-  let design;
-  try {
-    design = await getDesignById(designId);
-  } catch {
-    return NextResponse.json({ responses: [] });
-  }
-  if (!design || design.status === "draft") {
-    return NextResponse.json({ responses: [] });
-  }
-
   const responses = await getResponsesByReviewId(review._id.toString());
 
   return NextResponse.json({
