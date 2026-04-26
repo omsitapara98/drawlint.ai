@@ -119,7 +119,8 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
 
     if (selectedMode === "gemini") {
       const key = geminiKeyRef.current?.value.trim() ?? "";
-      const apiKey = key === "••••••••" ? (config.gemini?.apiKey ?? "") : key;
+      // Fall back to stored key if input is empty/masked or ref not mounted
+      const apiKey = (key && key !== "••••••••") ? key : (config.gemini?.apiKey ?? "");
       if (!apiKey) {
         setTestStatus("error");
         setTestMessage("Please enter your API key first.");
@@ -128,9 +129,9 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
       testBody = { provider: "gemini", apiKey };
     } else if (selectedMode === "azure") {
       const key = azureKeyRef.current?.value.trim() ?? "";
-      const apiKey = key === "••••••••" ? (config.azure?.apiKey ?? "") : key;
-      const endpoint = azureEndpointRef.current?.value.trim() ?? "";
-      const deployment = azureDeploymentRef.current?.value.trim() ?? "";
+      const apiKey = (key && key !== "••••••••") ? key : (config.azure?.apiKey ?? "");
+      const endpoint = azureEndpointRef.current?.value.trim() || config.azure?.endpoint || "";
+      const deployment = azureDeploymentRef.current?.value.trim() || config.azure?.deployment || "";
       if (!apiKey || !endpoint || !deployment) {
         setTestStatus("error");
         setTestMessage("Please fill in all fields first.");
