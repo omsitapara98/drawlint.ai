@@ -126,6 +126,7 @@ function DimensionCard({
   canRespond,
   responses,
   onRespond,
+  forceExpanded,
 }: {
   name: string;
   dimension: ReviewDimension;
@@ -133,8 +134,16 @@ function DimensionCard({
   canRespond?: boolean;
   responses: Map<string, StoredResponse>;
   onRespond?: (section: string, issueIndex: number, text: string) => Promise<StoredResponse | null>;
+  forceExpanded?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const [localExpanded, setLocalExpanded] = useState(true);
+
+  // Sync with global collapse/expand
+  useEffect(() => {
+    if (forceExpanded !== undefined) setLocalExpanded(forceExpanded);
+  }, [forceExpanded]);
+
+  const expanded = localExpanded;
   const meta = DIMENSION_META[name] ?? { icon: null, label: name, emoji: "" };
   const hasContent = dimension.highlights.length > 0 || dimension.issues.length > 0;
 
@@ -142,7 +151,7 @@ function DimensionCard({
     <Card>
       <button
         className="flex w-full items-center justify-between px-4 py-3 text-left"
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => setLocalExpanded(!expanded)}
       >
         <div className="flex items-center gap-2">
           <span>{meta.emoji}</span>
@@ -611,6 +620,7 @@ function AIReviewContent({
   if (!review) return null;
 
   const level = review.level ?? "deep";
+  const [allExpanded, setAllExpanded] = useState(true);
 
   return (
     <ScrollArea className="h-full">
@@ -619,14 +629,23 @@ function AIReviewContent({
         <Card>
           <CardContent className="py-5">
             <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <Sparkles className="h-4 w-4 text-violet-500" />
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  AI Review
-                </span>
-                <Badge className={`text-[10px] px-2 py-0 ${LEVEL_COLORS[level]}`}>
-                  {LEVEL_LABELS[level]}
-                </Badge>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-violet-500" />
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    AI Review
+                  </span>
+                  <Badge className={`text-[10px] px-2 py-0 ${LEVEL_COLORS[level]}`}>
+                    {LEVEL_LABELS[level]}
+                  </Badge>
+                </div>
+                <button
+                  onClick={() => setAllExpanded((v) => !v)}
+                  className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {allExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                  {allExpanded ? "Collapse All" : "Expand All"}
+                </button>
               </div>
               <p className="text-sm text-foreground">{review.summary}</p>
             </div>
@@ -643,6 +662,7 @@ function AIReviewContent({
             canRespond={canRespond}
             responses={responses}
             onRespond={handleRespond}
+            forceExpanded={allExpanded}
           />
         ))}
 
