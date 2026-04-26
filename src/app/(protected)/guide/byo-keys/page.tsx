@@ -346,15 +346,76 @@ export default function ByoKeysGuidePage() {
               </strong>
               .
             </p>
-            <div className="mt-4 rounded-xl bg-zinc-950 dark:bg-zinc-900/60 border border-zinc-800 p-6 font-mono text-sm text-emerald-400 overflow-x-auto">
-              <pre className="leading-relaxed whitespace-pre">
-{`┌─────────────┐      HTTPS       ┌──────────────┐       HTTPS       ┌─────────────────┐
-│  Your Browser│ ──────────────→ │ DrawLint API │ ──────────────→  │ Azure OpenAI API│
-│ (localStorage│                 │  (stateless) │                  │  (your resource) │
-│  stores key) │ ←────────────── │ never stores │ ←──────────────  │                 │
-└─────────────┘   AI review      │  your key    │   AI response    └─────────────────┘
-                   result        └──────────────┘`}
-              </pre>
+            <div className="mt-6 rounded-xl border border-border dark:border-white/[0.08] bg-zinc-950 dark:bg-zinc-900/60 p-6 overflow-hidden">
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                {/* Browser */}
+                <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-violet-500/50 bg-violet-500/10 px-5 py-4 min-w-[140px]">
+                  <span className="text-2xl">🌐</span>
+                  <span className="text-sm font-bold text-violet-300">Your Browser</span>
+                  <span className="text-[0.65rem] text-violet-400/70 text-center">Key stored in<br />localStorage</span>
+                </div>
+
+                {/* Arrow 1 */}
+                <div className="flex flex-col items-center gap-0.5 px-1">
+                  <span className="text-[0.6rem] font-medium text-emerald-400">HTTPS + key</span>
+                  <div className="flex items-center gap-1">
+                    <div className="h-px w-10 bg-gradient-to-r from-violet-500 to-emerald-500" />
+                    <span className="text-emerald-400">→</span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-amber-400">←</span>
+                    <div className="h-px w-10 bg-gradient-to-r from-amber-500 to-violet-500" />
+                  </div>
+                  <span className="text-[0.6rem] font-medium text-amber-400">AI review</span>
+                </div>
+
+                {/* DrawLint API */}
+                <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-emerald-500/50 bg-emerald-500/10 px-5 py-4 min-w-[140px]">
+                  <span className="text-2xl">⚡</span>
+                  <span className="text-sm font-bold text-emerald-300">DrawLint API</span>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-[0.6rem] text-emerald-400/80 font-medium">Stateless proxy</span>
+                    <span className="text-[0.6rem] text-red-400 font-semibold">🚫 Never stores key</span>
+                  </div>
+                </div>
+
+                {/* Arrow 2 */}
+                <div className="flex flex-col items-center gap-0.5 px-1">
+                  <span className="text-[0.6rem] font-medium text-cyan-400">Forwarded call</span>
+                  <div className="flex items-center gap-1">
+                    <div className="h-px w-10 bg-gradient-to-r from-emerald-500 to-cyan-500" />
+                    <span className="text-cyan-400">→</span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-cyan-400">←</span>
+                    <div className="h-px w-10 bg-gradient-to-r from-cyan-500 to-emerald-500" />
+                  </div>
+                  <span className="text-[0.6rem] font-medium text-cyan-400">AI response</span>
+                </div>
+
+                {/* AI Provider */}
+                <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-cyan-500/50 bg-cyan-500/10 px-5 py-4 min-w-[140px]">
+                  <span className="text-2xl">🤖</span>
+                  <span className="text-sm font-bold text-cyan-300">AI Provider</span>
+                  <span className="text-[0.65rem] text-cyan-400/70 text-center">Gemini / Azure<br />OpenAI</span>
+                </div>
+              </div>
+
+              {/* Key lifecycle */}
+              <div className="mt-5 flex items-center justify-center gap-6 text-[0.65rem]">
+                <span className="flex items-center gap-1.5 text-violet-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
+                  Key lives here
+                </span>
+                <span className="flex items-center gap-1.5 text-emerald-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Key passes through (in-memory only)
+                </span>
+                <span className="flex items-center gap-1.5 text-cyan-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-500" />
+                  Key authenticates your call
+                </span>
+              </div>
             </div>
             <p className="text-base leading-7 text-muted-foreground mt-4">
               <strong className="text-foreground">Key guarantees:</strong>
