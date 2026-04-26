@@ -18,7 +18,7 @@ export async function GET() {
 
     const user = await db.collection("users").findOne(
       { _id: new ObjectId(userId) },
-      { projection: { name: 1, email: 1, hashedPassword: 1, emailVerified: 1, createdAt: 1 } },
+      { projection: { name: 1, email: 1, hashedPassword: 1, emailVerified: 1, role: 1, createdAt: 1 } },
     );
 
     if (!user) {
@@ -40,6 +40,7 @@ export async function GET() {
       email: user.email,
       hasPassword: !!user.hashedPassword,
       emailVerified,
+      role: (user.role as string) ?? "free",
       providers,
       createdAt: user.createdAt,
     });
