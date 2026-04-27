@@ -70,7 +70,35 @@ export async function POST(request: Request) {
       ? body.reviewLevel
       : "senior";
 
+  const isChallenge = body.submissionType === "challenge";
   const userId = session.user.id;
+
+  // ── Validate challenge eligibility server-side ─────────────────
+  // Don't trust client submissionType alone — verify against DB
+  let validatedChallenge = false;
+  if (isChallenge) {
+    const { getCurrentChallenge, hasUserSubmitted } = await import("@/lib/db/challenges");
+    const challenge = await getCurrentChallenge();
+    if (challenge && body.topicId) {
+      const topicMatches = challenge.topicId.toString() === body.topicId;
+      const alreadySubmitted = await hasUserSubmitted(challenge._id.toString(), userId);
+      // Also verify user has a challenge draft for this topic
+      const { ObjectId: ObjId } = await import("mongodb");
+      const mongoClient = await (await import("@/lib/db/mongodb")).default;
+      const draftExists = await mongoClient.db("drawlint-db").collection("designs").findOne({
+        userId: new ObjId(userId),
+        topicId: new ObjId(body.topicId),
+        submissionType: "challenge",
+        status: "draft",
+      });
+      validatedChallenge = topicMatches && !alreadySubmitted && !!draftExists;
+    }
+    if (!validatedChallenge) {
+      // Silently treat as regular — don't give free reviews for invalid challenge claims
+      body.submissionType = undefined;
+    }
+  }
+  const isValidChallenge = isChallenge && validatedChallenge;
 
   // ── Draft save fast path ─────────────────────────────────────
   if (body.draft) {
@@ -141,8 +169,8 @@ export async function POST(request: Request) {
   const credentials = providerResult.credentials;
   isManagedMode = providerResult.isManagedQuota;
 
-  // For managed mode: check and reserve quota
-  if (isManagedMode) {
+  // For managed mode: check and reserve quota (skip for validated challenge submissions)
+  if (isManagedMode && !isValidChallenge) {
     const quota = await reserveManagedQuota(userId);
     if (!quota.allowed) {
       return NextResponse.json(
@@ -215,6 +243,7 @@ export async function POST(request: Request) {
     version,
     forkedFrom: body.forkedFrom,
     anonymousName,
+    submissionType: isValidChallenge ? "challenge" : "regular",
   });
 
   const encoder = new TextEncoder();

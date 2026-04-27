@@ -73,6 +73,8 @@ export async function createDesign(input: {
   version: number;
   forkedFrom?: string;
   anonymousName?: string;
+  submissionType?: "regular" | "challenge";
+  challengeId?: string;
   status?: Design["status"];
 }): Promise<Design> {
   const col = await collection();
@@ -87,6 +89,7 @@ export async function createDesign(input: {
     blobKey: input.blobKey,
     status: input.status ?? "reviewing",
     reviewLevel: input.reviewLevel,
+    submissionType: input.submissionType ?? "regular",
     createdAt: now,
     updatedAt: now,
   };
@@ -96,6 +99,9 @@ export async function createDesign(input: {
   }
   if (input.anonymousName) {
     doc.anonymousName = input.anonymousName;
+  }
+  if (input.challengeId) {
+    doc.challengeId = new ObjectId(input.challengeId);
   }
 
   await col.insertOne(doc);

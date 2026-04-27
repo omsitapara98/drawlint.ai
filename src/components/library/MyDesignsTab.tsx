@@ -15,6 +15,7 @@ interface UserDesign {
   reviewLevel: string;
   hasReview: boolean;
   reviewedBy: string | null;
+  submissionType?: "regular" | "challenge";
   signal: string | null;
   createdAt: string;
   updatedAt: string;
@@ -158,9 +159,16 @@ export function MyDesignsTab() {
             className="group block rounded-xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 shadow-md shadow-black/[0.04] dark:shadow-none p-5 text-card-foreground hover:border-primary/30 hover:shadow-lg hover:shadow-violet-500/[0.08] dark:hover:shadow-[0_0_20px_oklch(0.72_0.25_285_/_15%)] hover:-translate-y-0.5 transition-all duration-300"
           >
             <div className="flex items-start justify-between gap-2">
-              <h3 className="text-sm font-semibold group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors truncate">
-                {d.topicName}
-              </h3>
+              <div className="flex items-center gap-1.5 min-w-0">
+                {d.submissionType === "challenge" && (
+                  <span className="shrink-0 rounded bg-orange-500/15 px-1.5 py-0.5 text-[0.6rem] font-bold text-orange-500">
+                    🔥
+                  </span>
+                )}
+                <h3 className="text-sm font-semibold group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors truncate">
+                  {d.topicName}
+                </h3>
+              </div>
               <span
                 className={`shrink-0 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold ${badge.className}`}
               >

@@ -113,6 +113,14 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Submitted challenge designs cannot be deleted (drafts can)
+  if (design.submissionType === "challenge" && design.status !== "draft") {
+    return NextResponse.json(
+      { error: "Weekly challenge submissions cannot be deleted." },
+      { status: 403 },
+    );
+  }
+
   // Delete blob
   try {
     await deleteBlob(design.blobKey);

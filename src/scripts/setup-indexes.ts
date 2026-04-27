@@ -46,6 +46,38 @@ async function main() {
     );
     console.log("✓ users indexes created");
 
+    // ── Weekly Challenges ────────────────────────────────────────
+    const challenges = db.collection("weekly_challenges");
+    try {
+      await challenges.createIndex({ weekId: 1 }, { unique: true });
+    } catch (e) {
+      console.log("  ⚠ weekly_challenges unique weekId index skipped (may need cleanup):", (e as Error).message);
+    }
+    await challenges.createIndex({ startDate: -1 });
+    console.log("✓ weekly_challenges indexes created");
+
+    // ── Challenge Submissions ────────────────────────────────────
+    const submissions = db.collection("challenge_submissions");
+    try {
+      await submissions.createIndex(
+        { challengeId: 1, userId: 1 },
+        { unique: true, name: "one_submission_per_user_per_challenge" },
+      );
+    } catch (e) {
+      console.log("  ⚠ challenge_submissions unique index skipped:", (e as Error).message);
+    }
+    await submissions.createIndex({ challengeId: 1, score: -1, submittedAt: 1 });
+    console.log("✓ challenge_submissions indexes created");
+
+    // ── User Streaks ─────────────────────────────────────────────
+    const streaks = db.collection("user_streaks");
+    try {
+      await streaks.createIndex({ userId: 1 }, { unique: true });
+    } catch (e) {
+      console.log("  ⚠ user_streaks unique index skipped:", (e as Error).message);
+    }
+    console.log("✓ user_streaks indexes created");
+
     console.log("Index setup complete.");
   } finally {
     await client.close();

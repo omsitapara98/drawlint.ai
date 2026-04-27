@@ -319,7 +319,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
                   <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400">⭐ Recommended</span>
                 </div>
                 <p className="text-sm font-semibold">DrawLint AI</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Best quality • No setup</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Pro models • No key needed</p>
                 <div className="mt-1.5 flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   <span className="text-[10px] text-emerald-600 dark:text-emerald-400">High quality</span>
@@ -337,7 +337,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
               >
                 <div className="flex items-center gap-1.5 mb-1">
                   <Zap className="h-3.5 w-3.5 text-amber-500" />
-                  <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">💡 Free</span>
+                  <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">💡 Free via Gemini</span>
                 </div>
                 <p className="text-sm font-semibold">Gemini AI</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">No cost • Quick setup</p>

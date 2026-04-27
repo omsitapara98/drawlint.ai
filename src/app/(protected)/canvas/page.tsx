@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks";
 import { loadDiagram } from "@/lib/storage";
 import { hasAnyCredentials, getCredentialsForRequest, getAIConfig } from "@/lib/storage/ai-config";
-import { parseDiagram, createWhiteboardTemplate } from "@/lib/diagram";
+import { parseDiagram, createWhiteboardTemplate, createChallengeTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
 import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save, Pencil, Zap, Trash2, Link2, AlertTriangle } from "lucide-react";
@@ -62,9 +62,16 @@ function CanvasPageInner() {
   const viewDesignId = searchParams.get("view");
   const [viewModeInitialized, setViewModeInitialized] = useState(false);
   const [viewIsAuthor, setViewIsAuthor] = useState(false);
+  const [viewIsChallenge, setViewIsChallenge] = useState(false);
   const [viewAuthorName, setViewAuthorName] = useState<string | null>(null);
   const [viewEditMode, setViewEditMode] = useState(false);
   const [viewError, setViewError] = useState<string | null>(null);
+
+  /* ── Challenge mode ──────────────────────────────────────────── */
+  const challengeWeekId = searchParams.get("challenge");
+  const challengeTopicSlug = searchParams.get("topic");
+  const [challengeMode, setChallengeMode] = useState(!!challengeWeekId);
+  const [showChallengeConfirm, setShowChallengeConfirm] = useState(false);
 
   /* ── Phase gate ──────────────────────────────────────────────── */
   const [phase, setPhase] = useState<"select" | "draw">(
@@ -212,6 +219,40 @@ function CanvasPageInner() {
     fetchTopics();
   }, []);
 
+  /* ── Challenge mode: auto-select topic + skip gate ─────────── */
+  useEffect(() => {
+    if (!challengeWeekId || !challengeTopicSlug || topicsLoading) return;
+    const match = topics.find((t) => t.slug === challengeTopicSlug);
+    if (match) {
+      setSelectedTopic(match);
+      setChallengeMode(true);
+
+      // If editing an existing draft, don't override canvas — edit mode handles it
+      if (editDesignId) {
+        setPhase("draw");
+        return;
+      }
+
+      // Fresh challenge start: pre-fill template
+      fetch(`/api/challenge/current`)
+        .then((r) => r.json())
+        .then((data: { topic?: { requirements?: string[]; scale?: string[] } }) => {
+          const reqs = data.topic?.requirements ?? [];
+          const scale = data.topic?.scale ?? [];
+          if (reqs.length > 0 || scale.length > 0) {
+            const template = createChallengeTemplate(reqs, scale) as ExcalidrawElement[];
+            setElements(template);
+            setInitialData(template);
+            setCanvasKey((k) => k + 1);
+          }
+          setPhase("draw");
+        })
+        .catch(() => {
+          setPhase("draw");
+        });
+    }
+  }, [challengeWeekId, challengeTopicSlug, topicsLoading, topics, editDesignId]);
+
   /* ── Edit mode: load design elements + skip topic gate ──────── */
   useEffect(() => {
     if (!editDesignId || editModeInitialized || topicsLoading) return;
@@ -227,14 +268,17 @@ function CanvasPageInner() {
           if (matchedTopic) setSelectedTopic(matchedTopic);
         }
 
-        // Fetch design metadata to get reviewLevel
+        // Fetch design metadata to get reviewLevel + detect challenge mode
         const metaRes = await fetch(`/api/designs/${editDesignId}`);
         if (metaRes.ok) {
           const metaData = (await metaRes.json()) as {
-            design: { reviewLevel?: string };
+            design: { reviewLevel?: string; submissionType?: string };
           };
           if (metaData.design.reviewLevel) {
             setReviewLevel(metaData.design.reviewLevel as ReviewLevel);
+          }
+          if (metaData.design.submissionType === "challenge") {
+            setChallengeMode(true);
           }
         }
 
@@ -280,6 +324,8 @@ function CanvasPageInner() {
             userId: string;
             topicId: string;
             anonymousName?: string;
+            challengeId?: string;
+            submissionType?: "regular" | "challenge";
             status: "draft" | "submitted" | "reviewing" | "reviewed";
           };
           review: AIReviewResponse | null;
@@ -316,6 +362,7 @@ function CanvasPageInner() {
         // Check if current user is the author
         const isOwner = !!(session?.user?.id && session.user.id === metaData.design.userId.toString());
         setViewIsAuthor(isOwner);
+        setViewIsChallenge(!!metaData.design.challengeId || metaData.design.submissionType === "challenge");
 
         // Display name: anonymous designs show pseudonym, unless viewer is the owner
         if (metaData.design.anonymousName && !isOwner) {
@@ -496,9 +543,9 @@ function CanvasPageInner() {
   }, []);
 
   /* ── Canvas data loading ────────────────────────────────────── */
+  // Skip default canvas loading in challenge mode (handled by challenge effect)
   useEffect(() => {
-    // In view/edit mode, initialData is set by the view/edit useEffect — skip default loading
-    if (viewDesignId || editDesignId) return;
+    if (viewDesignId || editDesignId || challengeWeekId) return;
 
     const saved = loadDiagram();
     if (saved && saved.length > 0) {
@@ -509,7 +556,7 @@ function CanvasPageInner() {
       setElements(template);
       setInitialData(template);
     }
-  }, [viewDesignId, editDesignId]);
+  }, [viewDesignId, editDesignId, challengeWeekId]);
 
   useEffect(() => {
     setPanelWidth(loadPanelWidth());
@@ -643,6 +690,7 @@ function CanvasPageInner() {
           elements: elements as unknown[],
           reviewLevel,
           anonymous: anonymousMode,
+          ...(challengeMode ? { submissionType: "challenge" } : {}),
           // Include BYO credentials only if configured — server uses them if present
           ...(byoCreds.apiKey ? {
             apiKey: byoCreds.apiKey,
@@ -726,6 +774,19 @@ function CanvasPageInner() {
                 setAiReview(event.review);
                 setAiStatus("complete");
                 stopReviewerProgress("done");
+
+                // Challenge mode: record the challenge submission
+                if (challengeMode && challengeWeekId) {
+                  const signal = event.review.leadReviewer?.signal ?? "no-hire";
+                  const dId = submittedDesignId ?? event.designId;
+                  if (dId) {
+                    fetch("/api/challenge/submit", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ designId: dId, signal }),
+                    }).catch(console.error);
+                  }
+                }
               } else {
                 setAiStatus("complete");
                 stopReviewerProgress("done");
@@ -948,11 +1009,20 @@ function CanvasPageInner() {
                 <div ref={topicContainerRef} className="relative">
                   {selectedTopic ? (
                     <button
-                      onClick={handleTopicClear}
-                      className="flex h-10 w-full items-center justify-between rounded-lg border bg-violet-50 px-3 text-sm font-medium text-violet-700 transition-colors hover:bg-violet-100 dark:bg-violet-900/50 dark:text-violet-300 dark:hover:bg-violet-900"
+                      onClick={challengeMode ? undefined : handleTopicClear}
+                      disabled={challengeMode}
+                      className={`flex h-10 w-full items-center justify-between rounded-lg border px-3 text-sm font-medium transition-colors ${
+                        challengeMode
+                          ? "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800 cursor-not-allowed"
+                          : "bg-violet-50 text-violet-700 hover:bg-violet-100 dark:bg-violet-900/50 dark:text-violet-300 dark:hover:bg-violet-900"
+                      }`}
                     >
-                      {selectedTopic.name}
-                      <span className="text-xs text-violet-500">✕</span>
+                      <span className="flex items-center gap-1.5">
+                        {challengeMode && <span>🔥</span>}
+                        {selectedTopic.name}
+                      </span>
+                      {!challengeMode && <span className="text-xs text-violet-500">✕</span>}
+                      {challengeMode && <span className="text-[0.6rem] text-orange-500 font-normal">Challenge</span>}
                     </button>
                   ) : (
                     <>
@@ -1098,7 +1168,7 @@ function CanvasPageInner() {
                   <span className="text-xs font-semibold text-violet-600 dark:text-violet-400 shrink-0">
                     {levelLabel(reviewLevel)}
                   </span>
-                  {!viewDesignId && !submitted && !editDesignId && (
+                  {!viewDesignId && !submitted && !editDesignId && !challengeMode && (
                     <button
                       onClick={handleChangeTopicLevel}
                       className="inline-flex items-center justify-center h-4 w-4 rounded text-violet-500 hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/40 transition-colors shrink-0"
@@ -1212,7 +1282,7 @@ function CanvasPageInner() {
                       )}
                       {/* Post + AI Review button */}
                       <button
-                        onClick={isAnalyzing ? () => setPanelOpen(p => !p) : handleSubmitDesign}
+                        onClick={isAnalyzing ? () => setPanelOpen(p => !p) : challengeMode ? () => setShowChallengeConfirm(true) : handleSubmitDesign}
                         disabled={submitDisabled}
                         title={tooltip}
                         className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1222,7 +1292,7 @@ function CanvasPageInner() {
                         ) : (
                           <Send className="h-3 w-3" />
                         )}
-                        {isAnalyzing ? "Analyzing…" : "Post + AI Review"}
+                        {isAnalyzing ? "Analyzing…" : challengeMode ? "🔥 Submit Challenge" : "Post + AI Review"}
                       </button>
                     </>
                   );
@@ -1257,23 +1327,32 @@ function CanvasPageInner() {
                   </button>
                 )}
 
-                {/* View mode: Edit + Delete + AI Review (owner only, not in edit mode) */}
+                {/* View mode: Edit + Delete + AI Review (owner only, not in edit mode, not challenge) */}
                 {viewDesignId && viewIsAuthor && !viewEditMode && (
                   <>
-                    <button
-                      onClick={() => setViewEditMode(true)}
-                      className="inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
-                    >
-                      <RotateCcw className="h-3 w-3" />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => setShowDeleteDraftConfirm(true)}
-                      className="inline-flex h-7 items-center gap-1 rounded-lg border border-red-300 dark:border-red-700 px-2.5 text-xs font-medium text-red-600 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/30"
-                      title="Delete this design"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
+                    {!viewIsChallenge && (
+                      <>
+                        <button
+                          onClick={() => setViewEditMode(true)}
+                          className="inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setShowDeleteDraftConfirm(true)}
+                          className="inline-flex h-7 items-center gap-1 rounded-lg border border-red-300 dark:border-red-700 px-2.5 text-xs font-medium text-red-600 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/30"
+                          title="Delete this design"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </>
+                    )}
+                    {viewIsChallenge && (
+                      <span className="inline-flex h-7 items-center gap-1 rounded-lg bg-orange-500/10 px-2.5 text-xs font-medium text-orange-500">
+                        🔥 Weekly Challenge
+                      </span>
+                    )}
                     {!panelOpen && (aiReview || aiStatus === "analyzing") && (
                       <button
                         onClick={() => setPanelOpen(true)}
@@ -1319,6 +1398,35 @@ function CanvasPageInner() {
                       className="inline-flex h-8 items-center rounded-lg bg-red-500 px-3 text-xs font-medium text-white hover:bg-red-600 transition-colors disabled:opacity-50"
                     >
                       {deletingDraft ? "Deleting…" : "Delete"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Weekly Challenge confirmation dialog */}
+            {showChallengeConfirm && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                <div className="w-full max-w-sm rounded-xl border bg-background p-6 shadow-xl space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🔥</span>
+                    <h3 className="text-sm font-semibold">Submit Weekly Challenge?</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Weekly Challenge submissions can only be made <strong className="text-foreground">once</strong>. Your design will be locked after submission — no re-evaluations or edits allowed. You can still respond to follow-up questions.
+                  </p>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => setShowChallengeConfirm(false)}
+                      className="inline-flex h-8 items-center rounded-lg border px-3 text-xs font-medium hover:bg-muted transition-colors"
+                    >
+                      Go Back
+                    </button>
+                    <button
+                      onClick={() => { setShowChallengeConfirm(false); handleSubmitDesign(); }}
+                      className="inline-flex h-8 items-center gap-1 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 px-3 text-xs font-medium text-white hover:opacity-90 transition-opacity"
+                    >
+                      🔥 Submit Challenge
                     </button>
                   </div>
                 </div>

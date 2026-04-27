@@ -757,7 +757,7 @@ function AIReviewContent({
                   className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-4 py-2 text-xs font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
                   {reevaling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                  {reevaling ? "Re-evaluating..." : reeval ? "Re-evaluate Again" : "Re-evaluate Signal"}
+                  {reevaling ? "Rechecking..." : reeval ? "Recheck Again" : "Recheck Hire Signal"}
                 </button>
               )}
 

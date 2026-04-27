@@ -5,4 +5,4 @@ export { serializeDiagram, extractSectionContents } from "./serializer";
 export { parseDiagram } from "./graph-parser";
 
 // Blank whiteboard template (native Excalidraw elements)
-export { createWhiteboardTemplate } from "./template";
+export { createWhiteboardTemplate, createChallengeTemplate } from "./template";

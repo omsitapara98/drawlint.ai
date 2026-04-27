@@ -73,6 +73,7 @@ interface EnrichedDesign {
   status: string;
   date: string;
   reviewedBy: string | null;
+  submissionType?: "regular" | "challenge";
   isPremium?: boolean;
 }
 
@@ -233,6 +234,9 @@ export function FilterableDesignGrid({ designs }: { designs: EnrichedDesign[] })
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium flex items-center gap-1">
+                      {design.submissionType === "challenge" && (
+                        <span className="shrink-0 rounded bg-orange-500/15 px-1 py-0.5 text-[0.55rem] font-bold text-orange-500">🔥</span>
+                      )}
                       {design.displayName}
                       {design.isPremium && <span title="Premium member" className="text-amber-500 text-xs">👑</span>}
                     </p>

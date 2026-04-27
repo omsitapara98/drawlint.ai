@@ -9,10 +9,10 @@ import { ParticleBackground } from "@/components/ui/particle-background";
 
 // Typewriter words for hero
 const TYPEWRITER_WORDS = [
-  "System Design",
-  "Architecture Review",
-  "Scalability Analysis",
-  "API Design",
+  "System Design Interviews",
+  "Architecture Tradeoffs",
+  "Hire Signal Drills",
+  "Mock Rounds",
 ];
 
 // Steps data
@@ -35,7 +35,7 @@ const steps = [
     number: "03",
     title: "Respond",
     emoji: "💬",
-    description: "Address feedback verbally — just like in a real interview. The AI re-evaluates your signal based on your responses.",
+    description: "Explain your tradeoffs verbally — just like in a real interview. The AI rechecks your hire signal based on your responses.",
     color: "emerald",
   },
 ];
@@ -104,8 +104,10 @@ function useTypewriter(words: string[], typingSpeed = 80, deletingSpeed = 40, pa
     if (!isDeleting && text === currentWord) {
       timeout = setTimeout(() => setIsDeleting(true), pauseDuration);
     } else if (isDeleting && text === "") {
-      setIsDeleting(false);
-      setWordIndex((prev) => (prev + 1) % words.length);
+      timeout = setTimeout(() => {
+        setIsDeleting(false);
+        setWordIndex((prev) => (prev + 1) % words.length);
+      }, 400);
     } else {
       const speed = isDeleting ? deletingSpeed : typingSpeed;
       timeout = setTimeout(() => {
@@ -146,14 +148,23 @@ function useCountUp(target: number, duration = 2000) {
   return { count, ref };
 }
 
+// Glow-follows-cursor handler — sets CSS vars on element
+const handleGlowMove = (e: React.MouseEvent<HTMLElement>) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  e.currentTarget.style.setProperty("--mx", `${e.clientX - rect.left}px`);
+  e.currentTarget.style.setProperty("--my", `${e.clientY - rect.top}px`);
+};
+
 // AI Pipeline animation component
 function AIPipelineAnimation() {
   const containerRef = useRef<HTMLDivElement>(null);
   const inView = useInView(containerRef, { once: true, margin: "-100px" });
   const [activeStep, setActiveStep] = useState(-1);
+  const [replayKey, setReplayKey] = useState(0);
 
   useEffect(() => {
     if (!inView) return;
+    setActiveStep(-1);
     // Animate through each reviewer, then lead
     const intervals: ReturnType<typeof setTimeout>[] = [];
     AI_REVIEWERS.forEach((_, i) => {
@@ -163,8 +174,10 @@ function AIPipelineAnimation() {
     intervals.push(setTimeout(() => setActiveStep(6), 400 * 7)); // hire signal
     intervals.push(setTimeout(() => setActiveStep(7), 400 * 8.5)); // respond
     intervals.push(setTimeout(() => setActiveStep(8), 400 * 10)); // re-evaluate
+    // Auto-loop after a pause so users who scrolled past quickly still catch it
+    intervals.push(setTimeout(() => setReplayKey((k) => k + 1), 400 * 10 + 4500));
     return () => intervals.forEach(clearTimeout);
-  }, [inView]);
+  }, [inView, replayKey]);
 
   return (
     <div ref={containerRef} className="mx-auto max-w-2xl">
@@ -245,7 +258,7 @@ function AIPipelineAnimation() {
               animate={{ opacity: 1, x: 0 }}
               className="ml-2 inline-flex items-center rounded-full bg-emerald-500 px-2 py-0.5 text-[0.6rem] font-bold text-white"
             >
-              Hire Signal Ready
+              Hire ✓
             </motion.span>
           )}
         </div>
@@ -276,7 +289,7 @@ function AIPipelineAnimation() {
         >
           <MessageSquareReply className={`h-5 w-5 transition-colors duration-500 ${activeStep >= 7 ? "text-sky-500" : "text-muted-foreground/40"}`} />
           <span className="text-xs font-semibold">Respond</span>
-          <span className="text-[0.55rem] text-muted-foreground text-center">Defend your choices</span>
+          <span className="text-[0.55rem] text-muted-foreground text-center">Explain your tradeoffs</span>
           {activeStep >= 7 && (
             <motion.span
               initial={{ scale: 0 }}
@@ -313,6 +326,18 @@ function AIPipelineAnimation() {
           )}
         </motion.div>
       </div>
+
+      {/* Replay button */}
+      <div className="flex justify-center mt-8">
+        <button
+          onClick={() => setReplayKey((k) => k + 1)}
+          className="group inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-violet-500 transition-colors"
+          aria-label="Replay pipeline animation"
+        >
+          <RefreshCw className="h-3 w-3 group-hover:rotate-180 transition-transform duration-500" />
+          Replay
+        </button>
+      </div>
     </div>
   );
 }
@@ -345,9 +370,9 @@ export default function LandingPage() {
         >
           <motion.p
             variants={item}
-            className="text-sm tracking-[0.2em] uppercase text-violet-500 dark:text-violet-400 font-medium mb-4"
+            className="text-sm tracking-[0.2em] uppercase text-violet-500 dark:text-violet-400 font-semibold mb-4"
           >
-            AI-Powered Architecture Review
+            For developers, by developers
           </motion.p>
 
           <motion.h1
@@ -360,7 +385,7 @@ export default function LandingPage() {
 
           <motion.div variants={item} className="h-10 flex items-center justify-center mb-6">
             <span className="text-xl md:text-2xl text-muted-foreground font-light">
-              Master{" "}
+              Practice{" "}
               <span className="text-foreground font-medium">{typewriterText}</span>
               <span className="inline-block w-0.5 h-6 ml-1 bg-violet-500 animate-pulse" />
             </span>
@@ -370,23 +395,34 @@ export default function LandingPage() {
             variants={item}
             className="max-w-xl mx-auto text-base text-muted-foreground mb-10"
           >
-            Draw your system architecture, get instant review from five AI
-            reviewers — each calibrated to catch different classes of design issues.
+            Draw your design, defend your tradeoffs, get a hire signal —
+            before your real interview.
           </motion.p>
 
           <motion.div variants={item} className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/canvas"
-              className="group inline-flex items-center rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-10 h-12 text-base sm:text-lg font-medium text-white shadow-[0_0_25px_oklch(0.72_0.25_285_/_25%)] transition-all hover:shadow-[0_0_40px_oklch(0.72_0.25_285_/_40%)] hover:-translate-y-0.5"
+              onMouseMove={handleGlowMove}
+              className="group relative overflow-hidden inline-flex items-center rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-10 h-12 text-base sm:text-lg font-medium text-white shadow-[0_0_25px_oklch(0.72_0.25_285_/_25%)] transition-all hover:shadow-[0_0_40px_oklch(0.72_0.25_285_/_40%)] hover:-translate-y-0.5"
             >
-              Start Drawing
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              <span
+                aria-hidden
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(circle 140px at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.35), transparent 70%)",
+                }}
+              />
+              <span className="relative z-10 inline-flex items-center">
+                Try a Free Review
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </span>
             </Link>
             <Link
               href="/library"
               className="inline-flex items-center rounded-full border border-border dark:border-white/10 bg-card/50 dark:bg-white/5 backdrop-blur-sm px-6 h-10 text-sm font-medium text-foreground shadow-sm hover:shadow-md hover:border-violet-500/30 transition-all"
             >
-              Browse the Library
+              See Reviewed Designs
               <ArrowRight className="ml-2 h-3.5 w-3.5" />
             </Link>
           </motion.div>
@@ -411,16 +447,16 @@ export default function LandingPage() {
         <div className="mx-auto h-px max-w-4xl bg-gradient-to-r from-transparent via-border to-transparent" />
         <div className="mx-auto max-w-3xl mt-16 grid grid-cols-3 gap-8">
           {[
-            { ref: topics.ref, count: topics.count, suffix: "+", label: "Design Topics", icon: FileCheck },
+            { ref: topics.ref, count: topics.count, suffix: "+", label: "Practice Problems", icon: FileCheck },
             { ref: reviewers.ref, count: reviewers.count, suffix: "", label: "AI Reviewers", icon: Brain },
             { ref: levels.ref, count: levels.count, suffix: "", label: "Review Levels", icon: Users },
-          ].map((stat) => (
+          ].map((stat, i) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.5 }}
+              whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15, delay: i * 0.1 }}
               className="text-center"
             >
               <stat.icon className="h-6 w-6 mx-auto mb-3 text-violet-500" />
@@ -455,10 +491,14 @@ export default function LandingPage() {
             {steps.map((step, i) => (
               <motion.div
                 key={step.number}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{
+                  opacity: 0,
+                  x: i === 0 ? -60 : i === 2 ? 60 : 0,
+                  y: i === 1 ? 40 : 0,
+                }}
+                whileInView={{ opacity: 1, x: 0, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.15 * i }}
+                transition={{ duration: 0.6, delay: 0.15 * i, ease: "easeOut" }}
                 className="group relative rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm p-8 shadow-md shadow-black/[0.04] dark:shadow-none hover:shadow-lg hover:shadow-violet-500/[0.08] dark:hover:shadow-[0_0_20px_oklch(0.72_0.25_285_/_15%)] hover:border-violet-500/30 hover:-translate-y-1 transition-all duration-300"
               >
                 {/* Animated emoji */}
@@ -513,16 +553,16 @@ export default function LandingPage() {
           transition={{ duration: 0.5 }}
           className="gradient-text mt-16 mb-16 text-center font-heading text-3xl sm:text-4xl font-bold tracking-tight"
         >
-          Built Different
+          Why DrawLint
         </motion.h2>
         <div className="mx-auto grid max-w-4xl gap-5 sm:grid-cols-2">
           {features.map((f, i) => (
             <motion.div
               key={f.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: i % 2 === 0 ? -40 : 40 }}
+              whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 * i }}
+              transition={{ duration: 0.5, delay: 0.1 * i, ease: "easeOut" }}
               whileHover={{ y: -4 }}
               className="group relative rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm shadow-md shadow-black/[0.04] dark:shadow-none hover:shadow-lg hover:shadow-violet-500/[0.08] dark:hover:shadow-[0_0_20px_oklch(0.72_0.25_285_/_15%)] hover:border-violet-500/30 transition-all duration-300 p-7 text-card-foreground"
             >
@@ -545,10 +585,10 @@ export default function LandingPage() {
       <section className="relative px-4 py-24">
         <div className="mx-auto h-px max-w-4xl bg-gradient-to-r from-transparent via-border to-transparent" />
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, filter: "blur(20px)", scale: 0.95 }}
+          whileInView={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
           className="relative mx-auto mt-16 max-w-3xl overflow-hidden rounded-2xl border border-border dark:border-white/[0.08] bg-gradient-to-br from-violet-500/5 via-card to-cyan-500/3 dark:from-violet-500/10 dark:via-card dark:to-cyan-500/5 p-12 text-center"
         >
           <ParticleBackground className="absolute inset-0" particleCount={20} />
@@ -559,17 +599,28 @@ export default function LandingPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              Ready to level up your designs?
+              Ready to find the holes in your design?
             </motion.p>
             <p className="text-muted-foreground max-w-md">
               Join engineers practicing system design with AI-powered reviews. Free to start.
             </p>
             <Link
               href="/canvas"
-              className="group inline-flex items-center rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-8 h-12 text-base font-medium text-white shadow-lg shadow-violet-500/25 shadow-[0_0_25px_oklch(0.72_0.25_285_/_25%)] transition-all hover:shadow-xl hover:shadow-[0_0_35px_oklch(0.72_0.25_285_/_40%)] hover:-translate-y-0.5"
+              onMouseMove={handleGlowMove}
+              className="group relative overflow-hidden inline-flex items-center rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 px-8 h-12 text-base font-medium text-white shadow-lg shadow-violet-500/25 shadow-[0_0_25px_oklch(0.72_0.25_285_/_25%)] transition-all hover:shadow-xl hover:shadow-[0_0_35px_oklch(0.72_0.25_285_/_40%)] hover:-translate-y-0.5"
             >
-              Start Drawing — It&apos;s Free
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              <span
+                aria-hidden
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(circle 140px at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.35), transparent 70%)",
+                }}
+              />
+              <span className="relative z-10 inline-flex items-center">
+                Try a Free Review
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </span>
             </Link>
           </div>
         </motion.div>
@@ -578,8 +629,10 @@ export default function LandingPage() {
       {/* ── Footer ──────────────────────────────────────────── */}
       <div className="mx-auto h-px w-full max-w-4xl bg-gradient-to-r from-transparent via-border to-transparent" />
       <footer className="px-4 py-10 text-center text-sm text-muted-foreground">
-        <p className="font-medium">Built for system design interview practice</p>
-        <p className="mt-1 text-xs text-muted-foreground/50 italic">For developers, by developers.</p>
+        <p className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent font-semibold tracking-wide">
+          For developers, by developers.
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground/60">Built for system design interview practice.</p>
         <div className="mt-3 flex items-center justify-center gap-4">
           <Link href="/guide" className="hover:text-foreground transition-colors">
             Drawing Guide

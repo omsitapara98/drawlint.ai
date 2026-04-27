@@ -16,15 +16,23 @@ interface UserMenuProps {
 export default function UserMenu({ session, onOpenSettings, onOpenAccount }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [streak, setStreak] = useState<number>(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const user = session.user;
 
-  // Fetch role
+  // Fetch role + streak
   useEffect(() => {
     fetch("/api/user/settings")
       .then((r) => r.ok ? r.json() : null)
       .then((data: { role?: string } | null) => {
         if (data?.role === "premium" || data?.role === "admin") setIsPremium(true);
+      })
+      .catch(() => {});
+
+    fetch("/api/challenge/streak")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { streak?: { currentStreak?: number } } | null) => {
+        if (data?.streak?.currentStreak) setStreak(data.streak.currentStreak);
       })
       .catch(() => {});
   }, []);
@@ -62,6 +70,11 @@ export default function UserMenu({ session, onOpenSettings, onOpenAccount }: Use
         <span className="max-w-[100px] truncate text-xs font-medium">
           {user?.name ?? "User"}
         </span>
+        {streak > 0 && (
+          <span className="rounded-full bg-orange-500/15 px-1.5 py-0.5 text-[0.6rem] font-bold text-orange-500" title={`${streak} week streak`}>
+            🔥{streak}
+          </span>
+        )}
         {isPremium && <span className="text-[10px]" title="Premium">👑</span>}
       </button>
 

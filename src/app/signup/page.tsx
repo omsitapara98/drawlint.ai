@@ -96,7 +96,7 @@ export default function SignUpPage() {
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold">Create your account</h1>
           <p className="text-sm text-muted-foreground">
-            Get started with DrawLint.ai
+            Get started — your first reviews are free.
           </p>
         </div>
 

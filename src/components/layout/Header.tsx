@@ -8,7 +8,7 @@ import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { SignInButton, UserMenu } from "@/components/auth";
 import { SettingsModal, AccountModal } from "@/components/settings";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Flame } from "lucide-react";
 
 export default function Header() {
   const { theme, setTheme } = useTheme();
@@ -49,6 +49,13 @@ export default function Header() {
             className="relative inline-flex items-center rounded-lg px-2.5 h-8 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-gradient-to-r after:from-violet-500 after:to-cyan-500 after:transition-all after:duration-300"
           >
             Library
+          </Link>
+          <Link
+            href="/challenge"
+            className="relative inline-flex items-center gap-1 rounded-lg px-2.5 h-8 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-gradient-to-r after:from-orange-500 after:to-red-500 after:transition-all after:duration-300"
+          >
+            <Flame className="h-3.5 w-3.5 text-orange-500" />
+            Challenge
           </Link>
           <Link
             href="/guide"

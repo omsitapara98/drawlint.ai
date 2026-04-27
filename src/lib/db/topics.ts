@@ -56,6 +56,7 @@ export async function createTopic(
     _id: new ObjectId(),
     name,
     slug,
+    source: "community",
     submissionCount: 0,
     createdBy: new ObjectId(userId),
     createdAt: now,
@@ -64,6 +65,15 @@ export async function createTopic(
 
   await col.insertOne(doc);
   return doc;
+}
+
+/** Find multiple topics by their slugs in a single query. */
+export async function getTopicsBySlugs(
+  slugs: string[],
+): Promise<Topic[]> {
+  if (slugs.length === 0) return [];
+  const col = await collection();
+  return col.find({ slug: { $in: slugs } }).toArray();
 }
 
 /** Increment the denormalized submission counter. */

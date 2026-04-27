@@ -45,6 +45,7 @@ export async function GET() {
         reviewLevel: d.reviewLevel,
         hasReview: !!review,
         reviewedBy: review?.reviewedBy ?? null,
+        submissionType: d.submissionType ?? "regular",
         signal,
         createdAt: d.createdAt,
         updatedAt: d.updatedAt,

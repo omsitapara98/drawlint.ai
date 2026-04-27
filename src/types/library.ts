@@ -7,11 +7,22 @@ import type {
 
 /* ── Topic ───────────────────────────────────────────────────── */
 
+export type TopicDifficulty = "easy" | "medium" | "hard";
+export type TopicSource = "official" | "community";
+
 export interface Topic {
   _id: ObjectId;
   name: string;
   slug: string;
   description?: string;
+  difficulty?: TopicDifficulty;
+  source?: TopicSource;
+  brief?: string;
+  requirements?: string[];
+  scale?: string[];
+  hints?: string[];
+  timeMinutes?: number;
+  relatedSlugs?: string[];
   submissionCount: number;
   createdBy?: ObjectId;
   createdAt: Date;
@@ -31,6 +42,10 @@ export interface Design {
   forkedFrom?: ObjectId;
   reviewLevel: ReviewLevel;
   anonymousName?: string;
+  /** Set when this design was submitted as part of a weekly challenge */
+  challengeId?: ObjectId;
+  /** How this design was submitted */
+  submissionType?: "regular" | "challenge";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -115,6 +130,8 @@ export interface SubmitDesignInput {
   reviewLevel?: ReviewLevel;
   forkedFrom?: string;
   anonymous?: boolean;
+  /** "challenge" when submitted via weekly challenge flow */
+  submissionType?: "regular" | "challenge";
   /** BYO key mode: sent from client localStorage, never stored server-side */
   apiKey?: string;
   endpoint?: string;
