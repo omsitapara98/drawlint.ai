@@ -346,7 +346,7 @@ export default function LandingPage() {
   const typewriterText = useTypewriter(TYPEWRITER_WORDS);
 
   // Stats counters
-  const topics = useCountUp(20);
+  const topics = useCountUp(50);
   const reviewers = useCountUp(6);
   const levels = useCountUp(4);
 
