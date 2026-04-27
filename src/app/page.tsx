@@ -174,8 +174,6 @@ function AIPipelineAnimation() {
     intervals.push(setTimeout(() => setActiveStep(6), 400 * 7)); // hire signal
     intervals.push(setTimeout(() => setActiveStep(7), 400 * 8.5)); // respond
     intervals.push(setTimeout(() => setActiveStep(8), 400 * 10)); // re-evaluate
-    // Auto-loop after a pause so users who scrolled past quickly still catch it
-    intervals.push(setTimeout(() => setReplayKey((k) => k + 1), 400 * 10 + 4500));
     return () => intervals.forEach(clearTimeout);
   }, [inView, replayKey]);
 
