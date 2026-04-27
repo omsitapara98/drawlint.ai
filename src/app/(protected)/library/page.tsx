@@ -23,7 +23,7 @@ export default async function LibraryPage() {
             System Design Library
           </h1>
           <p className="mt-3 text-base text-muted-foreground">
-            Explore real system designs reviewed by AI — learn from the community&apos;s architecture decisions
+            See how engineers designed real systems — and what the AI flagged.
           </p>
         </div>
       </section>
@@ -31,7 +31,7 @@ export default async function LibraryPage() {
       {/* Topics Grid + My Designs */}
       <section className="mx-auto w-full max-w-5xl px-4 py-12">
         <LibraryTabs
-          topics={topics.map(t => ({ _id: t._id.toString(), name: t.name, slug: t.slug, description: t.description, submissionCount: t.submissionCount }))}
+          topics={topics.map(t => ({ _id: t._id.toString(), name: t.name, slug: t.slug, description: t.description, difficulty: t.difficulty, source: t.source, submissionCount: t.submissionCount }))}
         />
       </section>
     </div>
