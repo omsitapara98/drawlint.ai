@@ -55,7 +55,7 @@ const features = [
   {
     icon: Shield,
     title: "Privacy First",
-    description: "Your API keys stay in your browser. We never store or log credentials. Post designs under a generated pseudonym for full anonymity — verified by our open-source codebase.",
+    description: "Your API keys stay in your browser. We never store or log credentials. Post designs under a generated pseudonym for full anonymity — verified by our publicly available codebase.",
   },
   {
     icon: Star,

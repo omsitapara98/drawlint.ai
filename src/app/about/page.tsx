@@ -248,7 +248,7 @@ export default function AboutPage() {
             { value: 51, suffix: "", label: "Official Topics" },
             { value: 3, suffix: "", label: "AI Providers" },
             { value: 5, suffix: "", label: "Review Dimensions" },
-            { value: 100, suffix: "%", label: "Open Source" },
+            { value: 100, suffix: "%", label: "Public Code" },
             { value: 1, suffix: "/wk", label: "Weekly Challenge" },
           ].map((s) => (
             <motion.div
@@ -431,7 +431,7 @@ export default function AboutPage() {
                 <Sparkles className="h-7 w-7 text-violet-400" />
               </div>
               <h2 className="text-2xl font-bold font-heading mb-3">
-                100% Open Source
+                Publicly Available
               </h2>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Every line of code is public under BSL 1.1. Audit it, fork it, contribute to it.

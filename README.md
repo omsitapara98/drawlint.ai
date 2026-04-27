@@ -155,7 +155,7 @@ Deployed via GitHub Actions → Docker → Azure App Service.
 - **API keys are never stored server-side** — user credentials (Gemini/Azure) live in browser localStorage only
 - **Keys transit over HTTPS** — sent to our server only during review, immediately discarded from memory
 - **No logging of credentials** — API keys are never written to logs or databases
-- **Open source** — verify the key handling yourself in `src/lib/ai/providers/`
+- **Publicly available** — verify the key handling yourself in `src/lib/ai/providers/`
 
 ## 💰 Pricing
 
@@ -219,4 +219,4 @@ src/
 
 ## 📄 License
 
-MIT
+BSL 1.1 — see [LICENSE](./LICENSE) for details.

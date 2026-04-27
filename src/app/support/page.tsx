@@ -101,7 +101,7 @@ const FAQ_ITEMS: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "Is my data secure?",
-    a: "Yes. Your designs are stored securely in our database. API keys (Gemini or Azure) are stored only in your browser\u2019s localStorage and are never persisted on our server. Our codebase is open source \u2014 you can verify it yourself.",
+    a: "Yes. Your designs are stored securely in our database. API keys (Gemini or Azure) are stored only in your browser\u2019s localStorage and are never persisted on our server. Our codebase is publicly available \u2014 you can verify it yourself.",
   },
   {
     q: "Can I post designs anonymously?",
@@ -246,7 +246,7 @@ export default function SupportPage() {
           <div className="rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm p-8 shadow-md shadow-black/[0.04] dark:shadow-none space-y-6">
             <SectionHeading emoji="💬" title="Need More Help?" />
             <p className="text-base leading-7 text-muted-foreground">
-              We&apos;re an open-source project — your feedback shapes what we
+              We&apos;re a publicly available project — your feedback shapes what we
               build next.
             </p>
 

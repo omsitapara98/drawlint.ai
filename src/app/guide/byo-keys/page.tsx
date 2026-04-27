@@ -543,7 +543,7 @@ export default function ByoKeysGuidePage() {
               <li className="flex items-start gap-2.5">
                 <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500 inline-block" />
                 <span>
-                  <strong className="text-foreground">Open source</strong>{" "}
+                  <strong className="text-foreground">Publicly available</strong>{" "}
                   — our codebase is{" "}
                   <a
                     href="https://github.com/omsitapara98/drawlint.ai"

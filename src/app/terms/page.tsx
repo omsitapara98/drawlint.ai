@@ -123,7 +123,7 @@ export default function TermsOfServicePage() {
             <h2>10. Intellectual Property</h2>
             <ul>
               <li>The DrawLint.ai name, logo, and branding are our property.</li>
-              <li>The Service&apos;s source code is available under the MIT License on GitHub.</li>
+              <li>The Service&apos;s source code is publicly available under the BSL 1.1 License on GitHub.</li>
               <li>AI evaluation prompts and review criteria are proprietary to DrawLint.ai.</li>
             </ul>
           </section>
