@@ -55,7 +55,7 @@ const features = [
   {
     icon: Shield,
     title: "Privacy First",
-    description: "Your API keys stay in your browser. We never store or log credentials — verified by our open-source codebase.",
+    description: "Your API keys stay in your browser. We never store or log credentials. Post designs under a generated pseudonym for full anonymity — verified by our open-source codebase.",
   },
   {
     icon: Star,
@@ -631,15 +631,7 @@ export default function LandingPage() {
           For developers, by developers.
         </p>
         <p className="mt-1 text-xs text-muted-foreground/60">Built for system design interview practice.</p>
-        <div className="mt-3 flex items-center justify-center gap-4">
-          <Link href="/guide" className="hover:text-foreground transition-colors">
-            Drawing Guide
-          </Link>
-          <span className="text-muted-foreground/30">·</span>
-          <Link href="/support" className="hover:text-foreground transition-colors">
-            Support
-          </Link>
-          <span className="text-muted-foreground/30">·</span>
+        <div className="mt-3 flex items-center justify-center">
           <a
             href="https://github.com/omsitapara98/drawlint.ai"
             target="_blank"
@@ -653,8 +645,6 @@ export default function LandingPage() {
           </a>
         </div>
         <div className="mt-3 flex items-center justify-center gap-3 text-xs text-muted-foreground/60">
-          <Link href="/about" className="hover:text-muted-foreground transition-colors">About</Link>
-          <span>·</span>
           <Link href="/changelog" className="hover:text-muted-foreground transition-colors">Changelog</Link>
           <span>·</span>
           <Link href="/privacy" className="hover:text-muted-foreground transition-colors">Privacy Policy</Link>

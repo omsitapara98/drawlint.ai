@@ -104,6 +104,10 @@ const FAQ_ITEMS: { q: string; a: React.ReactNode }[] = [
     a: "Yes. Your designs are stored securely in our database. API keys (Gemini or Azure) are stored only in your browser\u2019s localStorage and are never persisted on our server. Our codebase is open source \u2014 you can verify it yourself.",
   },
   {
+    q: "Can I post designs anonymously?",
+    a: "Yes. Toggle anonymous mode before submitting and your design will be posted under a generated pseudonym (like \u201cBoldTiger42\u201d) instead of your real name. Your pseudonym is consistent across all your anonymous posts, but only you know it\u2019s you.",
+  },
+  {
     q: "Can others see my drafts?",
     a: 'No. Draft designs are private and only visible to you. Only designs submitted via "Post + AI Review" are visible in the public library.',
   },
@@ -279,6 +283,15 @@ export default function SupportPage() {
                 </span>
               </a>
             </div>
+            <p className="text-sm text-muted-foreground text-center pt-2">
+              Or reach us directly at{" "}
+              <a
+                href="mailto:drawlint.ai.support@gmail.com"
+                className="text-violet-500 hover:text-violet-400 underline underline-offset-2 transition-colors"
+              >
+                drawlint.ai.support@gmail.com
+              </a>
+            </p>
           </div>
         </section>
       </main>

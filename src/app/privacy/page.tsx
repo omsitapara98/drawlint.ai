@@ -43,6 +43,13 @@ export default function PrivacyPolicyPage() {
               <li><strong>OAuth profile data</strong> — when you sign in with Google or GitHub, we receive your name, email, and profile picture from the provider. We do not access your repositories, contacts, or other data.</li>
             </ul>
 
+            <h3>Anonymous Posting</h3>
+            <ul>
+              <li>Signed-in users can toggle <strong>anonymous mode</strong> to post designs under a generated pseudonym instead of their real name.</li>
+              <li>Your pseudonym is generated once and stored with your account. It is consistent across all your anonymous submissions.</li>
+              <li>Other users see only your pseudonym — your real identity is <strong>never exposed</strong> on anonymous posts.</li>
+            </ul>
+
             <h3>Design Data</h3>
             <ul>
               <li><strong>System design diagrams</strong> — the drawings you create and submit for review.</li>

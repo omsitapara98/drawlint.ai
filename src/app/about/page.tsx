@@ -214,21 +214,21 @@ export default function AboutPage() {
             <Target className="h-6 w-6" />
           </motion.div>
           <motion.h2 variants={fadeUp} className="text-3xl font-bold font-heading mb-4">
-            The Mission
+            Who We Are
           </motion.h2>
           <motion.p variants={fadeUp} className="text-lg text-muted-foreground leading-relaxed">
-            System design interviews are one of the{" "}
-            <span className="text-foreground font-semibold">hardest parts</span>{" "}
-            of the engineering hiring process.
-            Most candidates practice by drawing on whiteboards with{" "}
-            <span className="text-foreground font-semibold">zero feedback</span>.
+            DrawLint.ai is built by a developer who shared a common frustration:{" "}
+            <span className="text-foreground font-semibold">practicing system design with zero feedback</span>.
+            Most engineers prepare by drawing on whiteboards alone, with{" "}
+            <span className="text-foreground font-semibold">no way to know</span>{" "}
+            if their architecture would pass a real interview.
           </motion.p>
           <motion.p variants={fadeUp} className="mt-4 text-lg leading-relaxed">
-            <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent font-semibold">
-              DrawLint.ai changes that.
-            </span>{" "}
             <span className="text-muted-foreground">
-              Draw your architecture, get instant AI review, defend your choices, and improve iteratively.
+              Having prepared for and gone through system design interviews firsthand, we&apos;re building the tool we always wished existed —{" "}
+            </span>
+            <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent font-semibold">
+              an AI-powered review partner that gives you real, actionable feedback.
             </span>
           </motion.p>
         </motion.div>
@@ -434,7 +434,7 @@ export default function AboutPage() {
                 100% Open Source
               </h2>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Every line of code is public under the MIT License. Audit it, fork it, contribute to it.
+                Every line of code is public under BSL 1.1. Audit it, fork it, contribute to it.
                 No black boxes, no hidden logic.
               </p>
               <a
@@ -454,14 +454,14 @@ export default function AboutPage() {
         </motion.div>
       </section>
 
-      {/* ━━ Built By ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/* ━━ Our Story ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section className="px-4 py-20">
         <motion.div
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: "-100px" }}
           variants={stagger}
-          className="mx-auto max-w-md text-center"
+          className="mx-auto max-w-2xl text-center"
         >
           <motion.div variants={scaleIn}>
             <div className="relative mx-auto mb-6">
@@ -472,41 +472,53 @@ export default function AboutPage() {
               </div>
             </div>
           </motion.div>
-          <motion.h3 variants={fadeUp} className="text-xl font-bold">
-            Built by{" "}
-            <a
-              href="https://omsitapara.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent hover:underline"
-            >
-              Om Sitapara
-            </a>
-          </motion.h3>
-          <motion.p variants={fadeUp} className="mt-2 text-sm text-muted-foreground">
-            Software engineer passionate about making system design practice accessible to every developer.
+          <motion.h2 variants={fadeUp} className="text-3xl font-bold font-heading mb-4">
+            Our Story
+          </motion.h2>
+          <motion.p variants={fadeUp} className="text-base text-muted-foreground leading-relaxed">
+            What began as a side project to automate system design feedback evolved into something bigger — a mission to rethink how engineers prepare for system design interviews.
           </motion.p>
-          <motion.div variants={fadeUp} className="mt-5 flex items-center justify-center gap-3">
-            <a
-              href="https://omsitapara.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 h-9 text-xs font-medium text-muted-foreground transition-all hover:text-foreground hover:border-foreground/20"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Portfolio
-            </a>
-            <a
-              href="https://github.com/omsitapara98"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 h-9 text-xs font-medium text-muted-foreground transition-all hover:text-foreground hover:border-foreground/20"
-            >
-              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-              </svg>
-              GitHub
-            </a>
+          <motion.p variants={fadeUp} className="mt-4 text-base text-muted-foreground leading-relaxed">
+            Today, DrawLint.ai is focused on creating the best AI-powered system design review platform, where{" "}
+            <span className="text-foreground font-semibold">visual thinking</span>,{" "}
+            <span className="text-foreground font-semibold">engineering discipline</span>, and{" "}
+            <span className="text-foreground font-semibold">AI</span>{" "}
+            work together seamlessly.
+          </motion.p>
+          <motion.div variants={fadeUp} className="mt-6">
+            <p className="text-sm text-muted-foreground">
+              Created by{" "}
+              <a
+                href="https://omsitapara.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent font-semibold hover:underline"
+              >
+                Om Sitapara
+              </a>
+            </p>
+            <div className="mt-4 flex items-center justify-center gap-3">
+              <a
+                href="https://omsitapara.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 h-9 text-xs font-medium text-muted-foreground transition-all hover:text-foreground hover:border-foreground/20"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Portfolio
+              </a>
+              <a
+                href="https://github.com/omsitapara98"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 h-9 text-xs font-medium text-muted-foreground transition-all hover:text-foreground hover:border-foreground/20"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                </svg>
+                GitHub
+              </a>
+            </div>
           </motion.div>
         </motion.div>
       </section>
