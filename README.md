@@ -25,6 +25,14 @@ AI-powered system design review platform. Draw your architecture, get expert-lev
 - 🔄 **Re-evaluate Signal** — AI re-assesses hire signal after your responses
 - ❓ **Follow-up Questions** — Answer AI-generated probing questions with AI evaluation
 
+### Weekly Challenge
+- 🔥 **Weekly System Design Challenge** — New problem every Monday, practice all week
+- 🏆 **Leaderboard** — Ranked by hire signal + submission time
+- 📊 **Streak Tracking** — Track consecutive weeks of practice
+- 🎯 **Pre-filled Requirements** — FR and scale expectations auto-filled from topic data
+- 🔒 **One-shot Submission** — Submit once, no re-evaluations — mirrors real interview pressure
+- 🆓 **Free for Everyone** — Separate from monthly quota, no credits needed
+
 ### AI Providers
 - ⭐ **DrawLint AI** — Managed, best quality, 10 free reviews/month
 - 💡 **Gemini AI** — Free, unlimited with your own Google API key (~30 sec setup)
@@ -33,7 +41,8 @@ AI-powered system design review platform. Draw your architecture, get expert-lev
 
 ### Platform
 - 🎨 **Excalidraw Canvas** — Structured whiteboard template with locked sections
-- 📚 **Community Library** — Browse, filter, sort, and learn from other designers
+- 📚 **Community Library** — 51 enriched topics with difficulty, requirements, scale, and hints
+- 🏷️ **Official + Community Topics** — Curated problems with difficulty badges (Easy/Medium/Hard)
 - 💾 **Draft System** — Auto-save drafts, continue editing anytime
 - 🔗 **Share Designs** — Copy link to share your design + review with anyone
 - 🔒 **Auth** — GitHub + Google OAuth via NextAuth.js v5

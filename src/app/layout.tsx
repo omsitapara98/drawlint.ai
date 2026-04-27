@@ -26,7 +26,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://drawlint-ai.in";
 export const metadata: Metadata = {
   title: "DrawLint.ai — AI-Powered System Design Review",
   description:
-    "Draw system design diagrams and get instant AI feedback from 6 specialized reviewers. Practice for system design interviews with real-time architecture analysis.",
+    "Draw system design diagrams and get instant AI feedback from 6 specialized reviewers. Weekly challenges, leaderboards, and streaks. Practice for system design interviews with real-time architecture analysis.",
   metadataBase: new URL(APP_URL),
   keywords: [
     "system design",
@@ -39,6 +39,8 @@ export const metadata: Metadata = {
     "scalability",
     "HLD",
     "low level design",
+    "weekly challenge",
+    "system design practice",
   ],
   authors: [{ name: "DrawLint.ai" }],
   creator: "DrawLint.ai",

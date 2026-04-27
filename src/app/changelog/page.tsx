@@ -12,6 +12,21 @@ const CHANGELOG = [
     tag: "Launch",
     items: [
       {
+        title: "Weekly Challenge",
+        description: "New system design challenge every Monday. One-shot submission with AI review, leaderboard ranked by hire signal, streak tracking, and pre-filled requirements. Free for everyone — doesn\u2019t use your monthly quota.",
+        badge: "New" as const,
+      },
+      {
+        title: "Library Revamp",
+        description: "Three-tab layout: Official Topics (51 curated problems with difficulty badges), Community Topics, and My Designs. Each topic page now shows requirements, scale expectations, collapsible hints, estimated time, and related topics.",
+        badge: "Major" as const,
+      },
+      {
+        title: "Topic Enrichment",
+        description: "All 51 official topics now include difficulty level (Easy/Medium/Hard), problem brief, key requirements, scale expectations, hints, estimated time, and related topic links.",
+        badge: "New" as const,
+      },
+      {
         title: "Core Platform",
         description: "Excalidraw-based canvas, 6 AI reviewers (NFR, Entities, Capacity, API, HLD + Lead Reviewer), peer library, draft save, share links, and authentication (email, Google, GitHub).",
         badge: "Launch" as const,

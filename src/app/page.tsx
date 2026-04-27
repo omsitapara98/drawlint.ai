@@ -59,8 +59,8 @@ const features = [
   },
   {
     icon: Star,
-    title: "Interview Simulation",
-    description: "Respond to feedback verbally, answer follow-up questions, and get your hire signal re-evaluated — just like a real panel.",
+    title: "Weekly Challenge",
+    description: "New system design problem every week. Compete on the leaderboard, build your streak, and practice under real interview pressure.",
   },
 ];
 

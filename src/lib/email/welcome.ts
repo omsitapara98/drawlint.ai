@@ -68,6 +68,7 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<void> 
     <div style="background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); border-radius: 10px; padding: 16px; margin-bottom: 24px;">
       <p style="margin: 0; font-size: 13px; color: #a78bfa; font-weight: 600;">🎁 Your free tier includes:</p>
       <p style="margin: 8px 0 0; font-size: 13px; color: #999;">10 AI reviews/month with DrawLint AI — or connect Gemini for unlimited free reviews.</p>
+      <p style="margin: 8px 0 0; font-size: 13px; color: #999;">🔥 <strong style="color: #fb923c;">Weekly Challenge</strong> — free system design challenge every week with leaderboard and streaks.</p>
     </div>
 
     <a href="${appUrl}/canvas" style="display: block; text-align: center; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; text-decoration: none; padding: 14px 24px; border-radius: 10px; font-size: 15px; font-weight: 600; margin-bottom: 24px;">
