@@ -131,6 +131,22 @@ const FAQ_ITEMS: { q: string; a: React.ReactNode }[] = [
     q: "Can I use DrawLint on mobile?",
     a: "The whiteboard canvas requires a desktop browser for the best experience. You can browse the design library on mobile.",
   },
+  {
+    q: "What is the Weekly Challenge?",
+    a: "Every Monday, a new system design problem is posted. You have until Sunday to submit your solution. The AI reviews it for free (doesn\u2019t use your monthly quota), and you\u2019re ranked on the leaderboard by hire signal. Build your streak by completing consecutive weeks.",
+  },
+  {
+    q: "Can I re-submit my weekly challenge?",
+    a: "No \u2014 weekly challenge submissions are one-shot, just like a real interview. You get one submission per week. You can still respond to follow-up questions to improve your feedback, but the design itself is locked after submission.",
+  },
+  {
+    q: "Is the weekly challenge free?",
+    a: "Yes, completely free for all users. Challenge reviews don\u2019t count against your 10/month DrawLint AI quota. It\u2019s a separate bucket.",
+  },
+  {
+    q: "What happens to my streak if I miss a week?",
+    a: "Your current streak resets to zero, but your longest streak is preserved. You can start building again the following week.",
+  },
 ];
 
 /* ── Accordion item ───────────────────────────────────────── */

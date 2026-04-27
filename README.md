@@ -12,7 +12,7 @@ AI-powered system design review platform. Draw your architecture, get expert-lev
 
 1. **Draw** — Use the Excalidraw whiteboard with structured sections (FR, Assumptions, NFRs, Entities, Capacity, API Routes, HLD)
 2. **Submit** — Choose your review level and submit to the community library
-3. **Review** — Get feedback from 5 specialized AI reviewers + 1 Lead Reviewer with hire signals
+3. **Review** — Get feedback from 6 AI reviewers (5 section specialists + 1 Lead Reviewer) with hire signals
 
 ## ✨ Features
 

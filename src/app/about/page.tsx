@@ -241,13 +241,15 @@ export default function AboutPage() {
           whileInView="show"
           viewport={{ once: true }}
           variants={stagger}
-          className="mx-auto grid max-w-4xl grid-cols-2 gap-4 sm:grid-cols-4"
+          className="mx-auto grid max-w-4xl grid-cols-2 gap-4 sm:grid-cols-3"
         >
           {[
             { value: 6, suffix: "", label: "AI Reviewers" },
-            { value: 5, suffix: "", label: "Review Dimensions" },
+            { value: 51, suffix: "", label: "Official Topics" },
             { value: 3, suffix: "", label: "AI Providers" },
+            { value: 5, suffix: "", label: "Review Dimensions" },
             { value: 100, suffix: "%", label: "Open Source" },
+            { value: 1, suffix: "/wk", label: "Weekly Challenge" },
           ].map((s) => (
             <motion.div
               key={s.label}
@@ -304,6 +306,70 @@ export default function AboutPage() {
                 </div>
               </motion.div>
             ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ━━ Features ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section className="px-4 py-20">
+        <div className="mx-auto max-w-4xl">
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={stagger}
+            className="text-center mb-12"
+          >
+            <motion.h2 variants={fadeUp} className="text-3xl font-bold font-heading">
+              Beyond Reviews
+            </motion.h2>
+            <motion.p variants={fadeUp} className="mt-2 text-muted-foreground">
+              Practice, compete, and grow — all in one place.
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            variants={stagger}
+            className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+          >
+            <SpotlightCard>
+              <motion.div variants={fadeUp} className="flex flex-col items-center gap-3 text-center">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted/50 text-xl">🔥</div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Weekly Challenge</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    New system design problem every Monday. One-shot submission, leaderboard rankings, and streak tracking to keep you consistent.
+                  </p>
+                </div>
+              </motion.div>
+            </SpotlightCard>
+
+            <SpotlightCard>
+              <motion.div variants={fadeUp} className="flex flex-col items-center gap-3 text-center">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted/50 text-xl">📚</div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">51 Official Topics</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Curated problems with difficulty levels (Easy / Medium / Hard), pre-filled requirements, and scale expectations.
+                  </p>
+                </div>
+              </motion.div>
+            </SpotlightCard>
+
+            <SpotlightCard>
+              <motion.div variants={fadeUp} className="flex flex-col items-center gap-3 text-center">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted/50 text-xl">🏷️</div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Community Library</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Browse Official and Community tabs — learn from curated solutions and real submissions from other engineers.
+                  </p>
+                </div>
+              </motion.div>
+            </SpotlightCard>
           </motion.div>
         </div>
       </section>

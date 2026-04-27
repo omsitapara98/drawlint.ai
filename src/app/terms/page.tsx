@@ -63,7 +63,17 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2>5. AI-Generated Content</h2>
+            <h2>5. Weekly Challenge Rules</h2>
+            <ul>
+              <li>Weekly challenge submissions are <strong>final</strong> and cannot be deleted or re-evaluated.</li>
+              <li>Each user is limited to <strong>one submission per challenge</strong>.</li>
+              <li>Leaderboard rankings are determined by AI-generated hire signals and submission time.</li>
+              <li>DrawLint reserves the right to modify challenge rules, scoring criteria, or frequency at any time.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>6. AI-Generated Content</h2>
             <p>
               DrawLint.ai provides AI-generated reviews and feedback on your system designs. Please note:
             </p>
@@ -77,7 +87,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2>6. Bring Your Own API Keys</h2>
+            <h2>7. Bring Your Own API Keys</h2>
             <ul>
               <li>If you connect your own AI provider (Gemini, Azure OpenAI), you are responsible for compliance with that provider&apos;s terms of service.</li>
               <li>Your API keys are stored in your browser and transmitted to our server only during analysis. We do not store your keys on our servers.</li>
@@ -87,7 +97,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2>7. Acceptable Use</h2>
+            <h2>8. Acceptable Use</h2>
             <p>You agree not to:</p>
             <ul>
               <li>Use the Service for any unlawful purpose.</li>
@@ -101,7 +111,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2>8. Free Tier & Usage Limits</h2>
+            <h2>9. Free Tier & Usage Limits</h2>
             <ul>
               <li>The free tier includes a limited number of AI reviews per month using DrawLint AI.</li>
               <li>We reserve the right to modify usage limits at any time.</li>
@@ -110,7 +120,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2>9. Intellectual Property</h2>
+            <h2>10. Intellectual Property</h2>
             <ul>
               <li>The DrawLint.ai name, logo, and branding are our property.</li>
               <li>The Service&apos;s source code is available under the MIT License on GitHub.</li>
@@ -119,7 +129,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2>10. Disclaimer of Warranties</h2>
+            <h2>11. Disclaimer of Warranties</h2>
             <p>
               The Service is provided <strong>&quot;as is&quot;</strong> and <strong>&quot;as available&quot;</strong> without warranties of any kind,
               either express or implied. We do not warrant that the Service will be uninterrupted,
@@ -128,7 +138,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2>11. Limitation of Liability</h2>
+            <h2>12. Limitation of Liability</h2>
             <p>
               To the maximum extent permitted by law, DrawLint.ai shall not be liable for any indirect,
               incidental, special, consequential, or punitive damages, including but not limited to loss of
@@ -137,7 +147,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2>12. Account Termination</h2>
+            <h2>13. Account Termination</h2>
             <ul>
               <li>You may delete your account at any time through Settings.</li>
               <li>We may suspend or terminate accounts that violate these Terms.</li>
@@ -146,7 +156,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2>13. Changes to Terms</h2>
+            <h2>14. Changes to Terms</h2>
             <p>
               We may update these Terms from time to time. Material changes will be communicated by posting
               the updated terms on this page. Continued use of the Service after changes constitutes acceptance
@@ -155,7 +165,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2>14. Governing Law</h2>
+            <h2>15. Governing Law</h2>
             <p>
               These Terms shall be governed by and construed in accordance with the laws of India,
               without regard to conflict of law provisions.
@@ -163,7 +173,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2>15. Contact</h2>
+            <h2>16. Contact</h2>
             <p>
               Questions about these Terms? Contact us at:{" "}
               <a href="mailto:drawlint.ai.support@gmail.com" className="text-violet-400 hover:underline">drawlint.ai.support@gmail.com</a>

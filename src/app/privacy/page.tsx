@@ -50,6 +50,13 @@ export default function PrivacyPolicyPage() {
               <li><strong>Your responses</strong> — text you write when responding to AI feedback.</li>
             </ul>
 
+            <h3>Weekly Challenge Data</h3>
+            <ul>
+              <li><strong>Challenge submissions</strong> — design data and submission timestamps for each weekly challenge you enter.</li>
+              <li><strong>Streak data</strong> — your current streak, longest streak, and completion history.</li>
+              <li><strong>Leaderboard data</strong> — scores and rankings, displayed publicly with your display name or pseudonym.</li>
+            </ul>
+
             <h3>API Keys (BYO Mode)</h3>
             <ul>
               <li>If you choose to bring your own AI provider (Gemini or Azure OpenAI), your API keys are stored <strong>locally in your browser&apos;s localStorage</strong>.</li>
