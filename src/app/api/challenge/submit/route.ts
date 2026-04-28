@@ -5,6 +5,7 @@ import {
   hasUserSubmitted,
   createChallengeSubmission,
   updateUserStreak,
+  DuplicateSubmissionError,
 } from "@/lib/db/challenges";
 import { getWeekId, SIGNAL_SCORES } from "@/types/challenge";
 
@@ -124,13 +125,24 @@ export async function POST(request: Request) {
 
   // 4. Create submission entry with server-verified signal
   const score = SIGNAL_SCORES[serverSignal] ?? 1;
-  const submission = await createChallengeSubmission({
-    challengeId: challenge._id.toString(),
-    userId,
-    designId: body.designId,
-    score,
-    signal: serverSignal,
-  });
+  let submission;
+  try {
+    submission = await createChallengeSubmission({
+      challengeId: challenge._id.toString(),
+      userId,
+      designId: body.designId,
+      score,
+      signal: serverSignal,
+    });
+  } catch (err) {
+    if (err instanceof DuplicateSubmissionError) {
+      return NextResponse.json(
+        { error: "You have already submitted for this week's challenge." },
+        { status: 409 },
+      );
+    }
+    throw err;
+  }
 
   // 5. Update streak
   const streak = await updateUserStreak(userId, weekId);

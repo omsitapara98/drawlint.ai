@@ -5,6 +5,15 @@ import { getWeekId, getPreviousWeekId, getWeekBounds } from "@/types/challenge";
 
 const DB_NAME = "drawlint-db";
 
+/* ── Custom Errors ───────────────────────────────────────────── */
+
+export class DuplicateSubmissionError extends Error {
+  constructor() {
+    super("duplicate submission");
+    this.name = "DuplicateSubmissionError";
+  }
+}
+
 /* ── Collection accessors ────────────────────────────────────── */
 
 async function challengesCol() {
@@ -120,7 +129,12 @@ export async function createChallengeSubmission(input: {
     signal: input.signal,
     submittedAt: new Date(),
   };
-  await col.insertOne(doc);
+  try {
+    await col.insertOne(doc);
+  } catch (err) {
+    if ((err as { code?: number }).code === 11000) throw new DuplicateSubmissionError();
+    throw err;
+  }
   return doc;
 }
 
