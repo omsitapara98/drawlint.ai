@@ -602,14 +602,44 @@ function CanvasPageInner() {
   );
   const canvasDirty = elementFingerprint !== draftSavedFingerprintRef.current;
 
-  // Warn before leaving with unsaved changes
+  // Warn before leaving with unsaved changes (tab close + SPA navigation)
   useEffect(() => {
     if (!hasDrawnShapes || !canvasDirty) return;
-    const handler = (e: BeforeUnloadEvent) => {
+
+    // Browser tab close / refresh
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
     };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Intercept Next.js client-side navigation (pushState)
+    const originalPushState = history.pushState.bind(history);
+    history.pushState = function (...args: Parameters<typeof history.pushState>) {
+      if (!window.confirm("You have unsaved changes. Leave this page?")) {
+        return;
+      }
+      return originalPushState(...args);
+    };
+
+    // Intercept browser back/forward
+    const handlePopState = () => {
+      if (!window.confirm("You have unsaved changes. Leave this page?")) {
+        // Push current state back to cancel the navigation
+        history.pushState = originalPushState;
+        history.pushState(null, "", window.location.href);
+        history.pushState = function (...a: Parameters<typeof history.pushState>) {
+          if (!window.confirm("You have unsaved changes. Leave this page?")) return;
+          return originalPushState(...a);
+        };
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("popstate", handlePopState);
+      history.pushState = originalPushState;
+    };
   }, [hasDrawnShapes, canvasDirty]);
 
   // Cancel any in-progress stream on unmount
