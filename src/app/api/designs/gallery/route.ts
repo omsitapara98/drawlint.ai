@@ -26,11 +26,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ designs: [], hasMore: false });
   }
 
-  // Batch fetch topics and users
+  // Batch fetch topics, users, and reviews
+  const designIds = designs.map((d) => d._id);
   const topicIds = [...new Set(designs.map((d) => d.topicId.toString()))];
   const userIds = [...new Set(designs.map((d) => d.userId.toString()))];
 
-  const [topics, users] = await Promise.all([
+  const [topics, users, reviews] = await Promise.all([
     db
       .collection("topics")
       .find({ _id: { $in: topicIds.map((id) => new ObjectId(id)) } })
@@ -41,14 +42,21 @@ export async function GET(request: Request) {
       .find({ _id: { $in: userIds.map((id) => new ObjectId(id)) } })
       .project({ _id: 1, name: 1, image: 1 })
       .toArray(),
+    db
+      .collection("reviews")
+      .find({ designId: { $in: designIds } })
+      .project({ designId: 1, level: 1, reviewedBy: 1, leadReviewer: 1 })
+      .toArray(),
   ]);
 
   const topicMap = new Map(topics.map((t) => [t._id.toString(), t]));
   const userMap = new Map(users.map((u) => [u._id.toString(), u]));
+  const reviewMap = new Map(reviews.map((r) => [r.designId.toString(), r]));
 
   const enriched = designs.map((d) => {
     const topic = topicMap.get(d.topicId.toString());
     const user = userMap.get(d.userId.toString());
+    const review = reviewMap.get(d._id.toString());
     const isAnonymous = !!d.anonymousName;
 
     return {
@@ -59,9 +67,9 @@ export async function GET(request: Request) {
         ? d.anonymousName
         : (user?.name ?? "Anonymous"),
       avatarUrl: isAnonymous ? null : (user?.image ?? null),
-      signal: d.review?.hireSignal ?? null,
-      reviewLevel: d.review?.level ?? "mid",
-      reviewedBy: d.review?.reviewedBy ?? null,
+      signal: review?.leadReviewer?.signal ?? null,
+      reviewLevel: review?.level ?? d.reviewLevel ?? "mid",
+      reviewedBy: review?.reviewedBy ?? null,
       submissionType: d.submissionType ?? "regular",
       isPremium: d.isPremium ?? false,
       createdAt: d.createdAt,
