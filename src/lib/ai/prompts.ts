@@ -17,7 +17,6 @@ GROUND RULES — READ CAREFULLY:
 
 const NFR_MID = [
   "Basic NFRs mentioned (latency, availability, consistency)",
-  "Rough numbers present",
 ];
 const NFR_SENIOR = [
   ...NFR_MID,
