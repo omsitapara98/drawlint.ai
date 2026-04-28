@@ -423,7 +423,7 @@ export default function LandingPage() {
               href="/library"
               className="inline-flex items-center rounded-full border border-border dark:border-white/10 bg-card/50 dark:bg-white/5 backdrop-blur-sm px-6 h-10 text-sm font-medium text-foreground shadow-sm hover:shadow-md hover:border-violet-500/30 transition-all"
             >
-              Design Library
+              System Design Library
               <ArrowRight className="ml-2 h-3.5 w-3.5" />
             </Link>
           </motion.div>
