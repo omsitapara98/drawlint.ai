@@ -7,10 +7,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const sort =
     searchParams.get("sort") === "recent" ? "recent" : "popular";
-  const limit = Math.min(
-    Math.max(parseInt(searchParams.get("limit") ?? "50", 10) || 50, 1),
-    200,
-  );
+  const limitParam = searchParams.get("limit");
+  const limit = limitParam
+    ? Math.min(Math.max(parseInt(limitParam, 10) || 200, 1), 200)
+    : undefined;
 
   const topics = await getTopics(sort, limit);
   return NextResponse.json({ topics });

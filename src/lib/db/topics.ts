@@ -14,7 +14,7 @@ async function collection() {
 /** List topics, sorted by popularity or recency. */
 export async function getTopics(
   sort: "popular" | "recent" = "popular",
-  limit = 50,
+  limit?: number,
 ): Promise<Topic[]> {
   const col = await collection();
   const sortField: Record<string, 1 | -1> =
@@ -23,10 +23,12 @@ export async function getTopics(
       : { createdAt: -1 };
 
   try {
-    return await col.find().sort(sortField).limit(limit).toArray();
+    const cursor = col.find().sort(sortField);
+    return await (limit ? cursor.limit(limit) : cursor).toArray();
   } catch {
     // Fallback: Cosmos DB may lack indexes for server-side sort — sort in JS
-    const docs = await col.find().limit(limit).toArray();
+    const cursor = col.find();
+    const docs = await (limit ? cursor.limit(limit) : cursor).toArray();
     const key = sort === "popular" ? "submissionCount" : "createdAt";
     docs.sort((a, b) => {
       const av = a[key] instanceof Date ? (a[key] as Date).getTime() : (a[key] as number);

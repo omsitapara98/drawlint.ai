@@ -10,7 +10,7 @@ export const metadata = {
 };
 
 export default async function LibraryPage() {
-  const topics = await getTopics("popular", 50);
+  const topics = await getTopics("popular");
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
