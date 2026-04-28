@@ -59,7 +59,11 @@ export async function GET(request: Request) {
         ? d.anonymousName
         : (user?.name ?? "Anonymous"),
       avatarUrl: isAnonymous ? null : (user?.image ?? null),
-      hireSignal: d.review?.hireSignal ?? null,
+      signal: d.review?.hireSignal ?? null,
+      reviewLevel: d.review?.level ?? "mid",
+      reviewedBy: d.review?.reviewedBy ?? null,
+      submissionType: d.submissionType ?? "regular",
+      isPremium: d.isPremium ?? false,
       createdAt: d.createdAt,
     };
   });
