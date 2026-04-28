@@ -18,6 +18,7 @@ import { analyzeDesign } from "@/lib/ai";
 import { parseDiagram } from "@/lib/diagram";
 import type { SubmitDesignInput } from "@/types/library";
 import type { ReviewLevel } from "@/types/feedback";
+import type { DrawLintCredentials, ProviderCredentials } from "@/lib/ai/providers/types";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 interface DesignRequestBody extends SubmitDesignInput {
@@ -152,22 +153,29 @@ export async function POST(request: Request) {
   }
 
   // ── Resolve AI credentials BEFORE any mutations ────────────────
-  // Use centralized provider resolver based on user's aiMode.
+  // Challenges always use DrawLint AI for consistent leaderboard quality.
+  // Regular submissions use the user's selected provider.
   const { resolveAnalysisProvider, isResolutionError } = await import("@/lib/ai/resolve-provider");
   const userSettings = await getUserAiSettings(userId);
-  const providerResult = resolveAnalysisProvider(userSettings, body);
 
+  let credentials: ProviderCredentials;
   let isManagedMode = false;
 
-  if (isResolutionError(providerResult)) {
-    return NextResponse.json(
-      { error: providerResult.error, code: providerResult.errorCode },
-      { status: providerResult.status },
-    );
+  if (isValidChallenge) {
+    // Force DrawLint AI for challenges — consistent review quality on leaderboard
+    credentials = { provider: "drawlint" } as DrawLintCredentials;
+    isManagedMode = true;
+  } else {
+    const providerResult = resolveAnalysisProvider(userSettings, body);
+    if (isResolutionError(providerResult)) {
+      return NextResponse.json(
+        { error: providerResult.error, code: providerResult.errorCode },
+        { status: providerResult.status },
+      );
+    }
+    credentials = providerResult.credentials;
+    isManagedMode = providerResult.isManagedQuota;
   }
-
-  const credentials = providerResult.credentials;
-  isManagedMode = providerResult.isManagedQuota;
 
   // For managed mode: check and reserve quota (skip for validated challenge submissions)
   if (isManagedMode && !isValidChallenge) {
