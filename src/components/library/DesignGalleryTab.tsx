@@ -103,29 +103,30 @@ export function DesignGalleryTab() {
             href={`/library/${d.topicSlug}/${d._id}`}
             className="group block rounded-xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 shadow-md shadow-black/[0.04] dark:shadow-none p-5 text-card-foreground hover:border-primary/30 hover:shadow-lg hover:shadow-violet-500/[0.08] dark:hover:shadow-[0_0_20px_oklch(0.72_0.25_285_/_15%)] hover:-translate-y-0.5 transition-all duration-300"
           >
-            {/* Topic name */}
-            <p className="text-[0.7rem] font-medium text-violet-600 dark:text-violet-400 mb-2">
+            {/* Topic title */}
+            <h3 className="text-sm font-semibold text-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
               {d.topicName}
-            </p>
+            </h3>
 
             {/* Author row */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 mt-2">
               {d.avatarUrl ? (
-                <img src={d.avatarUrl} alt={d.displayName} className="h-8 w-8 rounded-full object-cover" />
+                <img src={d.avatarUrl} alt={d.displayName} className="h-6 w-6 rounded-full object-cover" />
               ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-violet-700 dark:bg-violet-900 dark:text-violet-300 shadow-[0_0_8px_oklch(0.72_0.25_285_/_25%)]">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-100 text-[0.6rem] font-bold text-violet-700 dark:bg-violet-900 dark:text-violet-300">
                   {d.displayName.charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium flex items-center gap-1">
+                <p className="truncate text-xs text-muted-foreground flex items-center gap-1">
                   {d.submissionType === "challenge" && (
                     <span className="shrink-0 rounded bg-orange-500/15 px-1 py-0.5 text-[0.55rem] font-bold text-orange-500">🔥</span>
                   )}
                   {d.displayName}
                   {d.isPremium && <span title="Premium member" className="text-amber-500 text-xs">👑</span>}
+                  <span className="text-muted-foreground/50">·</span>
+                  {formatDate(d.createdAt)}
                 </p>
-                <p className="text-xs text-muted-foreground">{formatDate(d.createdAt)}</p>
               </div>
             </div>
 
