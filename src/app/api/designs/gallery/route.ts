@@ -45,18 +45,30 @@ export async function GET(request: Request) {
     db
       .collection("reviews")
       .find({ designId: { $in: designIds } })
-      .project({ designId: 1, level: 1, reviewedBy: 1, leadReviewer: 1 })
+      .project({ _id: 1, designId: 1, level: 1, reviewedBy: 1, leadReviewer: 1 })
       .toArray(),
   ]);
+
+  // Batch-fetch re-evaluated signals (latest hire call overrides original)
+  const reviewIds = reviews.map((r) => r._id);
+  const reevals = reviewIds.length
+    ? await db
+        .collection("reeval_signals")
+        .find({ reviewId: { $in: reviewIds } })
+        .project({ reviewId: 1, updatedSignal: 1 })
+        .toArray()
+    : [];
 
   const topicMap = new Map(topics.map((t) => [t._id.toString(), t]));
   const userMap = new Map(users.map((u) => [u._id.toString(), u]));
   const reviewMap = new Map(reviews.map((r) => [r.designId.toString(), r]));
+  const reevalByReviewId = new Map(reevals.map((e) => [e.reviewId.toString(), e]));
 
   const enriched = designs.map((d) => {
     const topic = topicMap.get(d.topicId.toString());
     const user = userMap.get(d.userId.toString());
     const review = reviewMap.get(d._id.toString());
+    const reeval = review ? reevalByReviewId.get(review._id.toString()) : null;
     const isAnonymous = !!d.anonymousName;
 
     return {
@@ -67,7 +79,7 @@ export async function GET(request: Request) {
         ? d.anonymousName
         : (user?.name ?? "Anonymous"),
       avatarUrl: isAnonymous ? null : (user?.image ?? null),
-      signal: review?.leadReviewer?.signal ?? null,
+      signal: reeval?.updatedSignal ?? review?.leadReviewer?.signal ?? null,
       reviewLevel: review?.level ?? d.reviewLevel ?? "mid",
       reviewedBy: review?.reviewedBy ?? null,
       submissionType: d.submissionType ?? "regular",
