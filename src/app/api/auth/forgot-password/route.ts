@@ -6,6 +6,21 @@ import { sendPasswordResetEmail } from "@/lib/email/reset-password";
 
 const DB_NAME = "drawlint-db";
 
+const FORGOT_MAX_ATTEMPTS = 3;
+const FORGOT_WINDOW_MS = 15 * 60 * 1000;
+const forgotPasswordByIp = new Map<string, { count: number; windowStart: number }>();
+const forgotPasswordByEmail = new Map<string, { count: number; windowStart: number }>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of forgotPasswordByIp) {
+    if (now - record.windowStart > FORGOT_WINDOW_MS) forgotPasswordByIp.delete(key);
+  }
+  for (const [key, record] of forgotPasswordByEmail) {
+    if (now - record.windowStart > FORGOT_WINDOW_MS) forgotPasswordByEmail.delete(key);
+  }
+}, 30 * 60 * 1000).unref?.();
+
 export async function POST(request: Request) {
   let body: { email?: string };
   try {
@@ -23,6 +38,35 @@ export async function POST(request: Request) {
   const successResponse = NextResponse.json({
     message: "If an account exists with this email, a reset link has been sent.",
   });
+
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+
+  const now = Date.now();
+
+  const ipRecord = forgotPasswordByIp.get(ip);
+  if (ipRecord && now - ipRecord.windowStart <= FORGOT_WINDOW_MS && ipRecord.count >= FORGOT_MAX_ATTEMPTS) {
+    return successResponse;
+  }
+
+  const emailRecord = forgotPasswordByEmail.get(email);
+  if (emailRecord && now - emailRecord.windowStart <= FORGOT_WINDOW_MS && emailRecord.count >= FORGOT_MAX_ATTEMPTS) {
+    return successResponse;
+  }
+
+  if (!ipRecord || now - ipRecord.windowStart > FORGOT_WINDOW_MS) {
+    forgotPasswordByIp.set(ip, { count: 1, windowStart: now });
+  } else {
+    ipRecord.count++;
+  }
+
+  if (!emailRecord || now - emailRecord.windowStart > FORGOT_WINDOW_MS) {
+    forgotPasswordByEmail.set(email, { count: 1, windowStart: now });
+  } else {
+    emailRecord.count++;
+  }
 
   try {
     const client = await clientPromise;

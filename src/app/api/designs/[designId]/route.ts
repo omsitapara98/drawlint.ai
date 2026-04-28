@@ -58,13 +58,15 @@ export async function GET(
   const { getResponsesByDesignId } = await import("@/lib/db/responses");
   const issueResponses = await getResponsesByDesignId(designId);
 
-  // Fetch author info
+  // Fetch author info (skip if design is anonymous)
   const client = await clientPromise;
   const db = client.db(DB_NAME);
-  const author = await db.collection("users").findOne(
-    { _id: new ObjectId(design.userId) },
-    { projection: { _id: 1, name: 1, image: 1 } },
-  );
+  const author = design.anonymousName
+    ? null
+    : await db.collection("users").findOne(
+        { _id: new ObjectId(design.userId) },
+        { projection: { _id: 1, name: 1, image: 1 } },
+      );
 
   // Fetch topic
   const topic = await db

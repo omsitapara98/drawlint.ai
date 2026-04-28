@@ -400,6 +400,10 @@ function CanvasPageInner() {
           setElements(elData.elements);
           setInitialData(elData.elements);
           setCanvasKey((k) => k + 1);
+        } else {
+          const errData = (await elRes.json().catch(() => ({}))) as { error?: string };
+          setViewError(errData.error ?? "Failed to load design elements.");
+          return;
         }
 
         setSubmittedDesignId(viewDesignId!);

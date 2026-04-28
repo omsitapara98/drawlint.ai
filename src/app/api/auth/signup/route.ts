@@ -4,8 +4,38 @@ import crypto from "crypto";
 import clientPromise from "@/lib/db/mongodb";
 import { sendVerificationEmail, hashToken } from "@/lib/email/send";
 
+const SIGNUP_MAX_ATTEMPTS = 5;
+const SIGNUP_WINDOW_MS = 15 * 60 * 1000;
+const signupAttempts = new Map<string, { count: number; windowStart: number }>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of signupAttempts) {
+    if (now - record.windowStart > SIGNUP_WINDOW_MS) signupAttempts.delete(key);
+  }
+}, 30 * 60 * 1000).unref?.();
+
 export async function POST(request: Request) {
   try {
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      request.headers.get("x-real-ip") ??
+      "unknown";
+
+    const now = Date.now();
+    const ipRecord = signupAttempts.get(ip);
+    if (ipRecord && now - ipRecord.windowStart <= SIGNUP_WINDOW_MS && ipRecord.count >= SIGNUP_MAX_ATTEMPTS) {
+      return NextResponse.json(
+        { error: "Too many signup attempts. Please try again later." },
+        { status: 429 },
+      );
+    }
+    if (!ipRecord || now - ipRecord.windowStart > SIGNUP_WINDOW_MS) {
+      signupAttempts.set(ip, { count: 1, windowStart: now });
+    } else {
+      ipRecord.count++;
+    }
+
     const body = (await request.json()) as {
       name?: string;
       email?: string;
@@ -59,7 +89,7 @@ export async function POST(request: Request) {
     const rawToken = crypto.randomUUID();
     const tokenHash = hashToken(rawToken);
     const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
-    const now = new Date();
+    const createdAt = new Date();
 
     // Create user — emailVerified is null until the link is clicked
     await db.collection("users").insertOne({
@@ -69,9 +99,9 @@ export async function POST(request: Request) {
       emailVerified: null,
       emailVerificationTokenHash: tokenHash,
       emailVerificationExpiry: tokenExpiry,
-      emailVerificationSentAt: now,
+      emailVerificationSentAt: createdAt,
       image: null,
-      createdAt: now,
+      createdAt,
     });
 
     // Send verification email (non-fatal — don't block account creation if mail fails)

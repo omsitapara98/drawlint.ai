@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { getDesignById } from "@/lib/db/designs";
 import { downloadDesign } from "@/lib/blob/storage";
 
@@ -6,6 +7,11 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ designId: string }> },
 ) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { designId } = await params;
 
   let design;
@@ -17,6 +23,11 @@ export async function GET(
 
   if (!design) {
     return NextResponse.json({ error: "Design not found." }, { status: 404 });
+  }
+
+  // Only drafts are owner-only; reviewed/submitted designs are publicly readable
+  if (design.status === "draft" && design.userId.toString() !== session.user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {

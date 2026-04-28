@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getDesignById } from "@/lib/db/designs";
 import { getReviewByDesignId } from "@/lib/db/reviews";
-import { upsertResponse, getResponsesByDesignId } from "@/lib/db/responses";
+import { upsertResponse } from "@/lib/db/responses";
 import { getUserAiSettings } from "@/lib/db/users";
 import { resolveAnalysisProvider, isResolutionError } from "@/lib/ai/resolve-provider";
 import { createProvider } from "@/lib/ai";
@@ -13,6 +13,18 @@ import type { FeedbackItem } from "@/types/feedback";
 const VALID_SECTIONS: (ReviewSection | "followUpQuestions")[] = [
   "nfrReview", "entitiesReview", "capacityReview", "apiReview", "hldReview", "followUpQuestions",
 ];
+
+// In-memory rate limit: 20 respond calls per hour per userId (managed mode only)
+const RESPOND_MAX = 20;
+const RESPOND_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const respondAttempts = new Map<string, { count: number; windowStart: number }>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of respondAttempts) {
+    if (now - record.windowStart > RESPOND_WINDOW_MS) respondAttempts.delete(key);
+  }
+}, 30 * 60 * 1000).unref?.();
 
 interface RespondBody {
   section: string;
@@ -64,6 +76,25 @@ export async function POST(
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
 
+  // In-memory rate limit (managed mode only — BYO key users exempt)
+  if (!body.apiKey) {
+    const userId = session.user.id;
+    const now = Date.now();
+    const record = respondAttempts.get(userId) ?? { count: 0, windowStart: now };
+    if (now - record.windowStart > RESPOND_WINDOW_MS) {
+      record.count = 0;
+      record.windowStart = now;
+    }
+    if (record.count >= RESPOND_MAX) {
+      return NextResponse.json(
+        { error: "Rate limit reached. You can respond to up to 20 issues per hour." },
+        { status: 429 },
+      );
+    }
+    record.count++;
+    respondAttempts.set(userId, record);
+  }
+
   // Validate section
   const section = body.section as ReviewSection | "followUpQuestions";
   if (!VALID_SECTIONS.includes(section)) {
@@ -93,17 +124,6 @@ export async function POST(
       return NextResponse.json({ error: "Invalid issue index." }, { status: 400 });
     }
     originalIssue = dimension.issues[body.issueIndex] as FeedbackItem;
-  }
-
-  // Rate limit: max 20 responses per design per hour
-  const recentResponses = await getResponsesByDesignId(designId);
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-  const recentCount = recentResponses.filter((r) => r.createdAt > oneHourAgo).length;
-  if (recentCount >= 20) {
-    return NextResponse.json(
-      { error: "Rate limit reached. Try again later." },
-      { status: 429 },
-    );
   }
 
   // Validate response text

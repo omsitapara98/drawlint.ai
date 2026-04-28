@@ -93,7 +93,7 @@ export class GeminiProvider implements AIProvider {
   }
 
   async generate(options: GenerateOptions): Promise<GenerateResult> {
-    const url = `${GEMINI_API_BASE}/models/${this.model}:generateContent?key=${this.apiKey}`;
+    const url = `${GEMINI_API_BASE}/models/${this.model}:generateContent`;
 
     // Append stricter JSON formatting instructions for Gemini
     const enhancedSystemPrompt = options.systemPrompt + GEMINI_JSON_SUFFIX;
@@ -118,7 +118,10 @@ export class GeminiProvider implements AIProvider {
     try {
       response = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": this.apiKey,
+        },
         body: JSON.stringify(body),
         signal: options.signal,
       });
