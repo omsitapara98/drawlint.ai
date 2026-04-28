@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { Search, X, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/layout";
 import { ParticleBackground } from "@/components/ui/particle-background";
@@ -192,6 +192,60 @@ function FAQItem({ q, a }: { q: string; a: React.ReactNode }) {
   );
 }
 
+/* ── Searchable FAQ ───────────────────────────────────────── */
+function SearchableFAQ() {
+  const [query, setQuery] = useState("");
+
+  const filtered = query.trim()
+    ? FAQ_ITEMS.filter((faq) =>
+        faq.q.toLowerCase().includes(query.trim().toLowerCase()) ||
+        (typeof faq.a === "string" && faq.a.toLowerCase().includes(query.trim().toLowerCase()))
+      )
+    : FAQ_ITEMS;
+
+  return (
+    <>
+      <div className="relative pt-2">
+        <Search className="absolute left-3.5 top-1/2 mt-1 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search FAQs..."
+          className="w-full rounded-xl border border-border dark:border-white/[0.08] bg-background/50 dark:bg-background/30 pl-10 pr-10 h-10 text-sm outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-muted-foreground/60"
+        />
+        {query && (
+          <button
+            onClick={() => setQuery("")}
+            className="absolute right-3 top-1/2 mt-1 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted transition-colors"
+          >
+            <X className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+        )}
+      </div>
+      {query.trim() && (
+        <p className="text-xs text-muted-foreground text-center">
+          {filtered.length} {filtered.length === 1 ? "result" : "results"} found
+        </p>
+      )}
+      <div className="pt-1">
+        {filtered.length === 0 ? (
+          <div className="py-8 text-center">
+            <p className="text-sm text-muted-foreground">No FAQs match your search</p>
+            <button onClick={() => setQuery("")} className="mt-2 text-xs text-violet-500 hover:underline">
+              Clear search
+            </button>
+          </div>
+        ) : (
+          filtered.map((faq) => (
+            <FAQItem key={faq.q} q={faq.q} a={faq.a} />
+          ))
+        )}
+      </div>
+    </>
+  );
+}
+
 /* ── Page ─────────────────────────────────────────────────── */
 export default function SupportPage() {
   return (
@@ -231,11 +285,7 @@ export default function SupportPage() {
         <section>
           <div className="rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm p-8 shadow-md shadow-black/[0.04] dark:shadow-none space-y-2">
             <SectionHeading emoji="❓" title="Frequently Asked Questions" />
-            <div className="pt-2">
-              {FAQ_ITEMS.map((faq) => (
-                <FAQItem key={faq.q} q={faq.q} a={faq.a} />
-              ))}
-            </div>
+            <SearchableFAQ />
           </div>
         </section>
 
