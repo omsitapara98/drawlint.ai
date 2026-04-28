@@ -602,7 +602,7 @@ function CanvasPageInner() {
   );
   const canvasDirty = elementFingerprint !== draftSavedFingerprintRef.current;
 
-  // Warn before leaving with unsaved changes (tab close + SPA navigation)
+  // Warn before leaving with unsaved changes
   useEffect(() => {
     if (!hasDrawnShapes || !canvasDirty) return;
 
@@ -612,33 +612,24 @@ function CanvasPageInner() {
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
 
-    // Intercept Next.js client-side navigation (pushState)
-    const originalPushState = history.pushState.bind(history);
-    history.pushState = function (...args: Parameters<typeof history.pushState>) {
+    // Intercept link clicks before Next.js processes them
+    const handleClick = (e: MouseEvent) => {
+      const anchor = (e.target as HTMLElement).closest("a");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#") || href.startsWith("mailto:")) return;
+      // Only block internal navigation — external links open in new tabs anyway
+      if (anchor.target === "_blank") return;
       if (!window.confirm("You have unsaved changes. Leave this page?")) {
-        return;
-      }
-      return originalPushState(...args);
-    };
-
-    // Intercept browser back/forward
-    const handlePopState = () => {
-      if (!window.confirm("You have unsaved changes. Leave this page?")) {
-        // Push current state back to cancel the navigation
-        history.pushState = originalPushState;
-        history.pushState(null, "", window.location.href);
-        history.pushState = function (...a: Parameters<typeof history.pushState>) {
-          if (!window.confirm("You have unsaved changes. Leave this page?")) return;
-          return originalPushState(...a);
-        };
+        e.preventDefault();
+        e.stopPropagation();
       }
     };
-    window.addEventListener("popstate", handlePopState);
+    document.addEventListener("click", handleClick, true);
 
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
-      window.removeEventListener("popstate", handlePopState);
-      history.pushState = originalPushState;
+      document.removeEventListener("click", handleClick, true);
     };
   }, [hasDrawnShapes, canvasDirty]);
 
