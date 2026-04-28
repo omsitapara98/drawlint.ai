@@ -680,6 +680,15 @@ function CanvasPageInner() {
         try {
           byoCreds = getCredentialsForRequest(aiMode as "gemini" | "azure");
         } catch { /* noop */ }
+
+        if (!byoCreds.apiKey) {
+          const providerName = aiMode === "gemini" ? "Gemini" : "Azure OpenAI";
+          setAiError(`Your AI mode is set to ${providerName} but no API key was found in this browser. Please open Settings and re-enter your ${providerName} API key.`);
+          setAiStatus("error");
+          stopReviewerProgress("error");
+          activeStreamRef.current = false;
+          return;
+        }
       }
 
       const res = await fetch(url, {
