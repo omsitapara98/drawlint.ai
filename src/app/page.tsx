@@ -7,6 +7,7 @@ import { motion, useInView } from "framer-motion";
 import { Header } from "@/components/layout";
 import { ParticleBackground } from "@/components/ui/particle-background";
 import LandingTour from "@/components/tour/LandingTour";
+import GuideDemo from "@/components/guide/GuideDemo";
 
 // Typewriter words for hero
 const TYPEWRITER_WORDS = [
@@ -440,6 +441,13 @@ export default function LandingPage() {
             <ChevronDown className="h-5 w-5 text-muted-foreground/60" />
           </motion.div>
         </motion.div>
+      </section>
+
+      {/* ── Live Demo ────────────────────────────────────────── */}
+      <section className="relative px-4 pb-12">
+        <div className="mx-auto w-full max-w-5xl">
+          <GuideDemo />
+        </div>
       </section>
 
       {/* ── Stats ────────────────────────────────────────────── */}
