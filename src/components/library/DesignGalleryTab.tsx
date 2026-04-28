@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Loader2, Search, Sparkles, Zap, Key } from "lucide-react";
+import { ArrowRight, Loader2, Search, Sparkles, Zap, Key, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface GalleryDesign {
@@ -60,6 +60,7 @@ export function DesignGalleryTab() {
   const [designs, setDesigns] = useState<GalleryDesign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     fetch("/api/designs/gallery")
@@ -68,6 +69,10 @@ export function DesignGalleryTab() {
       .catch(() => setError("Failed to load designs"))
       .finally(() => setLoading(false));
   }, []);
+
+  const filtered = query.trim()
+    ? designs.filter((d) => d.topicName.toLowerCase().includes(query.trim().toLowerCase()))
+    : designs;
 
   if (loading) {
     return (
@@ -91,13 +96,54 @@ export function DesignGalleryTab() {
   }
 
   return (
-    <motion.div
-      variants={container}
-      initial="hidden"
-      animate="show"
-      className="grid gap-4 sm:grid-cols-2"
-    >
-      {designs.map((d) => (
+    <div className="space-y-6">
+      {/* Search bar */}
+      <div className="flex justify-center">
+        <div className="relative w-full max-w-md">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by topic..."
+            className="w-full rounded-xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm pl-10 pr-10 h-11 text-sm outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 focus:shadow-[0_0_12px_oklch(0.72_0.25_285_/_15%)] transition-all placeholder:text-muted-foreground/60"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted transition-colors"
+            >
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Results count when filtering */}
+      {query.trim() && (
+        <p className="text-center text-xs text-muted-foreground">
+          {filtered.length} {filtered.length === 1 ? "design" : "designs"} found
+        </p>
+      )}
+
+      {/* Grid */}
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <Search className="h-10 w-10 text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground">No designs match your search</p>
+          <button onClick={() => setQuery("")} className="text-xs text-violet-500 hover:underline">
+            Clear search
+          </button>
+        </div>
+      ) : (
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="grid gap-4 sm:grid-cols-2"
+        key={query}
+      >
+        {filtered.map((d) => (
         <motion.div key={d._id} variants={item}>
           <Link
             href={`/library/${d.topicSlug}/${d._id}`}
@@ -167,5 +213,7 @@ export function DesignGalleryTab() {
         </motion.div>
       ))}
     </motion.div>
+      )}
+    </div>
   );
 }
