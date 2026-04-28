@@ -27,11 +27,6 @@ const CHANGELOG = [
         badge: "New" as const,
       },
       {
-        title: "BYO AI Provider Support",
-        description: "Connect your own Gemini (free) or Azure OpenAI key for unlimited reviews. Three options: DrawLint AI (managed), Gemini AI (free), Azure OpenAI (advanced).",
-        badge: "Major" as const,
-      },
-      {
         title: "Respond to AI Feedback",
         description: "Defend your design choices inline — explain why you picked a certain database, queue, or caching strategy. The AI evaluates your response and gives a verdict.",
         badge: "New" as const,
@@ -40,6 +35,11 @@ const CHANGELOG = [
         title: "Signal Re-Evaluation",
         description: "After responding, request a re-evaluation. The Lead Reviewer reconsiders your hire signal based on your responses — just like a real interview debrief.",
         badge: "New" as const,
+      },
+      {
+        title: "BYO AI Provider Support",
+        description: "Connect your own Gemini (free) or Azure OpenAI key for unlimited reviews. Three options: DrawLint AI (managed), Gemini AI (free), Azure OpenAI (advanced).",
+        badge: "Major" as const,
       },
       {
         title: "Multi-Provider Architecture",
@@ -77,13 +77,13 @@ const CHANGELOG = [
         badge: null,
       },
       {
-        title: "AI Disclaimer",
-        description: "Added \u2018AI-generated \u00b7 Use your own judgment\u2019 notice with warning icon on all review results.",
+        title: "Premium Badge",
+        description: "Pro subscribers get a \ud83d\udc51 badge on their submissions in the library and header.",
         badge: null,
       },
       {
-        title: "Premium Badge",
-        description: "Pro subscribers get a \ud83d\udc51 badge on their submissions in the library and header.",
+        title: "AI Disclaimer",
+        description: "Added \u2018AI-generated \u00b7 Use your own judgment\u2019 notice with warning icon on all review results.",
         badge: null,
       },
       {
