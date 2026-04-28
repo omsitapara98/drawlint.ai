@@ -767,6 +767,9 @@ function CanvasPageInner() {
       streamReaderRef.current = reader;
       const decoder = new TextDecoder();
       let buffer = "";
+      // Capture designId synchronously from the "design" event so the "complete"
+      // handler can use it without relying on the stale React state closure.
+      let streamDesignId: string | undefined;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -797,7 +800,10 @@ function CanvasPageInner() {
 
           switch (event.type) {
             case "design":
-              if (event.designId) setSubmittedDesignId(event.designId);
+              if (event.designId) {
+                streamDesignId = event.designId;
+                setSubmittedDesignId(event.designId);
+              }
               setSubmitted(true);
               break;
             case "section":
@@ -814,16 +820,28 @@ function CanvasPageInner() {
                 setAiStatus("complete");
                 stopReviewerProgress("done");
 
-                // Challenge mode: record the challenge submission
+                // Challenge mode: record the challenge submission + update streak.
+                // Use streamDesignId (set synchronously above) to avoid the stale
+                // React state closure on submittedDesignId / targetId.
                 if (challengeMode && challengeWeekId) {
                   const signal = event.review.leadReviewer?.signal ?? "no-hire";
-                  const dId = submittedDesignId ?? event.designId;
+                  const dId = streamDesignId ?? event.design?._id ?? targetId ?? submittedDesignId;
                   if (dId) {
-                    fetch("/api/challenge/submit", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ designId: dId, signal }),
-                    }).catch(console.error);
+                    try {
+                      const submitRes = await fetch("/api/challenge/submit", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ designId: dId, signal }),
+                      });
+                      if (!submitRes.ok) {
+                        const err = (await submitRes.json().catch(() => ({}))) as { error?: string };
+                        console.error("Challenge submit failed:", err.error ?? submitRes.status);
+                      }
+                    } catch (err) {
+                      console.error("Challenge submit error:", err);
+                    }
+                  } else {
+                    console.error("Challenge submit skipped: no design ID available");
                   }
                 }
               } else {
@@ -846,7 +864,7 @@ function CanvasPageInner() {
       stopReviewerProgress("error");
       activeStreamRef.current = false;
     }
-  }, [selectedTopic, authStatus, router, elements, reviewLevel, anonymousMode, editDesignId, submittedDesignId, viewDesignId, startReviewerProgress, stopReviewerProgress]);
+  }, [selectedTopic, authStatus, router, elements, reviewLevel, anonymousMode, editDesignId, submittedDesignId, viewDesignId, challengeMode, challengeWeekId, aiMode, startReviewerProgress, stopReviewerProgress]);
 
   /** Save design as a draft — no AI review, stays private. */
   const handleSaveDraft = useCallback(async () => {
