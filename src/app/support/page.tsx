@@ -151,6 +151,58 @@ const FAQ_ITEMS: { q: string; a: React.ReactNode }[] = [
     q: "What happens to my streak if I miss a week?",
     a: "Your current streak resets to zero, but your longest streak is preserved. You can start building again the following week.",
   },
+  {
+    q: "What review levels are available?",
+    a: "Four levels: Mid, Senior, Staff, and Deep. Each is calibrated to a different experience level — higher levels expect more sophisticated trade-off analysis, capacity planning, and fault-tolerance considerations.",
+  },
+  {
+    q: "What's the minimum design requirement to submit?",
+    a: "Your design needs at least 3 filled template sections and 2 HLD (high-level design) components. If your design is too sparse, the submit button will tell you what's missing.",
+  },
+  {
+    q: "Can I edit a design after submitting it?",
+    a: "Yes. You can re-open any submitted design, edit it, and re-submit for a fresh AI review. Your previous review and responses are preserved.",
+  },
+  {
+    q: "How do I sign up?",
+    a: "You can sign up with email/password, Google, or GitHub. Email/password accounts require email verification before you can submit designs.",
+  },
+  {
+    q: "Can I create my own topic?",
+    a: "Yes. If you can\u2019t find your topic in the dropdown, type a name and click \u201cCreate\u201d. Your topic will appear under Community Topics in the library.",
+  },
+  {
+    q: "Can I share my design with others?",
+    a: "Yes. After submitting, use the share button to copy a direct link to your design. Anyone with the link can view it in the library.",
+  },
+  {
+    q: "How does anonymous posting work?",
+    a: "Toggle the identity chip on the canvas before submitting. Your design will be posted under a generated pseudonym like \u201cBoldTiger42\u201d instead of your real name. Your pseudonym is consistent across all anonymous posts.",
+  },
+  {
+    q: "What is the Re-evaluate Signal feature?",
+    a: "After responding to AI feedback, click \u201cRe-evaluate Signal\u201d and the Lead Reviewer reconsiders your hire signal based on your responses. Resolved and partially addressed issues count in your favor.",
+  },
+  {
+    q: "How is the weekly challenge topic selected?",
+    a: "The system auto-picks an official topic not used in recent weeks, rotating through Easy, Medium, and Hard difficulty. If all topics have been used recently, it picks randomly from the full pool.",
+  },
+  {
+    q: "How do I set up Azure OpenAI (BYO)?",
+    a: "Open Settings, select Azure OpenAI, and enter your API key, endpoint URL, and deployment name. Your endpoint must be an Azure OpenAI or Azure AI Foundry URL. Test the connection before saving.",
+  },
+  {
+    q: "How do I delete a design?",
+    a: "Open the design in the canvas or library, then use the delete option. You can only delete your own designs. Challenge submissions cannot be deleted after the challenge ends.",
+  },
+  {
+    q: "Is there a changelog?",
+    a: "Yes. Visit the Changelog page from the footer to see recent updates, new features, and improvements.",
+  },
+  {
+    q: "Are there rate limits?",
+    a: "DrawLint AI: 10 reviews/month on the free tier. Gemini AI: unlimited but capped at 2 concurrent requests (Google's free tier limit). You can also respond up to 20 times per design per hour.",
+  },
 ];
 
 /* ── Accordion item ───────────────────────────────────────── */
