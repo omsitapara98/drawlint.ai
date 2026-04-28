@@ -46,11 +46,20 @@ export function SearchableTopicGrid({ topics }: { topics: Topic[] }) {
 
   const hasOfficialTopics = topics.some((t) => t.difficulty);
 
-  const filtered = topics.filter((t) => {
-    if (query.trim() && !t.name.toLowerCase().includes(query.trim().toLowerCase())) return false;
-    if (diffFilter !== "all" && t.difficulty !== diffFilter) return false;
-    return true;
-  });
+  const DIFF_ORDER: Record<string, number> = { easy: 0, medium: 1, hard: 2 };
+
+  const filtered = topics
+    .filter((t) => {
+      if (query.trim() && !t.name.toLowerCase().includes(query.trim().toLowerCase())) return false;
+      if (diffFilter !== "all" && t.difficulty !== diffFilter) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const da = DIFF_ORDER[a.difficulty ?? "medium"] ?? 1;
+      const db = DIFF_ORDER[b.difficulty ?? "medium"] ?? 1;
+      if (da !== db) return da - db;
+      return a.name.localeCompare(b.name);
+    });
 
   return (
     <div className="space-y-6">
@@ -143,13 +152,9 @@ export function SearchableTopicGrid({ topics }: { topics: Topic[] }) {
                   <h2 className="text-sm font-semibold group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
                     {topic.name}
                   </h2>
-                  {topic.submissionCount >= 3 ? (
+                  {topic.submissionCount >= 3 && (
                     <span className="shrink-0 rounded-full bg-violet-100 px-2 py-0.5 text-[0.7rem] font-medium text-violet-700 dark:bg-violet-900 dark:text-violet-300 shadow-[0_0_6px_oklch(0.72_0.25_285_/_15%)]">
                       {topic.submissionCount}
-                    </span>
-                  ) : (
-                    <span className="shrink-0 rounded-full bg-muted/60 px-2.5 py-0.5 text-[0.7rem] font-medium text-muted-foreground dark:text-muted-foreground/80">
-                      New
                     </span>
                   )}
                 </div>
