@@ -6,6 +6,7 @@ import { ArrowRight, Sparkles, Zap, Shield, Star, ChevronDown, Brain, Layers, Ta
 import { motion, useInView } from "framer-motion";
 import { Header } from "@/components/layout";
 import { ParticleBackground } from "@/components/ui/particle-background";
+import LandingTour from "@/components/tour/LandingTour";
 
 // Typewriter words for hero
 const TYPEWRITER_WORDS = [
@@ -351,6 +352,7 @@ export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <Header />
+      <LandingTour />
 
       {/* ── Hero ────────────────────────────────────────────── */}
       <section className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-4 py-24">
