@@ -171,6 +171,16 @@ export async function PUT(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // ── Block re-submission of finalized challenge entries ──────────
+  // Once a challenge design has been reviewed and recorded on the leaderboard,
+  // it cannot be re-submitted for another free AI review.
+  if (design.submissionType === "challenge" && design.status === "reviewed") {
+    return NextResponse.json(
+      { error: "This challenge submission has already been reviewed. You cannot re-submit it." },
+      { status: 409 },
+    );
+  }
+
   let body: {
     elements?: unknown[];
     reviewLevel?: ReviewLevel;
@@ -260,25 +270,32 @@ export async function PUT(
   }
 
   // ── Resolve AI credentials BEFORE any mutations ────────────────
-  // Use centralized provider resolver based on user's aiMode.
+  // Challenge drafts always use DrawLint AI for consistent leaderboard quality.
+  // Regular submissions use the user's selected provider.
+  const isChallengeDraft = design.submissionType === "challenge";
   const { resolveAnalysisProvider, isResolutionError } = await import("@/lib/ai/resolve-provider");
   const userSettings = await getUserAiSettings(userId);
-  const providerResult = resolveAnalysisProvider(userSettings, body);
 
+  let credentials: import("@/lib/ai/providers/types").ProviderCredentials;
   let isManagedMode = false;
 
-  if (isResolutionError(providerResult)) {
-    return NextResponse.json(
-      { error: providerResult.error, code: providerResult.errorCode },
-      { status: providerResult.status },
-    );
+  if (isChallengeDraft) {
+    credentials = { provider: "drawlint" } as import("@/lib/ai/providers/types").DrawLintCredentials;
+    isManagedMode = true;
+  } else {
+    const providerResult = resolveAnalysisProvider(userSettings, body);
+    if (isResolutionError(providerResult)) {
+      return NextResponse.json(
+        { error: providerResult.error, code: providerResult.errorCode },
+        { status: providerResult.status },
+      );
+    }
+    credentials = providerResult.credentials;
+    isManagedMode = providerResult.isManagedQuota;
   }
 
-  const credentials = providerResult.credentials;
-  isManagedMode = providerResult.isManagedQuota;
-
-  // For managed mode: check and reserve quota
-  if (isManagedMode) {
+  // For managed mode: check and reserve quota (skip for challenge submissions)
+  if (isManagedMode && !isChallengeDraft) {
     const quota = await reserveManagedQuota(userId);
     if (!quota.allowed) {
       return NextResponse.json(

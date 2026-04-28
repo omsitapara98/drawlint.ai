@@ -1244,14 +1244,21 @@ function CanvasPageInner() {
                 {(!viewDesignId || viewEditMode || editDesignId) && authStatus === "authenticated" && aiMode && (
                   <span
                     className={`inline-flex h-6 items-center gap-1.5 rounded-lg px-2.5 text-[0.7rem] font-medium border transition-all shrink-0 ${
-                      aiMode === "azure"
+                      challengeMode
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800"
+                        : aiMode === "azure"
                         ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
                         : aiMode === "gemini"
                         ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800"
                         : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800"
                     }`}
                   >
-                    {aiMode === "azure" ? (
+                    {challengeMode ? (
+                      <>
+                        <Cpu className="h-3 w-3" />
+                        DrawLint AI
+                      </>
+                    ) : aiMode === "azure" ? (
                       <>
                         <Key className="h-3 w-3" />
                         Azure OpenAI
