@@ -70,13 +70,26 @@ export async function GET() {
   const db = client.db("drawlint-db");
   const topic = await db.collection("topics").findOne({ _id: new ObjectId(challenge.topicId) });
 
-  // Check user's submission status
   // Check user's submission status + existing draft
   let userSubmitted = false;
   let userDraftDesignId: string | null = null;
   const session = await auth();
   if (session?.user?.id) {
     userSubmitted = await hasUserSubmitted(challenge._id.toString(), session.user.id);
+
+    // Fallback: if challenge_submissions record is missing but a reviewed
+    // challenge design exists, treat as submitted (fire-and-forget race fix)
+    if (!userSubmitted) {
+      const reviewedDesign = await db.collection("designs").findOne({
+        userId: new ObjectId(session.user.id),
+        submissionType: "challenge",
+        topicId: challenge.topicId,
+        status: "reviewed",
+      });
+      if (reviewedDesign) {
+        userSubmitted = true;
+      }
+    }
 
     // Check for existing challenge draft
     if (!userSubmitted) {
