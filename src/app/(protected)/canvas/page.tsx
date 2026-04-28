@@ -1062,12 +1062,9 @@ function CanvasPageInner() {
                                 <button
                                   key={t._id}
                                   onClick={() => handleTopicSelect(t)}
-                                  className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted transition-colors"
+                                  className="flex w-full items-center px-3 py-2 text-left text-sm hover:bg-muted transition-colors"
                                 >
                                   <span className="font-medium">{t.name}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {t.submissionCount}
-                                  </span>
                                 </button>
                               ))}
                               {filteredTopics.length === 0 && topicSearch.trim() && (
