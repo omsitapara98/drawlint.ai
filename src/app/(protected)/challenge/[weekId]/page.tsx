@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Header } from "@/components/layout";
 import {
-  Flame,
   Clock,
   Trophy,
-  ArrowRight,
-  Loader2,
-  Lock,
+  ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 
 /* ── Types ────────────────────────────────────────────────────── */
@@ -22,11 +20,10 @@ interface ChallengeTopic {
   slug: string;
   difficulty?: "easy" | "medium" | "hard";
   brief?: string;
-  requirements?: string[];
   timeMinutes?: number;
 }
 
-interface CurrentChallenge {
+interface ChallengeDetail {
   challenge: {
     _id: string;
     weekId: string;
@@ -34,9 +31,6 @@ interface CurrentChallenge {
     endDate: string;
   };
   topic: ChallengeTopic | null;
-  userSubmitted: boolean;
-  userDraftDesignId: string | null;
-  userSubmittedDesignId: string | null;
   submissionCount: number;
 }
 
@@ -49,22 +43,6 @@ interface LeaderboardEntry {
   signalLabel: string;
   designId: string;
   submittedAt: string;
-}
-
-interface PastChallenge {
-  _id: string;
-  weekId: string;
-  startDate: string;
-  endDate: string;
-  submissionCount: number;
-  topic: { _id: string; name: string; slug: string; difficulty?: string } | null;
-}
-
-interface Streak {
-  currentStreak: number;
-  longestStreak: number;
-  totalCompleted: number;
-  lastCompletedWeek: string | null;
 }
 
 /* ── Style maps ───────────────────────────────────────────────── */
@@ -107,13 +85,6 @@ function formatDateRange(start: string, end: string) {
   return `${s.toLocaleDateString("en-US", opts)} – ${e.toLocaleDateString("en-US", opts)}, ${e.getFullYear()}`;
 }
 
-function shortDateRange(start: string, end: string) {
-  const s = new Date(start);
-  const e = new Date(end);
-  const mo: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
-  return `${s.toLocaleDateString("en-US", mo)}-${e.toLocaleDateString("en-US", mo)}`;
-}
-
 function countdown(endDate: string): string {
   const diff = new Date(endDate).getTime() - Date.now();
   if (diff <= 0) return "Challenge ended";
@@ -144,72 +115,43 @@ const cardCls =
 
 /* ── Page component ────────────────────────────────────────────── */
 
-export default function ChallengePage() {
-  const router = useRouter();
-  const [current, setCurrent] = useState<CurrentChallenge | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [history, setHistory] = useState<PastChallenge[]>([]);
-  const [streak, setStreak] = useState<Streak | null>(null);
+export default function ChallengeWeekPage() {
+  const params = useParams();
+  const weekId = params.weekId as string;
 
+  const [data, setData] = useState<ChallengeDetail | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [startingChallenge, setStartingChallenge] = useState(false);
-
-  /** Start or continue a challenge — creates a draft design, then opens canvas */
-  const handleStartChallenge = useCallback(async () => {
-    if (!current?.topic) return;
-    setStartingChallenge(true);
-    try {
-      const res = await fetch("/api/challenge/start", { method: "POST" });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { error?: string };
-        setError(data.error ?? "Failed to start challenge");
-        return;
-      }
-      const data = (await res.json()) as { designId: string };
-      router.push(`/canvas?edit=${data.designId}&topic=${current.topic.slug}&challenge=${current.challenge.weekId}`);
-    } catch {
-      setError("Failed to start challenge");
-    } finally {
-      setStartingChallenge(false);
-    }
-  }, [current, router]);
 
   useEffect(() => {
+    if (!weekId) return;
     let cancelled = false;
 
     async function load() {
       try {
-        const [curRes, streakRes, histRes] = await Promise.all([
-          fetch("/api/challenge/current"),
-          fetch("/api/challenge/streak"),
-          fetch("/api/challenge/history?limit=12"),
+        const [detailRes, lbRes] = await Promise.all([
+          fetch(`/api/challenge/${weekId}`),
+          fetch(`/api/challenge/leaderboard?weekId=${weekId}`),
         ]);
 
-        if (!curRes.ok) throw new Error("Failed to load current challenge");
+        if (!detailRes.ok) {
+          throw new Error(
+            detailRes.status === 404
+              ? "Challenge not found"
+              : "Failed to load challenge",
+          );
+        }
 
-        const curData = await curRes.json();
-        const streakData = streakRes.ok ? await streakRes.json() : { streak: null };
-        const histData = histRes.ok ? await histRes.json() : { challenges: [] };
+        const detail = await detailRes.json();
+        const lbData = lbRes.ok ? await lbRes.json() : { leaderboard: [] };
 
         if (cancelled) return;
-
-        setCurrent(curData);
-        setStreak(streakData.streak);
-        setHistory(histData.challenges ?? []);
-
-        // Fetch leaderboard if user submitted
-        if (curData.userSubmitted && curData.challenge?.weekId) {
-          const lbRes = await fetch(
-            `/api/challenge/leaderboard?weekId=${curData.challenge.weekId}`,
-          );
-          if (lbRes.ok) {
-            const lbData = await lbRes.json();
-            if (!cancelled) setLeaderboard(lbData.leaderboard ?? []);
-          }
-        }
+        setData(detail);
+        setLeaderboard(lbData.leaderboard ?? []);
       } catch (err: unknown) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Something went wrong");
+        if (!cancelled)
+          setError(err instanceof Error ? err.message : "Something went wrong");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -219,7 +161,7 @@ export default function ChallengePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [weekId]);
 
   /* ── Loading state ────────────────────────────────────────────── */
 
@@ -236,26 +178,23 @@ export default function ChallengePage() {
 
   /* ── Error state ──────────────────────────────────────────────── */
 
-  if (error || !current?.challenge) {
+  if (error || !data) {
     return (
       <div className="flex min-h-screen flex-col bg-background text-foreground">
         <Header />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center">
           <p className="text-lg font-semibold text-destructive">
-            {error ?? "No active challenge this week."}
+            {error ?? "Challenge not found."}
           </p>
-          <Link
-            href="/library"
-            className="text-sm text-violet-500 hover:underline"
-          >
-            Browse the design library →
+          <Link href="/challenge" className="text-sm text-violet-500 hover:underline">
+            ← All Challenges
           </Link>
         </div>
       </div>
     );
   }
 
-  const { challenge, topic, userSubmitted, userDraftDesignId, userSubmittedDesignId, submissionCount } = current;
+  const { challenge, topic, submissionCount } = data;
   const diff = topic?.difficulty ? DIFFICULTY_CONFIG[topic.difficulty] : null;
   const remaining = countdown(challenge.endDate);
 
@@ -266,17 +205,13 @@ export default function ChallengePage() {
       {/* ── Hero Section ───────────────────────────────────────────── */}
       <section className="border-b bg-gradient-to-br from-violet-500/8 via-background to-cyan-500/5 dark:from-violet-500/10 dark:via-background dark:to-cyan-500/5 px-4 py-14 sm:py-20">
         <div className="mx-auto max-w-3xl">
-          {/* Top row */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="flex items-center gap-1.5 text-sm font-medium text-orange-500">
-              <Flame className="h-4 w-4" /> Weekly Challenge
-            </span>
-            {streak && streak.currentStreak > 0 && (
-              <span className="flex items-center gap-1 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700 dark:bg-orange-900/50 dark:text-orange-300">
-                <Flame className="h-3.5 w-3.5" /> {streak.currentStreak}
-              </span>
-            )}
-          </div>
+          {/* Back link */}
+          <Link
+            href="/challenge"
+            className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" /> All Challenges
+          </Link>
 
           {/* Week + date range */}
           <p className="mt-2 text-sm text-muted-foreground">
@@ -324,55 +259,14 @@ export default function ChallengePage() {
             </Link>
           )}
 
-          {/* CTA */}
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            {userSubmitted ? (
-              <>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
-                  ✅ Submitted this week
-                </span>
-                <Link
-                  href={userSubmittedDesignId ? `/canvas?view=${userSubmittedDesignId}` : `/library/${topic?.slug}`}
-                  className="text-sm font-medium text-violet-500 hover:underline"
-                >
-                  View your submission <ChevronRight className="inline h-3.5 w-3.5" />
-                </Link>
-              </>
-            ) : userDraftDesignId ? (
-              <button
-                onClick={handleStartChallenge}
-                disabled={startingChallenge}
-                className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition hover:bg-orange-400 disabled:opacity-50"
-              >
-                {startingChallenge ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Flame className="h-4 w-4" />
-                )}
-                Continue Challenge <ArrowRight className="h-4 w-4" />
-              </button>
-            ) : (
-              <button
-                onClick={handleStartChallenge}
-                disabled={startingChallenge}
-                className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:bg-violet-500 disabled:opacity-50"
-              >
-                {startingChallenge ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ArrowRight className="h-4 w-4" />
-                )}
-                Start Challenge
-              </button>
-            )}
-          </div>
-
           {/* Countdown + submissions */}
           <div className="mt-5 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" /> {remaining}
             </span>
-            <span>{submissionCount} submission{submissionCount !== 1 && "s"}</span>
+            <span>
+              {submissionCount} submission{submissionCount !== 1 && "s"}
+            </span>
           </div>
         </div>
       </section>
@@ -384,18 +278,9 @@ export default function ChallengePage() {
         </h2>
 
         <div className={`mt-4 ${cardCls} overflow-hidden`}>
-          {!userSubmitted ? (
-            /* Gated / blurred state */
-            <div className="relative flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-              <div className="pointer-events-none absolute inset-0 backdrop-blur-sm" />
-              <Lock className="relative h-8 w-8 text-muted-foreground/60" />
-              <p className="relative text-sm font-medium text-muted-foreground">
-                Submit your design to view the leaderboard
-              </p>
-            </div>
-          ) : leaderboard.length === 0 ? (
+          {leaderboard.length === 0 ? (
             <p className="px-6 py-10 text-center text-sm text-muted-foreground">
-              No submissions yet this week.
+              No submissions recorded for this week.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -405,7 +290,10 @@ export default function ChallengePage() {
                     <th className="px-4 py-3 text-left font-medium">#</th>
                     <th className="px-4 py-3 text-left font-medium">Name</th>
                     <th className="px-4 py-3 text-left font-medium">Signal</th>
-                    <th className="px-4 py-3 text-right font-medium">Submitted</th>
+                    <th className="px-4 py-3 text-right font-medium">
+                      Submitted
+                    </th>
+                    <th className="px-4 py-3 text-right font-medium">View</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -445,6 +333,14 @@ export default function ChallengePage() {
                       <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
                         {timeAgo(entry.submittedAt)}
                       </td>
+                      <td className="px-4 py-3 text-right">
+                        <Link
+                          href={`/canvas?view=${entry.designId}`}
+                          className="text-xs font-medium text-violet-500 hover:underline"
+                        >
+                          View <ChevronRight className="inline h-3 w-3" />
+                        </Link>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -453,53 +349,6 @@ export default function ChallengePage() {
           )}
         </div>
       </section>
-
-      {/* ── Past Challenges Section ────────────────────────────────── */}
-      {history.length > 0 && (
-        <section className="mx-auto w-full max-w-3xl px-4 pb-16">
-          <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight">
-            📚 Past Challenges
-          </h2>
-
-          <div className={`mt-4 divide-y divide-border dark:divide-white/[0.06] ${cardCls}`}>
-            {history.map((c) => {
-              const d = c.topic?.difficulty
-                ? DIFFICULTY_CONFIG[c.topic.difficulty]
-                : null;
-              return (
-                <Link
-                  key={c._id}
-                  href={`/challenge/${c.weekId}`}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3.5 text-sm transition-colors hover:bg-muted/40"
-                >
-                  <span className="font-semibold">
-                    {weekNumber(c.weekId)}
-                  </span>
-                  <span className="text-muted-foreground">·</span>
-                  <span className="text-muted-foreground">
-                    {shortDateRange(c.startDate, c.endDate)}
-                  </span>
-                  <span className="text-muted-foreground">·</span>
-                  <span className="font-medium">
-                    {c.topic?.name ?? "Unknown"}
-                  </span>
-                  {d && (
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${d.color}`}
-                    >
-                      {d.label}
-                    </span>
-                  )}
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    {c.submissionCount} submission{c.submissionCount !== 1 && "s"}
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
     </div>
   );
 }

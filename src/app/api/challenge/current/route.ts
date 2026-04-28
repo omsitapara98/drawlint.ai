@@ -73,9 +73,19 @@ export async function GET() {
   // Check user's submission status + existing draft
   let userSubmitted = false;
   let userDraftDesignId: string | null = null;
+  let userSubmittedDesignId: string | null = null;
   const session = await auth();
   if (session?.user?.id) {
     userSubmitted = await hasUserSubmitted(challenge._id.toString(), session.user.id);
+
+    if (userSubmitted) {
+      // Fetch the submission record to get the designId
+      const sub = await db.collection("challenge_submissions").findOne({
+        challengeId: challenge._id,
+        userId: new ObjectId(session.user.id),
+      });
+      if (sub) userSubmittedDesignId = sub.designId.toString();
+    }
 
     // Fallback: if challenge_submissions record is missing but a reviewed
     // challenge design exists, treat as submitted (fire-and-forget race fix)
@@ -88,6 +98,7 @@ export async function GET() {
       });
       if (reviewedDesign) {
         userSubmitted = true;
+        userSubmittedDesignId = reviewedDesign._id.toString();
       }
     }
 
@@ -132,6 +143,7 @@ export async function GET() {
       : null,
     userSubmitted,
     userDraftDesignId,
+    userSubmittedDesignId,
     submissionCount,
   });
 }
