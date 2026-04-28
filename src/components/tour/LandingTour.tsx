@@ -138,13 +138,20 @@ export default function LandingTour() {
     if (active) writeSeen();
   }, [active]);
 
-  // Lock body scroll while tour is active.
+  // Lock body scroll while tour is active + broadcast active state.
   useEffect(() => {
-    if (!active) return;
     const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (active) {
+      document.body.style.overflow = "hidden";
+      if (typeof window !== "undefined") {
+        document.documentElement.dataset.landingTourActive = "true";
+      }
+    }
     return () => {
       document.body.style.overflow = prev;
+      if (typeof window !== "undefined") {
+        delete document.documentElement.dataset.landingTourActive;
+      }
     };
   }, [active]);
 

@@ -1200,6 +1200,7 @@ export default function GuideDemo() {
   const [resetKey, setResetKey] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [userOptedIn, setUserOptedIn] = useState(false);
+  const [tourActive, setTourActive] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1208,6 +1209,22 @@ export default function GuideDemo() {
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  // Sync tour active state from document attribute.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Set initial value.
+    setTourActive(document.documentElement.dataset.landingTourActive === "true");
+    // Observe mutations on the attribute.
+    const observer = new MutationObserver(() => {
+      setTourActive(document.documentElement.dataset.landingTourActive === "true");
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-landing-tour-active"],
+    });
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -1229,7 +1246,7 @@ export default function GuideDemo() {
     return () => obs.disconnect();
   }, [reducedMotion]);
 
-  const playbackActive = (inView && !reducedMotion) || userOptedIn;
+  const playbackActive = ((inView && !reducedMotion) || userOptedIn) && !tourActive;
   const stage = useTimeline(playbackActive, resetKey);
 
   const [analyzingPhaseT, setAnalyzingPhaseT] = useState(0);
