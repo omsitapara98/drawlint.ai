@@ -143,9 +143,15 @@ export function SearchableTopicGrid({ topics }: { topics: Topic[] }) {
                   <h2 className="text-sm font-semibold group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
                     {topic.name}
                   </h2>
-                  <span className="shrink-0 rounded-full bg-violet-100 px-2 py-0.5 text-[0.7rem] font-medium text-violet-700 dark:bg-violet-900 dark:text-violet-300 shadow-[0_0_6px_oklch(0.72_0.25_285_/_15%)]">
-                    {topic.submissionCount}
-                  </span>
+                  {topic.submissionCount >= 3 ? (
+                    <span className="shrink-0 rounded-full bg-violet-100 px-2 py-0.5 text-[0.7rem] font-medium text-violet-700 dark:bg-violet-900 dark:text-violet-300 shadow-[0_0_6px_oklch(0.72_0.25_285_/_15%)]">
+                      {topic.submissionCount}
+                    </span>
+                  ) : (
+                    <span className="shrink-0 rounded-full bg-muted/60 px-2.5 py-0.5 text-[0.7rem] font-medium text-muted-foreground dark:text-muted-foreground/80">
+                      New
+                    </span>
+                  )}
                 </div>
                 {/* Difficulty + Source badges */}
                 <div className="mt-2 flex items-center gap-1.5">
