@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { AIReviewResponse, AnalysisStatus, FeedbackItem, ReviewHighlight, ReviewDimension, ReviewLevel, ReviewerProgress, ReviewerKey, ReviewerStatus } from "@/types/feedback";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -280,6 +280,13 @@ function IssueRow({
   const [submitting, setSubmitting] = useState(false);
   const [localVerdict, setLocalVerdict] = useState<StoredResponse | null>(existingResponse ?? null);
 
+  // Sync local state when the parent clears existingResponse (new review arrived)
+  useEffect(() => {
+    setLocalVerdict(existingResponse ?? null);
+    setText(existingResponse?.userResponse ?? "");
+    setShowInput(false);
+  }, [existingResponse]);
+
   const handleSubmit = useCallback(async () => {
     if (!onRespond || !text.trim()) return;
     setSubmitting(true);
@@ -466,6 +473,15 @@ function AIReviewContent({
       .catch(() => {});
   }, [designId, initialResponses]);
 
+  // Clear stale responses when a new review arrives (review reset → new review streamed in)
+  const prevReviewRef = useRef<typeof review | undefined>(undefined);
+  useEffect(() => {
+    if (prevReviewRef.current === null && review != null) {
+      setResponses(new Map());
+    }
+    prevReviewRef.current = review;
+  }, [review]);
+
   // Handle submitting a response
   const handleRespond = useCallback(async (section: string, issueIndex: number, text: string): Promise<StoredResponse | null> => {
     if (!designId) return null;
@@ -532,6 +548,13 @@ function AIReviewContent({
   } | null>(null);
   const [reevaling, setReevaling] = useState(false);
   const [allExpanded, setAllExpanded] = useState(true);
+
+  // Clear stale reeval when a new review arrives
+  useEffect(() => {
+    if (prevReviewRef.current === null && review != null) {
+      setReeval(null);
+    }
+  }, [review]);
 
   // Load existing re-evaluation
   useEffect(() => {

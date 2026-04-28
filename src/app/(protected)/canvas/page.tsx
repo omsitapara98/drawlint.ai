@@ -704,6 +704,7 @@ function CanvasPageInner() {
     setAiStatus("analyzing");
     setAiError(undefined);
     setAiReview(null);
+    setInitialResponses([]);
     setViewModePolling(false);
     startReviewerProgress();
     activeStreamRef.current = true;
