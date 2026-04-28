@@ -531,6 +531,7 @@ function AIReviewContent({
     partialCount: number;
   } | null>(null);
   const [reevaling, setReevaling] = useState(false);
+  const [allExpanded, setAllExpanded] = useState(true);
 
   // Load existing re-evaluation
   useEffect(() => {
@@ -665,7 +666,6 @@ function AIReviewContent({
   if (!review) return null;
 
   const level = review.level ?? "deep";
-  const [allExpanded, setAllExpanded] = useState(true);
 
   return (
     <ScrollArea className="h-full">

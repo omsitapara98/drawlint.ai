@@ -24,18 +24,17 @@ export async function getTopics(
 
   try {
     const cursor = col.find().sort(sortField);
-    return await (limit ? cursor.limit(limit) : cursor).toArray();
+    return await (limit !== undefined ? cursor.limit(limit) : cursor).toArray();
   } catch {
     // Fallback: Cosmos DB may lack indexes for server-side sort — sort in JS
-    const cursor = col.find();
-    const docs = await (limit ? cursor.limit(limit) : cursor).toArray();
+    const docs = await col.find().toArray();
     const key = sort === "popular" ? "submissionCount" : "createdAt";
     docs.sort((a, b) => {
       const av = a[key] instanceof Date ? (a[key] as Date).getTime() : (a[key] as number);
       const bv = b[key] instanceof Date ? (b[key] as Date).getTime() : (b[key] as number);
       return bv - av;
     });
-    return docs;
+    return limit !== undefined ? docs.slice(0, limit) : docs;
   }
 }
 

@@ -8,9 +8,14 @@ export async function GET(request: Request) {
   const sort =
     searchParams.get("sort") === "recent" ? "recent" : "popular";
   const limitParam = searchParams.get("limit");
-  const limit = limitParam
-    ? Math.min(Math.max(parseInt(limitParam, 10) || 200, 1), 200)
-    : undefined;
+  let limit: number | undefined;
+  if (limitParam !== null) {
+    const parsed = Number(limitParam);
+    if (!Number.isInteger(parsed) || parsed < 1) {
+      return NextResponse.json({ error: "limit must be a positive integer" }, { status: 400 });
+    }
+    limit = Math.min(parsed, 500);
+  }
 
   const topics = await getTopics(sort, limit);
   return NextResponse.json({ topics });
