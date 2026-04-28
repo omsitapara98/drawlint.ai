@@ -1306,21 +1306,13 @@ export default function GuideDemo() {
               From blank canvas to AI review — the full flow.
             </p>
           </div>
-        </div>
-
-        <div
-          ref={containerRef}
-          role="img"
-          aria-label="Animated demo of the DrawLint design review flow"
-          className="relative rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm shadow-md shadow-black/[0.04] dark:shadow-none overflow-hidden"
-        >
           {showReplay && (
             <button
               type="button"
               aria-label="Replay demo"
               onClick={handleReplay}
               disabled={playing}
-              className={`absolute right-3 top-3 z-40 inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 backdrop-blur px-3 py-1.5 text-xs font-medium shadow-sm transition ${
+              className={`inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 backdrop-blur px-3 py-1.5 text-xs font-medium shadow-sm transition ${
                 playing
                   ? "opacity-50 cursor-not-allowed"
                   : "hover:bg-background hover:shadow"
@@ -1330,7 +1322,14 @@ export default function GuideDemo() {
               Replay
             </button>
           )}
+        </div>
 
+        <div
+          ref={containerRef}
+          role="img"
+          aria-label="Animated demo of the DrawLint design review flow"
+          className="relative rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm shadow-md shadow-black/[0.04] dark:shadow-none overflow-hidden"
+        >
           <FauxBrowserChrome />
 
           <div className="relative w-full aspect-[16/10] bg-background/40">
