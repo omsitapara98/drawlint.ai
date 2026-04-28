@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getDesignById } from "@/lib/db/designs";
 import { getReviewByDesignId } from "@/lib/db/reviews";
-import { upsertResponse } from "@/lib/db/responses";
+import { upsertResponse, getResponsesByDesignId } from "@/lib/db/responses";
 import { getUserAiSettings } from "@/lib/db/users";
 import { resolveAnalysisProvider, isResolutionError } from "@/lib/ai/resolve-provider";
 import { createProvider } from "@/lib/ai";
