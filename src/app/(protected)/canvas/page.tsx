@@ -589,7 +589,6 @@ function CanvasPageInner() {
       setAiReview(null);
       setAiStatus("idle");
       setAiError(undefined);
-      setSubmittedDesignId(null);
     }
   }, [elementFingerprint]);
 
