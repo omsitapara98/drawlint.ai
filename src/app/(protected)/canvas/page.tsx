@@ -592,6 +592,15 @@ function CanvasPageInner() {
     }
   }, [elementFingerprint]);
 
+  // Seed the "clean" fingerprint once after the initial element load so the
+  // canvas doesn't appear dirty the moment elements are fetched.
+  useEffect(() => {
+    if (viewModeInitialized || editModeInitialized) {
+      draftSavedFingerprintRef.current = elementFingerprint;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewModeInitialized, editModeInitialized]);
+
   const handleChange = useCallback((els: readonly ExcalidrawElement[]) => {
     setElements(els as ExcalidrawElement[]);
   }, []);
@@ -604,7 +613,8 @@ function CanvasPageInner() {
 
   // Warn before leaving with unsaved changes
   useEffect(() => {
-    if (!hasDrawnShapes || !canvasDirty) return;
+    // Skip warning in read-only view mode — nothing can be saved there anyway
+    if (!hasDrawnShapes || !canvasDirty || (!!viewDesignId && !viewEditMode)) return;
 
     // Browser tab close / refresh
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -631,7 +641,7 @@ function CanvasPageInner() {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       document.removeEventListener("click", handleClick, true);
     };
-  }, [hasDrawnShapes, canvasDirty]);
+  }, [hasDrawnShapes, canvasDirty, viewDesignId, viewEditMode]);
 
   // Cancel any in-progress stream on unmount
   useEffect(() => {
