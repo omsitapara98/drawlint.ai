@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, BookOpen } from "lucide-react";
 import { SearchableTopicGrid } from "./SearchableTopicGrid";
 import { MyDesignsTab } from "./MyDesignsTab";
+import { DesignGalleryTab } from "./DesignGalleryTab";
 
 interface Topic {
   _id: string;
@@ -16,16 +17,17 @@ interface Topic {
   submissionCount: number;
 }
 
-type Tab = "official" | "community" | "my";
+type Tab = "gallery" | "official" | "community" | "my";
 
 const TABS: { key: Tab; label: string }[] = [
+  { key: "gallery", label: "Design Gallery" },
   { key: "official", label: "Official Topics" },
   { key: "community", label: "Community Topics" },
   { key: "my", label: "My Designs" },
 ];
 
 export function LibraryTabs({ topics }: { topics: Topic[] }) {
-  const [tab, setTab] = useState<Tab>("official");
+  const [tab, setTab] = useState<Tab>("gallery");
 
   const officialTopics = topics.filter(t => !t.source || t.source === "official");
   const communityTopics = topics.filter(t => t.source === "community");
@@ -68,6 +70,7 @@ export function LibraryTabs({ topics }: { topics: Topic[] }) {
       </div>
 
       {/* Tab content */}
+      {tab === "gallery" && <DesignGalleryTab />}
       {tab === "official" && renderTopicGrid(officialTopics)}
       {tab === "community" && renderTopicGrid(communityTopics)}
       {tab === "my" && <MyDesignsTab />}
