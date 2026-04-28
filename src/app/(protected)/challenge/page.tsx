@@ -406,6 +406,7 @@ export default function ChallengePage() {
                     <th className="px-4 py-3 text-left font-medium">Name</th>
                     <th className="px-4 py-3 text-left font-medium">Signal</th>
                     <th className="px-4 py-3 text-right font-medium">Submitted</th>
+                    <th className="px-4 py-3 text-right font-medium">View</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -444,6 +445,14 @@ export default function ChallengePage() {
                       </td>
                       <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
                         {timeAgo(entry.submittedAt)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Link
+                          href={`/canvas?view=${entry.designId}`}
+                          className="text-xs font-medium text-violet-500 hover:underline"
+                        >
+                          View <ChevronRight className="inline h-3 w-3" />
+                        </Link>
                       </td>
                     </tr>
                   ))}
