@@ -602,6 +602,16 @@ function CanvasPageInner() {
   );
   const canvasDirty = elementFingerprint !== draftSavedFingerprintRef.current;
 
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    if (!hasDrawnShapes || !canvasDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [hasDrawnShapes, canvasDirty]);
+
   // Cancel any in-progress stream on unmount
   useEffect(() => {
     return () => {
