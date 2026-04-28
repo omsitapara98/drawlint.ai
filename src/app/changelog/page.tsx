@@ -27,11 +27,6 @@ const CHANGELOG = [
         badge: "New" as const,
       },
       {
-        title: "Core Platform",
-        description: "Excalidraw-based canvas, 6 AI reviewers (NFR, Entities, Capacity, API, HLD + Lead Reviewer), peer library, draft save, share links, and authentication (email, Google, GitHub).",
-        badge: "Launch" as const,
-      },
-      {
         title: "BYO AI Provider Support",
         description: "Connect your own Gemini (free) or Azure OpenAI key for unlimited reviews. Three options: DrawLint AI (managed), Gemini AI (free), Azure OpenAI (advanced).",
         badge: "Major" as const,
@@ -105,6 +100,11 @@ const CHANGELOG = [
         title: "About & Changelog Pages",
         description: "About page with mission, tech stack, and contact info. Changelog page with full feature timeline.",
         badge: null,
+      },
+      {
+        title: "Core Platform",
+        description: "Excalidraw-based canvas, 6 AI reviewers (NFR, Entities, Capacity, API, HLD + Lead Reviewer), peer library, draft save, share links, and authentication (email, Google, GitHub).",
+        badge: "Launch" as const,
       },
     ],
   },
