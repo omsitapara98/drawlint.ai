@@ -19,6 +19,7 @@ import {
   Trash2,
   Key,
   ExternalLink,
+  EyeOff,
 } from "lucide-react";
 
 interface AccountInfo {
@@ -39,6 +40,8 @@ interface AccountModalProps {
 export default function AccountModal({ open, onOpenChange }: AccountModalProps) {
   const [info, setInfo] = useState<AccountInfo | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pseudonym, setPseudonym] = useState<string | null>(null);
+  const [pseudonymLoading, setPseudonymLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -52,6 +55,7 @@ export default function AccountModal({ open, onOpenChange }: AccountModalProps) 
   useEffect(() => {
     if (!open) {
       setInfo(null);
+      setPseudonym(null);
       setDeleteConfirm(false);
       setShowChangePw(false);
       setChangePwCurrent("");
@@ -61,11 +65,20 @@ export default function AccountModal({ open, onOpenChange }: AccountModalProps) 
       return;
     }
     setLoading(true);
-    fetch("/api/user/account")
-      .then((r) => r.json())
-      .then((data) => setInfo(data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    setPseudonymLoading(true);
+    Promise.all([
+      fetch("/api/user/account")
+        .then((r) => r.json())
+        .then((data) => setInfo(data))
+        .catch(() => {}),
+      fetch("/api/auth/pseudonym")
+        .then((r) => r.json())
+        .then((data) => setPseudonym(data.pseudonym))
+        .catch(() => {}),
+    ]).finally(() => {
+      setLoading(false);
+      setPseudonymLoading(false);
+    });
   }, [open]);
 
   async function handleChangePassword() {
@@ -188,6 +201,22 @@ export default function AccountModal({ open, onOpenChange }: AccountModalProps) 
                 </div>
               </div>
             </div>
+
+            {/* Anonymous handle */}
+            {pseudonym && (
+              <div className="rounded-lg border border-border p-3 space-y-2">
+                <p className="text-xs font-semibold flex items-center gap-1.5">
+                  {pseudonymLoading ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-violet-400" />
+                  ) : (
+                    <EyeOff className="h-3.5 w-3.5 text-violet-400" />
+                  )}
+                  Anonymous handle
+                </p>
+                <span className="font-mono text-sm block">{pseudonym}</span>
+                <p className="text-xs text-muted-foreground">Used when you post designs anonymously.</p>
+              </div>
+            )}
 
             {/* Change password (collapsible) */}
             {info.hasPassword && (
