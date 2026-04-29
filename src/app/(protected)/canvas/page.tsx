@@ -1431,7 +1431,7 @@ function CanvasPageInner() {
                         🔥 Weekly Challenge
                       </span>
                     )}
-                    {!panelOpen && (aiReview || aiStatus === "analyzing") && (
+                    {!panelOpen && (aiReview || aiStatus === "analyzing" || aiStatus === "error") && (
                       <button
                         onClick={() => setPanelOpen(true)}
                         className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90"
@@ -1443,7 +1443,7 @@ function CanvasPageInner() {
                 )}
 
                 {/* Show Review toggle (non-owner view, normal flow, or view edit mode) */}
-                {!panelOpen && (aiReview || aiStatus === "analyzing") && !(viewDesignId && viewIsAuthor && !viewEditMode) && (
+                {!panelOpen && (aiReview || aiStatus === "analyzing" || aiStatus === "error") && !(viewDesignId && viewIsAuthor && !viewEditMode) && (
                   <button
                     onClick={() => setPanelOpen(true)}
                     className="inline-flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 px-3 text-xs font-medium text-white transition-opacity hover:opacity-90"
