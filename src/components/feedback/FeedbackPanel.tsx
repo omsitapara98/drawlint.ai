@@ -558,11 +558,15 @@ function AIReviewContent({
   const [reevaling, setReevaling] = useState(false);
   const [allExpanded, setAllExpanded] = useState(true);
 
-  // Clear stale reeval when a new review arrives
+  // Clear stale reeval + responses whenever a genuinely new review object arrives.
+  // Uses its own ref (not shared with response-clear) to avoid race conditions.
+  const prevReviewForReevalRef = useRef<typeof review>(undefined);
   useEffect(() => {
-    if (prevReviewRef.current === null && review != null) {
+    const prev = prevReviewForReevalRef.current;
+    if (prev !== undefined && prev !== review && review != null) {
       setReeval(null);
     }
+    prevReviewForReevalRef.current = review;
   }, [review]);
 
   // Load existing re-evaluation
