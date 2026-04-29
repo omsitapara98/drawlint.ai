@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ArrowRight, Loader2, Search, Sparkles, Zap, Key, X } from "lucide-react";
 import { motion } from "framer-motion";
@@ -62,13 +62,22 @@ export function DesignGalleryTab() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
-  useEffect(() => {
+  const loadDesigns = useCallback(() => {
+    setError(null);
+    setLoading(true);
     fetch("/api/designs/gallery")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
       .then((data: { designs: GalleryDesign[] }) => setDesigns(data.designs))
       .catch(() => setError("Failed to load designs"))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadDesigns();
+  }, [loadDesigns]);
 
   const filtered = query.trim()
     ? designs.filter((d) => d.topicName.toLowerCase().includes(query.trim().toLowerCase()))
@@ -83,7 +92,22 @@ export function DesignGalleryTab() {
     );
   }
 
-  if (error || designs.length === 0) {
+  if (error) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-20 text-center">
+        <Search className="h-12 w-12 text-muted-foreground/40" />
+        <p className="text-sm text-muted-foreground">Failed to load designs</p>
+        <button
+          onClick={loadDesigns}
+          className="text-xs text-primary hover:underline"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  if (designs.length === 0) {
     return (
       <div className="flex flex-col items-center gap-4 py-20 text-center">
         <Search className="h-12 w-12 text-muted-foreground/40" />

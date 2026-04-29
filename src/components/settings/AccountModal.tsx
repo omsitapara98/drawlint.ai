@@ -44,6 +44,7 @@ export default function AccountModal({ open, onOpenChange }: AccountModalProps) 
   const [pseudonymLoading, setPseudonymLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Change password
   const [changePwCurrent, setChangePwCurrent] = useState("");
@@ -57,6 +58,7 @@ export default function AccountModal({ open, onOpenChange }: AccountModalProps) 
       setInfo(null);
       setPseudonym(null);
       setDeleteConfirm(false);
+      setFetchError(null);
       setShowChangePw(false);
       setChangePwCurrent("");
       setChangePwNew("");
@@ -68,13 +70,19 @@ export default function AccountModal({ open, onOpenChange }: AccountModalProps) 
     setPseudonymLoading(true);
     Promise.all([
       fetch("/api/user/account")
-        .then((r) => r.json())
+        .then((r) => {
+          if (!r.ok) throw new Error();
+          return r.json();
+        })
         .then((data) => setInfo(data))
-        .catch(() => {}),
+        .catch(() => setFetchError("Failed to load account details")),
       fetch("/api/auth/pseudonym")
-        .then((r) => r.json())
+        .then((r) => {
+          if (!r.ok) throw new Error();
+          return r.json();
+        })
         .then((data) => setPseudonym(data.pseudonym))
-        .catch(() => {}),
+        .catch(() => setFetchError("Failed to load account details")),
     ]).finally(() => {
       setLoading(false);
       setPseudonymLoading(false);
@@ -139,6 +147,14 @@ export default function AccountModal({ open, onOpenChange }: AccountModalProps) 
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : fetchError && !info ? (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <p className="text-sm text-muted-foreground">{fetchError}</p>
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="h-7 text-xs">
+              Close
+            </Button>
           </div>
         ) : info ? (
           <div className="flex flex-col gap-3">

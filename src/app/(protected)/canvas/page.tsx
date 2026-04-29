@@ -857,9 +857,11 @@ function CanvasPageInner() {
                       if (!submitRes.ok) {
                         const err = (await submitRes.json().catch(() => ({}))) as { error?: string };
                         console.error("Challenge submit failed:", err.error ?? submitRes.status);
+                        setAiError("Challenge recorded but tracking may have failed. Your review is saved.");
                       }
                     } catch (err) {
                       console.error("Challenge submit error:", err);
+                      setAiError("Challenge recorded but tracking may have failed. Your review is saved.");
                     }
                   } else {
                     console.error("Challenge submit skipped: no design ID available");

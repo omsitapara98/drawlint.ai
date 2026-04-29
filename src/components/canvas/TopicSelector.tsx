@@ -17,6 +17,7 @@ interface TopicSelectorProps {
 export default function TopicSelector({ onChange }: TopicSelectorProps) {
   const [topics, setTopics] = useState<TopicOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<TopicOption | null>(null);
@@ -28,11 +29,12 @@ export default function TopicSelector({ onChange }: TopicSelectorProps) {
     async function fetchTopics() {
       try {
         const res = await fetch("/api/topics?sort=popular");
-        if (!res.ok) return;
+        if (!res.ok) throw new Error("Failed to load");
         const data = (await res.json()) as { topics: TopicOption[] };
         setTopics(data.topics);
+        setError(null);
       } catch {
-        // silent
+        setError("Failed to load topics");
       } finally {
         setLoading(false);
       }
@@ -89,6 +91,7 @@ export default function TopicSelector({ onChange }: TopicSelectorProps) {
           if (existing) handleSelect(existing);
         } else {
           console.error("Failed to create topic:", err.error);
+          setError(err.error ?? "Failed to create topic");
         }
         return;
       }
@@ -96,7 +99,7 @@ export default function TopicSelector({ onChange }: TopicSelectorProps) {
       setTopics((prev) => [data.topic, ...prev]);
       handleSelect(data.topic);
     } catch {
-      // silent
+      setError("Failed to create topic");
     } finally {
       setCreating(false);
     }
@@ -189,6 +192,9 @@ export default function TopicSelector({ onChange }: TopicSelectorProps) {
                   </div>
                 )}
               </div>
+            )}
+            {error && (
+              <p className="mt-1 text-[0.65rem] text-red-500">{error}</p>
             )}
           </>
         )}
