@@ -11,6 +11,7 @@ GROUND RULES — READ CAREFULLY:
 5. Only flag a checklist criterion as missing if it is RELEVANT to this specific design AND required by the stated FR. For example: if the API has no list/GET endpoints, do not flag "missing pagination." If the API uses WebSocket, evaluate WebSocket message design (message types, payload structure, connection lifecycle) — do not apply REST conventions to WebSocket APIs. Judge what IS there, not what a generic template expects.
 6. Do NOT invent requirements. If the FR says "match players 1v1", do not flag missing team/party support. If the FR says "text chat", do not flag missing voice/video. Stay strictly within the scope of the stated FR.
 7. BE BRUTALLY HONEST. If the content is gibberish, random characters, placeholder text, or clearly low-effort, say so directly. Do NOT manufacture strengths or positives for empty or nonsensical content. An empty section deserves zero highlights. A section with "asdf123" or random text is NOT a valid design decision worth praising. If NOTHING is genuinely good, the highlights array MUST be empty.
+8. Do NOT nitpick exact numbers. If the candidate says "99.9% availability" do not flag that it should be "99.99%". If capacity calculations show the right methodology and ballpark, do not argue about precise RAM overhead, exact shard counts, or specific node sizing. Focus on whether the APPROACH is sound, not whether the arithmetic is pixel-perfect. The Capacity section handles numerical accuracy — other reviewers should focus on design implications.
 `;
 
 /* ── Cumulative criteria per dimension ────────────────────────── */
@@ -20,7 +21,7 @@ const NFR_MID = [
 ];
 const NFR_SENIOR = [
   ...NFR_MID,
-  "NFRs specific and measurable (e.g. \"p99 < 200ms\")",
+  "NFRs specific with reasonable targets (e.g. \"p99 < 200ms\") — accept any defensible number, don't argue exact values",
   "Consistency model chosen (strong/eventual)",
   "Numbers tied to assumptions",
 ];
@@ -28,7 +29,7 @@ const NFR_STAFF = [
   ...NFR_SENIOR,
   "Trade-offs between NFRs discussed (consistency vs availability)",
   "NFRs inform architectural choices",
-  "SLA contracts considered",
+  "SLA contracts considered (general availability tiers, not exact decimal places)",
 ];
 const NFR_DEEP = [
   ...NFR_STAFF,
@@ -63,12 +64,12 @@ const ENTITIES_DEEP = [
 
 const CAPACITY_MID = [
   "Basic numbers present (DAU, rough QPS)",
-  "Right ballpark for scale",
+  "Right ballpark for scale — methodology matters more than exact values",
 ];
 const CAPACITY_SENIOR = [
   ...CAPACITY_MID,
   "Calculations are methodical (DAU → QPS → storage → bandwidth)",
-  "HLD matches calculated numbers",
+  "HLD generally consistent with calculated scale (don't nitpick exact node counts if the approach is sound)",
   "Component choices justified by scale",
 ];
 const CAPACITY_STAFF = [
@@ -120,7 +121,7 @@ const HLD_MID = [
 ];
 const HLD_SENIOR = [
   ...HLD_MID,
-  "Scalability for stated load",
+  "Scalability approach handles stated load (focus on bottlenecks and failure modes, not exact sizing)",
   "Caching where needed",
   "Async processing for heavy operations",
   "Basic redundancy (no obvious SPOFs)",
@@ -131,13 +132,15 @@ const HLD_STAFF = [
   "Consistency trade-offs explicitly addressed",
   "Circuit breakers",
   "Graceful degradation",
+  "Failure scenarios identified (what breaks, blast radius, recovery path)",
+  "Single points of failure called out with mitigation",
   "Operational readiness (monitoring, alerting, logging)",
 ];
 const HLD_DEEP = [
   ...HLD_STAFF,
   "Multi-region/disaster recovery",
   "Blue-green deployment strategy",
-  "Chaos engineering readiness",
+  "Chaos engineering readiness (failure injection points, blast radius boundaries)",
   "Cost optimization",
   "Full observability stack",
 ];
