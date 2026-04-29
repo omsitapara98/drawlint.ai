@@ -24,6 +24,12 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const handler = () => setSettingsOpen(true);
+    window.addEventListener("drawlint:open-settings", handler);
+    return () => window.removeEventListener("drawlint:open-settings", handler);
+  }, []);
+
   return (
     <>
       <header

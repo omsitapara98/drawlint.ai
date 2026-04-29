@@ -758,8 +758,9 @@ function CanvasPageInner() {
         const data = (await res.json().catch(() => ({}))) as { error?: string; quotaExceeded?: boolean; emailNotVerified?: boolean };
         if (data.quotaExceeded) {
           setAiError(
-            "You've used all 10 free AI reviews this month. Switch to Free AI (Gemini) or add your own key in Settings to continue.",
+            "You've used all 10 free AI reviews this month. Open Settings to add your own Gemini or Azure OpenAI key and get unlimited reviews.",
           );
+          setAiStatus("error");
           stopReviewerProgress("error");
           activeStreamRef.current = false;
           return;
@@ -768,6 +769,7 @@ function CanvasPageInner() {
           setAiError(
             "Please verify your email before using DrawLint AI. Check your inbox for a verification link.",
           );
+          setAiStatus("error");
           stopReviewerProgress("error");
           activeStreamRef.current = false;
           return;
@@ -1560,7 +1562,7 @@ function CanvasPageInner() {
                       aiError={aiError}
                       reviewerProgress={reviewerProgress}
                       onRetry={handleRetrySubmit}
-                      onOpenSettings={() => {}}
+                      onOpenSettings={() => window.dispatchEvent(new CustomEvent("drawlint:open-settings"))}
                       designId={submittedDesignId || editDesignId || viewDesignId}
                       isAuthor={viewDesignId ? viewIsAuthor : true}
                       initialResponses={initialResponses}

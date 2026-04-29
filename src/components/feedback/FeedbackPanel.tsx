@@ -665,22 +665,33 @@ function AIReviewContent({
 
   // Error
   if (status === "error") {
+    const isQuotaError = (error ?? "").includes("reviews this month");
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/10 text-3xl">
           <AlertTriangle className="h-8 w-8 text-red-500" />
         </div>
         <div className="text-center">
-          <p className="text-sm font-medium text-red-600 dark:text-red-400">Analysis Failed</p>
+          <p className="text-sm font-medium text-red-600 dark:text-red-400">
+            {isQuotaError ? "AI Quota Exhausted" : "Analysis Failed"}
+          </p>
           <p className="mt-1 text-xs text-muted-foreground max-w-xs">
             {error ?? "An unexpected error occurred."}
           </p>
         </div>
-        {onRetry && (
-          <Button variant="outline" size="sm" onClick={onRetry}>
-            Retry Analysis
-          </Button>
-        )}
+        <div className="flex flex-col gap-2 w-full max-w-[200px]">
+          {onOpenSettings && (
+            <Button variant="default" size="sm" onClick={onOpenSettings} className="w-full">
+              <Settings className="mr-1.5 h-3.5 w-3.5" />
+              Open Settings
+            </Button>
+          )}
+          {onRetry && !isQuotaError && (
+            <Button variant="outline" size="sm" onClick={onRetry} className="w-full">
+              Retry Analysis
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
