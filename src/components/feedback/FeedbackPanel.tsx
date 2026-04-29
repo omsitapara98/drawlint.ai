@@ -452,7 +452,7 @@ function AIReviewContent({
     }
     return map;
   });
-  const canRespond = !!isAuthor && !!designId && status === "complete";
+  const canRespond = !!isAuthor && !!designId && (status === "complete" || showPreviousReview);
 
   // When quota/email error hits, the old review is preserved in the `review` prop.
   // This flag lets the user toggle to see their previous review from the error screen.
