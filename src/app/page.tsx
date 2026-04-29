@@ -12,9 +12,9 @@ import GuideDemo from "@/components/guide/GuideDemo";
 // Typewriter words for hero
 const TYPEWRITER_WORDS = [
   "System Design Problems",
-  "Daily Architecture Practice",
+  "Architecture Tradeoffs",
   "Weekly Design Challenges",
-  "Build Your Design Streak",
+  "Daily Design Drills",
 ];
 
 // Steps data
