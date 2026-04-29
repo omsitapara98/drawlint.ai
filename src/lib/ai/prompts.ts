@@ -8,10 +8,9 @@ GROUND RULES — READ CAREFULLY:
 2. The Assumptions section contains the candidate's stated constraints (user count, read/write ratio, SLA targets, etc.). Evaluate the design AGAINST these assumptions — not against arbitrary scale targets.
 3. Judge HOW WELL the design meets the stated FR under the stated assumptions. A design for 10K users doesn't need the same infra as one for 10M users.
 4. The candidate's annotations near components explain their design rationale. Factor this into your evaluation — they may have already considered and addressed concerns you'd raise.
-5. **Component connectivity via annotations counts as explicit connection.** If a component appears in any numbered flow step, annotation, label, or description anywhere in the design — it IS connected to the architecture. Do NOT flag it as orphaned. A component is only truly orphaned if it has absolutely zero mentions in any flow description, annotation, or label across the entire design.
-6. Only flag a checklist criterion as missing if it is RELEVANT to this specific design AND required by the stated FR. For example: if the API has no list/GET endpoints, do not flag "missing pagination." If the API uses WebSocket, evaluate WebSocket message design (message types, payload structure, connection lifecycle) — do not apply REST conventions to WebSocket APIs. Judge what IS there, not what a generic template expects.
-7. Do NOT invent requirements. If the FR says "match players 1v1", do not flag missing team/party support. If the FR says "text chat", do not flag missing voice/video. Stay strictly within the scope of the stated FR.
-8. BE BRUTALLY HONEST. If the content is gibberish, random characters, placeholder text, or clearly low-effort, say so directly. Do NOT manufacture strengths or positives for empty or nonsensical content. An empty section deserves zero highlights. A section with "asdf123" or random text is NOT a valid design decision worth praising. If NOTHING is genuinely good, the highlights array MUST be empty.
+5. Only flag a checklist criterion as missing if it is RELEVANT to this specific design AND required by the stated FR. For example: if the API has no list/GET endpoints, do not flag "missing pagination." If the API uses WebSocket, evaluate WebSocket message design (message types, payload structure, connection lifecycle) — do not apply REST conventions to WebSocket APIs. Judge what IS there, not what a generic template expects.
+6. Do NOT invent requirements. If the FR says "match players 1v1", do not flag missing team/party support. If the FR says "text chat", do not flag missing voice/video. Stay strictly within the scope of the stated FR.
+7. BE BRUTALLY HONEST. If the content is gibberish, random characters, placeholder text, or clearly low-effort, say so directly. Do NOT manufacture strengths or positives for empty or nonsensical content. An empty section deserves zero highlights. A section with "asdf123" or random text is NOT a valid design decision worth praising. If NOTHING is genuinely good, the highlights array MUST be empty.
 `;
 
 /* ── Cumulative criteria per dimension ────────────────────────── */
@@ -117,7 +116,7 @@ const HLD_MID = [
   "Design works end-to-end",
   "Components connected logically",
   "Data flows address the FR",
-  "No orphaned components (a component is orphaned ONLY if it has no mention in any annotation, flow step, or label — connections via numbered steps count as explicit connections)",
+  "No orphaned components",
 ];
 const HLD_SENIOR = [
   ...HLD_MID,
@@ -251,7 +250,7 @@ const REVIEWER_FOCUS: Record<ReviewerSection, string> = {
   entities: "core domain entities and their relationships. At Mid/Senior level, focus ONLY on whether the right nouns are listed and relationships defined — do NOT demand attributes, fields, access patterns, indexing, or join/associative entities at these levels. Those are Staff+ criteria. Do NOT comment on infrastructure or API design.",
   capacity: "capacity calculations, projections, sizing, and whether numbers are methodical. Do NOT comment on component design or API routes.",
   api: "endpoint/message design, protocols, REST conventions or WebSocket patterns. Do NOT comment on backend architecture or data modeling.",
-  hld: "component choices, architecture patterns, scalability, redundancy, and operational readiness. This is where infrastructure and design pattern feedback belongs. When checking for orphaned components: components described in numbered flow steps or annotations ARE connected — do not flag them as orphaned.",
+  hld: "component choices, architecture patterns, scalability, redundancy, and operational readiness. This is where infrastructure and design pattern feedback belongs.",
 };
 
 const INDIVIDUAL_RESPONSE_SCHEMA = `
