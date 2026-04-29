@@ -17,132 +17,131 @@ GROUND RULES — READ CAREFULLY:
 /* ── Cumulative criteria per dimension ────────────────────────── */
 
 const NFR_MID = [
-  "Basic NFRs mentioned (latency, availability, consistency)",
+  "Are basic quality attributes identified? (latency, availability, consistency — at least mentioned)",
 ];
 const NFR_SENIOR = [
   ...NFR_MID,
-  "NFRs specific with reasonable targets (e.g. \"p99 < 200ms\") — accept any defensible number, don't argue exact values",
-  "Consistency model chosen (strong/eventual)",
-  "Numbers tied to assumptions",
+  "Are targets reasonable and defensible? (e.g. 'p99 < 200ms' — any concrete number is fine, don't argue the exact value)",
+  "Is the consistency model chosen and justified? (strong vs eventual — what breaks if you pick wrong?)",
+  "Do the numbers connect to the assumptions? (not floating in isolation)",
 ];
 const NFR_STAFF = [
   ...NFR_SENIOR,
-  "Trade-offs between NFRs discussed (consistency vs availability)",
-  "NFRs inform architectural choices",
-  "SLA contracts considered (general availability tiers, not exact decimal places)",
+  "Are trade-offs between NFRs discussed? (e.g. 'we sacrifice consistency for availability because...')",
+  "Do NFR choices actually drive architecture decisions? (not just listed and forgotten)",
+  "What happens when SLAs are breached? (any degradation story?)",
 ];
 const NFR_DEEP = [
   ...NFR_STAFF,
-  "Compliance requirements",
-  "Multi-region latency budgets",
-  "SLA composition across service dependencies",
+  "Are compliance/regulatory constraints considered where relevant?",
+  "Is there a latency budget across the request path? (not just endpoint targets)",
+  "How do dependent service SLAs compose? (if Service A is 99.9% and Service B is 99.9%, what's the user-facing SLA?)",
 ];
 
 const ENTITIES_MID = [
-  "Key entities listed (1-word nouns relevant to the system)",
+  "Are the core domain nouns identified? (the 3-5 key entities this system revolves around)",
 ];
 const ENTITIES_SENIOR = [
   ...ENTITIES_MID,
-  "All entities needed for the core flow are present (no missing domain concepts)",
-  "Relationships between entities defined (1:1, 1:N, N:N)",
+  "Are all entities needed for the core flow present? (trace the happy path — is any domain concept missing?)",
+  "Are relationships defined? (1:1, 1:N, N:N — how do these things connect?)",
 ];
 const ENTITIES_STAFF = [
   ...ENTITIES_SENIOR,
-  "Basic attributes present on each entity",
-  "Read vs write access patterns identified",
-  "Indexing strategy considered",
-  "Data partitioning/sharding strategy",
-  "Hot key awareness",
+  "What are the key fields on each entity? (at least the fields that matter for queries and indexes)",
+  "What's the hottest read path? Can the DB serve it efficiently? (think about access patterns, not just schema)",
+  "Is there a sharding/partitioning key? What happens if it's wrong? (hot partitions, cross-shard queries)",
+  "Are there any hot keys or skewed access patterns? (celebrity problem, popular items)",
 ];
 const ENTITIES_DEEP = [
   ...ENTITIES_STAFF,
-  "Denormalization rationale discussed",
-  "GDPR/data retention concerns",
-  "Cross-region replication strategy",
-  "Schema evolution plan",
+  "Is denormalization justified where used? (what's the read/write trade-off?)",
+  "Are data retention and deletion policies considered? (GDPR, TTL, archival)",
+  "How does schema evolve? (migrations, backward compatibility, dual-write periods)",
+  "Is cross-region data replication addressed if multi-region?",
 ];
 
 const CAPACITY_MID = [
-  "Basic numbers present (DAU, rough QPS)",
-  "Right ballpark for scale — methodology matters more than exact values",
+  "Are basic scale numbers present? (DAU, rough QPS — even back-of-envelope is fine)",
+  "Is the ballpark reasonable? (methodology matters more than exact digits)",
 ];
 const CAPACITY_SENIOR = [
   ...CAPACITY_MID,
-  "Calculations are methodical (DAU → QPS → storage → bandwidth)",
-  "HLD generally consistent with calculated scale (don't nitpick exact node counts if the approach is sound)",
-  "Component choices justified by scale",
+  "Is there a logical chain? (DAU → QPS → storage → bandwidth — not just random numbers)",
+  "Does the architecture generally fit the calculated scale? (don't nitpick exact node counts)",
+  "Are component choices justified by scale? (why Kafka vs SQS, why Redis vs Memcached for THIS load?)",
 ];
 const CAPACITY_STAFF = [
   ...CAPACITY_SENIOR,
-  "Storage growth projections",
-  "Cache hit ratios accounted for",
-  "DB choice handles calculated QPS",
+  "What does storage growth look like over time? (1 year, 3 years — is there a plan?)",
+  "What's the cache strategy? (hit ratio assumptions, cold start story, thundering herd mitigation)",
+  "Can the chosen DB actually handle the calculated QPS? (read vs write split considered)",
 ];
 const CAPACITY_DEEP = [
   ...CAPACITY_STAFF,
-  "Cost modeling (compute + storage + bandwidth)",
-  "2-3x growth capacity planning",
-  "Auto-scaling thresholds derived from calculations",
+  "Is there any cost awareness? (compute + storage + bandwidth — even rough estimates)",
+  "What's the growth plan? (2-3x headroom, auto-scaling triggers, when to re-architect)",
+  "Are auto-scaling thresholds derived from the calculations? (not arbitrary percentages)",
 ];
 
 const API_MID = [
-  "Endpoints cover core FR",
-  "Basic REST or WebSocket structure",
-  "CRUD coverage for primary entities",
+  "Do endpoints cover the core functional requirements? (can you actually use this system through these APIs?)",
+  "Is the protocol choice clear? (REST, WebSocket, gRPC — and appropriate for the use case)",
+  "Are the basic CRUD operations present for primary entities?",
 ];
 const API_SENIOR = [
   ...API_MID,
-  "Resource-oriented URL design for REST endpoints (evaluate message types for WebSocket APIs)",
-  "Pagination on list/GET endpoints (skip if no list endpoints exist)",
-  "Proper HTTP verbs for REST endpoints (skip for pure WebSocket APIs)",
-  "Error handling with status codes for REST; error message types for WebSocket",
+  "Is the URL/resource design clean? (for REST: resource-oriented; for WebSocket: clear message types)",
+  "What happens on large result sets? (pagination, cursor-based — skip if no list endpoints exist)",
+  "Are HTTP verbs correct for REST? (skip for WebSocket — evaluate message type design instead)",
+  "What does the client see on errors? (status codes, error shapes, retry guidance)",
 ];
 const API_STAFF = [
   ...API_SENIOR,
-  "Idempotency keys on mutating operations",
-  "API versioning strategy",
-  "Rate limiting",
-  "Backward compatibility",
-  "Bulk operations",
+  "What happens if POST /create is called twice? (idempotency — is the mutation safe to retry?)",
+  "How do you version without breaking existing clients? (API versioning strategy)",
+  "What stops a bad actor from hammering the API? (rate limiting, throttling)",
+  "Can you add fields without breaking old clients? (backward compatibility)",
+  "Is there a bulk/batch path for high-throughput operations?",
 ];
 const API_DEEP = [
   ...API_STAFF,
-  "Auth/authz on every endpoint",
-  "Injection prevention",
-  "API gateway patterns",
-  "mTLS between internal services",
+  "Is every endpoint authenticated and authorized? (who can call what?)",
+  "What about injection attacks? (SQL injection, XSS, command injection — input validation)",
+  "Is there an API gateway? (routing, auth, rate limiting in one place)",
+  "How do internal services authenticate to each other? (mTLS, service mesh, API keys)",
 ];
 
 const HLD_MID = [
-  "Design works end-to-end",
-  "Components connected logically",
-  "Data flows address the FR",
-  "No orphaned components",
+  "Does the design work end-to-end? (trace a request from client to response — does it complete?)",
+  "Are components connected logically? (no floating boxes with no arrows)",
+  "Do data flows address the functional requirements? (can the system actually DO what's asked?)",
+  "Are there orphaned components? (drawn but never used in any flow)",
 ];
 const HLD_SENIOR = [
   ...HLD_MID,
-  "Scalability approach handles stated load (focus on bottlenecks and failure modes, not exact sizing)",
-  "Caching where needed",
-  "Async processing for heavy operations",
-  "Basic redundancy (no obvious SPOFs)",
+  "Where are the bottlenecks at the stated scale? (what's the first thing that breaks under load?)",
+  "Is caching used where it matters? (hot read paths, expensive computations)",
+  "Are heavy operations async? (don't block the user for things that can happen later)",
+  "What's the single point of failure? (if one node dies, does the whole system go down?)",
 ];
 const HLD_STAFF = [
   ...HLD_SENIOR,
-  "Data partitioning strategy",
-  "Consistency trade-offs explicitly addressed",
-  "Circuit breakers",
-  "Graceful degradation",
-  "Failure scenarios identified (what breaks, blast radius, recovery path)",
-  "Single points of failure called out with mitigation",
-  "Operational readiness (monitoring, alerting, logging)",
+  "How is data partitioned? (sharding strategy, partition key choice, cross-partition query impact)",
+  "What consistency trade-offs were made? (strong vs eventual — and WHY for this use case)",
+  "What happens when a downstream service is slow or down? (circuit breakers, timeouts, fallbacks)",
+  "How does the system degrade gracefully? (what features drop first under pressure?)",
+  "What breaks, what's the blast radius, and what's the recovery path? (failure scenarios)",
+  "Is there a single point of failure, and how is it mitigated?",
+  "Is the system observable? (monitoring, alerting, logging — can you debug a production issue?)",
 ];
 const HLD_DEEP = [
   ...HLD_STAFF,
-  "Multi-region/disaster recovery",
-  "Blue-green deployment strategy",
-  "Chaos engineering readiness (failure injection points, blast radius boundaries)",
-  "Cost optimization",
-  "Full observability stack",
+  "Is there a multi-region or disaster recovery story? (RTO/RPO targets)",
+  "How do you deploy without downtime? (blue-green, canary, rolling — any strategy)",
+  "Where would you inject failures to test resilience? (chaos engineering — blast radius boundaries)",
+  "Is there cost awareness in component choices? (over-engineering vs right-sizing)",
+  "Can you trace a request end-to-end in production? (distributed tracing, correlation IDs)",
 ];
 
 /* ── Criteria lookup by level ─────────────────────────────────── */
@@ -249,11 +248,11 @@ const REVIEWER_NAMES: Record<ReviewerSection, string> = {
 };
 
 const REVIEWER_FOCUS: Record<ReviewerSection, string> = {
-  nfr: "non-functional requirements quality (latency targets, availability SLAs, consistency model). Do NOT comment on HLD component choices or infrastructure.",
-  entities: "core domain entities and their relationships. At Mid/Senior level, focus ONLY on whether the right nouns are listed and relationships defined — do NOT demand attributes, fields, access patterns, indexing, or join/associative entities at these levels. Those are Staff+ criteria. Do NOT comment on infrastructure or API design.",
-  capacity: "capacity calculations, projections, sizing, and whether numbers are methodical. Do NOT comment on component design or API routes.",
-  api: "endpoint/message design, protocols, REST conventions or WebSocket patterns. Do NOT comment on backend architecture or data modeling.",
-  hld: "component choices, architecture patterns, scalability, redundancy, and operational readiness. This is where infrastructure and design pattern feedback belongs. You will also receive other sections (NFR, Entities, Capacity, API) as cross-reference context. Use them to verify consistency — do NOT flag something as missing if it's addressed in another section.",
+  nfr: "non-functional requirements — are quality attributes identified, are targets defensible, and do they actually drive design decisions? Think: what breaks if these targets are wrong? Do NOT comment on HLD component choices or infrastructure.",
+  entities: "core domain entities — are the right nouns identified, are relationships clear, and at Staff+ level, are access patterns and partitioning thought through? At Mid/Senior, focus ONLY on whether entities and relationships are present — do NOT demand attributes, indexes, or sharding. Do NOT comment on infrastructure or API design.",
+  capacity: "capacity planning — is there a logical chain from users to infrastructure, and does the methodology make sense? Don't argue exact numbers — focus on whether the APPROACH is sound. Do NOT comment on component design or API routes.",
+  api: "API/protocol design — can you actually use this system through these endpoints? What happens on errors, retries, and edge cases? Do NOT comment on backend architecture or data modeling.",
+  hld: "architecture and design thinking — where are the bottlenecks, what breaks under failure, what trade-offs were made and why? Focus on gaps, risks, and failure scenarios — not template compliance. You will also receive other sections (NFR, Entities, Capacity, API) as cross-reference context. Use them to verify consistency — do NOT flag something as missing if it's addressed in another section.",
 };
 
 const INDIVIDUAL_RESPONSE_SCHEMA = `
@@ -271,7 +270,7 @@ Return a JSON object with this EXACT structure:
     {
       "severity": "critical" | "warning" | "info",
       "title": "<short title>",
-      "description": "<what's wrong and how to fix>"
+      "description": "<what could go wrong, framed as a scenario or probing question — e.g. 'What happens when the payment service is slow? Without a timeout, the booking flow blocks indefinitely.'>"
     }
   ]
 }`;
@@ -291,7 +290,9 @@ ${GROUND_RULES}
 
 YOUR SOLE RESPONSIBILITY: ${focus}
 
-SECTION OWNERSHIP: You are the ${name}. ONLY comment on your own section. Do not provide feedback on other dimensions.
+INTERVIEW MINDSET: Think like a senior interviewer, not a checklist auditor. For each criterion, ask yourself: "If I were sitting across from this candidate, what would I push back on? What failure scenario would I probe? What trade-off did they miss?" Frame issues as scenarios and probing questions, not as missing template items. Say "What happens when X fails?" not "Missing circuit breaker pattern."
+
+SECTION OWNERSHIP:You are the ${name}. ONLY comment on your own section. Do not provide feedback on other dimensions.
 
 YOUR CHECKLIST (${CRITERIA[level][reviewer].length} criteria — check each one):
 ${checklist}
@@ -301,13 +302,13 @@ CRITERIA ARE CUMULATIVE: Check ALL criteria from lower levels IN ADDITION to lev
 FEEDBACK — TWO SEPARATE ARRAYS:
 
 "highlights" array — things done WELL (use "strong" or "good"):
-- "strong": An exceptional design choice showing deep understanding. Use sparingly.
-- "good": A solid, correct decision worth acknowledging.
+- "strong": A design choice that shows real depth — the candidate clearly thought about failure modes, trade-offs, or edge cases. Use sparingly.
+- "good": A solid, thoughtful decision worth acknowledging — not just "they drew a box."
 
-"issues" array — things MISSING or WRONG (use "critical", "warning", or "info"):
-- "critical": A fundamental issue that would cause the system to fail or not meet requirements.
-- "warning": An important gap that should be addressed but doesn't break the system.
-- "info": A minor suggestion or nice-to-have improvement.
+"issues" array — gaps, risks, and missed trade-offs (use "critical", "warning", or "info"):
+- "critical": This would cause the system to fail in production. Frame as: "What happens when X? The system would Y."
+- "warning": An important gap the candidate should think about. Frame as: "Have you considered what happens if...?"
+- "info": A suggestion that would strengthen the design. Frame as: "You could improve this by..."
 
 Do NOT force highlights — if nothing stands out as genuinely good, leave the array empty.
 
@@ -353,7 +354,7 @@ ${desc}
 Provide:
 1. A 2-3 sentence summary of the overall design quality
 2. Your lead reviewer assessment (top strengths, top risks, hire signal with justification, improvement areas)
-3. At least 2 follow-up questions that probe the candidate's understanding
+3. 2-3 follow-up questions a real interviewer would ask — probe failure scenarios, trade-off justifications, and scaling limits (e.g. "What happens when your primary DB goes down?", "Why did you choose X over Y for this component?", "Walk me through what happens at 10x your stated scale.")
 
 RULES:
 - Return ONLY valid JSON. No markdown fences, no explanation text outside the JSON.
