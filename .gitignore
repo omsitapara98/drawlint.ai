@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Internal / sensitive files
+docs/pre-launch-findings.md
+AGENTS.md
+CLAUDE.md
+.dev-team.json
