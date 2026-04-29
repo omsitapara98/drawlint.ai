@@ -246,21 +246,16 @@ type ArchNode = {
 };
 
 const ENTRY_NODES: ArchNode[] = [
-  { id: "mobile", label: "Mobile", icon: "📱", x: 100, y: 8, w: 58, h: 30, layer: "entry", shape: "rounded" },
-  { id: "web", label: "Web App", icon: "🌐", x: 270, y: 8, w: 62, h: 30, layer: "entry", shape: "rounded" },
-  { id: "lb", label: "LB", icon: "◇", x: 204, y: 52, w: 36, h: 36, layer: "entry", shape: "diamond" },
-  { id: "apigw", label: "API Gateway", icon: "🚪", x: 178, y: 100, w: 88, h: 32, layer: "entry", shape: "rect" },
+  { id: "client", label: "Client App", icon: "🌐", x: 185, y: 15, w: 80, h: 32, layer: "entry", shape: "rounded" },
+  { id: "apigw", label: "API Gateway", icon: "🚪", x: 175, y: 80, w: 100, h: 34, layer: "entry", shape: "rect" },
 ];
 const SERVICE_NODES: ArchNode[] = [
-  { id: "auth", label: "Auth Svc", icon: "🔐", x: 32, y: 155, w: 68, h: 32, layer: "services", shape: "rect" },
-  { id: "booking", label: "Booking Svc", icon: "🎫", x: 172, y: 155, w: 100, h: 34, layer: "services", shape: "rect" },
-  { id: "payment", label: "Payment Svc", icon: "💳", x: 340, y: 155, w: 86, h: 32, layer: "services", shape: "rect" },
-  { id: "notif", label: "Notif Svc", icon: "📨", x: 185, y: 210, w: 74, h: 28, layer: "services", shape: "rect" },
+  { id: "booking", label: "Booking Svc", icon: "🎫", x: 70, y: 155, w: 90, h: 34, layer: "services", shape: "rect" },
+  { id: "payment", label: "Payment Svc", icon: "💳", x: 280, y: 155, w: 90, h: 34, layer: "services", shape: "rect" },
 ];
 const DATA_NODES: ArchNode[] = [
-  { id: "pg", label: "Postgres", icon: "🐘", x: 42, y: 260, w: 62, h: 40, layer: "data", shape: "cylinder" },
-  { id: "redis", label: "Redis", icon: "🔴", x: 186, y: 260, w: 58, h: 40, layer: "data", shape: "cylinder" },
-  { id: "blob", label: "Blob Store", icon: "📦", x: 340, y: 264, w: 72, h: 34, layer: "data", shape: "hexagon" },
+  { id: "pg", label: "Postgres", icon: "🐘", x: 75, y: 235, w: 70, h: 42, layer: "data", shape: "cylinder" },
+  { id: "redis", label: "Redis", icon: "🔴", x: 290, y: 235, w: 65, h: 42, layer: "data", shape: "cylinder" },
 ];
 const ALL_NODES = [...ENTRY_NODES, ...SERVICE_NODES, ...DATA_NODES];
 
@@ -646,54 +641,7 @@ function ArchArrow({
   );
 }
 
-function ArchAnnotation({
-  x, y, w, h, text, reveal, delay,
-}: {
-  x: number; y: number; w: number; h: number; text: string;
-  reveal: boolean; delay: number;
-}) {
-  return (
-    <motion.g
-      initial={{ opacity: 0 }}
-      animate={{ opacity: reveal ? 1 : 0 }}
-      transition={{ duration: 0.5, delay }}
-    >
-      <rect
-        x={x} y={y} width={w} height={h} rx={3}
-        fill="transparent"
-        stroke="rgb(139,92,246)"
-        strokeWidth={0.8}
-        strokeDasharray="3 2"
-      />
-      <text
-        x={x + w / 2} y={y + h / 2 + 3}
-        textAnchor="middle"
-        style={{ fontSize: 6, fontWeight: 400, fill: "rgb(139,92,246)" }}
-      >
-        {text}
-      </text>
-    </motion.g>
-  );
-}
 
-function LayerLabel({
-  text, y, reveal, delay,
-}: {
-  text: string; y: number; reveal: boolean; delay: number;
-}) {
-  return (
-    <motion.text
-      x={8}
-      y={y}
-      style={{ fontSize: 7, fontWeight: 500, fill: "rgb(148,163,184)", letterSpacing: "0.04em" }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: reveal ? 0.55 : 0 }}
-      transition={{ duration: 0.4, delay }}
-    >
-      {text}
-    </motion.text>
-  );
-}
 
 function RightPaneCanvas({ stage }: { stage: Stage }) {
   const showEntry = isAtOrAfter(stage, "draw-entry");
@@ -708,29 +656,22 @@ function RightPaneCanvas({ stage }: { stage: Stage }) {
   const buttonClicked = isAtOrAfter(stage, "click-button");
 
   // Node aliases for arrow wiring
-  const mobile = ENTRY_NODES[0];
-  const web = ENTRY_NODES[1];
-  const lb = ENTRY_NODES[2];
-  const apigw = ENTRY_NODES[3];
-  const auth = SERVICE_NODES[0];
-  const booking = SERVICE_NODES[1];
-  const payment = SERVICE_NODES[2];
-  const notif = SERVICE_NODES[3];
+  const client = ENTRY_NODES[0];
+  const apigw = ENTRY_NODES[1];
+  const booking = SERVICE_NODES[0];
+  const payment = SERVICE_NODES[1];
   const pg = DATA_NODES[0];
   const redis = DATA_NODES[1];
-  const blob = DATA_NODES[2];
 
-  // Trail path: Web App → LB → API GW → Booking Svc → Postgres
+  // Trail path: Client → API Gateway → Booking → Postgres
   const trailD = (() => {
-    const p1 = nodeBottom(web);
-    const p2 = nodeTop(lb);
-    const p3 = nodeBottom(lb);
-    const p4 = nodeTop(apigw);
-    const p5 = nodeBottom(apigw);
-    const p6 = nodeTop(booking);
-    const p7 = nodeBottom(booking);
-    const p8 = nodeTop(pg);
-    return `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y} M ${p3.x} ${p3.y} L ${p4.x} ${p4.y} M ${p5.x} ${p5.y} L ${p6.x} ${p6.y} M ${p7.x} ${p7.y} L ${p8.x} ${p8.y}`;
+    const p1 = nodeBottom(client);
+    const p2 = nodeTop(apigw);
+    const p3 = nodeBottom(apigw);
+    const p4 = nodeTop(booking);
+    const p5 = nodeBottom(booking);
+    const p6 = nodeTop(pg);
+    return `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y} M ${p3.x} ${p3.y} L ${p4.x} ${p4.y} M ${p5.x} ${p5.y} L ${p6.x} ${p6.y}`;
   })();
 
   return (
@@ -750,12 +691,6 @@ function RightPaneCanvas({ stage }: { stage: Stage }) {
               <path d="M 0 0 L 10 5 L 0 10 z" fill="rgb(148,163,184)" />
             </marker>
           </defs>
-
-          {/* Layer labels */}
-          <LayerLabel text="Clients" y={26} reveal={showEntry} delay={0} />
-          <LayerLabel text="Gateway" y={115} reveal={showEntry} delay={0.4} />
-          <LayerLabel text="Services" y={168} reveal={showServices} delay={0} />
-          <LayerLabel text="Data" y={278} reveal={showData} delay={0} />
 
           {/* Entry layer */}
           {ENTRY_NODES.map((n, i) => (
@@ -785,49 +720,46 @@ function RightPaneCanvas({ stage }: { stage: Stage }) {
             />
           ))}
 
-          {/* Arrows: clients → LB */}
+          {/* Client → API Gateway */}
           <ArchArrow
-            from={nodeBottom(mobile)}
-            to={nodeTop(lb)}
-            reveal={showArrows}
-            delay={0.0}
-            label="HTTPS"
-          />
-          <ArchArrow
-            from={nodeBottom(web)}
-            to={nodeTop(lb)}
-            reveal={showArrows}
-            delay={0.05}
-          />
-
-          {/* LB → API GW */}
-          <ArchArrow
-            from={nodeBottom(lb)}
+            from={nodeBottom(client)}
             to={nodeTop(apigw)}
             reveal={showArrows}
-            delay={0.15}
+            delay={0.0}
           />
 
-          {/* API GW → services */}
+          {/* API Gateway → Booking */}
           <ArchArrow
             from={{ x: apigw.x + 20, y: apigw.y + apigw.h }}
-            to={nodeTop(auth)}
-            reveal={showArrows}
-            delay={0.25}
-            label="JWT verify"
-          />
-          <ArchArrow
-            from={nodeBottom(apigw)}
             to={nodeTop(booking)}
             reveal={showArrows}
-            delay={0.3}
+            delay={0.1}
             label="POST /book"
           />
+
+          {/* API Gateway → Payment */}
           <ArchArrow
             from={{ x: apigw.x + apigw.w - 20, y: apigw.y + apigw.h }}
             to={nodeTop(payment)}
             reveal={showArrows}
-            delay={0.35}
+            delay={0.2}
+            label="charge()"
+          />
+
+          {/* Booking → Postgres */}
+          <ArchArrow
+            from={nodeBottom(booking)}
+            to={nodeTop(pg)}
+            reveal={showArrows}
+            delay={0.3}
+          />
+
+          {/* Payment → Redis */}
+          <ArchArrow
+            from={nodeBottom(payment)}
+            to={nodeTop(redis)}
+            reveal={showArrows}
+            delay={0.4}
           />
 
           {/* Booking → Payment */}
@@ -835,59 +767,7 @@ function RightPaneCanvas({ stage }: { stage: Stage }) {
             from={nodeRight(booking)}
             to={nodeLeft(payment)}
             reveal={showArrows}
-            delay={0.45}
-            label="charge()"
-          />
-
-          {/* Booking → Notification (async) */}
-          <ArchArrow
-            from={nodeBottom(booking)}
-            to={nodeTop(notif)}
-            reveal={showArrows}
             delay={0.5}
-            label="async"
-          />
-
-          {/* Services to data */}
-          <ArchArrow
-            from={nodeBottom(auth)}
-            to={nodeTop(pg)}
-            reveal={showArrows}
-            delay={0.55}
-          />
-          <ArchArrow
-            from={{ x: booking.x + 30, y: booking.y + booking.h }}
-            to={nodeTop(pg)}
-            reveal={showArrows}
-            delay={0.6}
-            label="write"
-          />
-          <ArchArrow
-            from={{ x: booking.x + booking.w - 30, y: booking.y + booking.h }}
-            to={nodeTop(redis)}
-            reveal={showArrows}
-            delay={0.65}
-            label="cache"
-          />
-          <ArchArrow
-            from={nodeBottom(notif)}
-            to={nodeTop(blob)}
-            reveal={showArrows}
-            delay={0.7}
-          />
-
-          {/* Annotation boxes (appear during draw-arrows) */}
-          <ArchAnnotation
-            x={352} y={187} w={85} h={14}
-            text="Idempotent w/ UUID"
-            reveal={showArrows}
-            delay={0.85}
-          />
-          <ArchAnnotation
-            x={164} y={300} w={52} h={12}
-            text="TTL: 5min"
-            reveal={showArrows}
-            delay={0.95}
           />
 
           {/* Request trail (dashed violet) */}
