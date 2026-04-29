@@ -250,7 +250,7 @@ const REVIEWER_FOCUS: Record<ReviewerSection, string> = {
   entities: "core domain entities and their relationships. At Mid/Senior level, focus ONLY on whether the right nouns are listed and relationships defined — do NOT demand attributes, fields, access patterns, indexing, or join/associative entities at these levels. Those are Staff+ criteria. Do NOT comment on infrastructure or API design.",
   capacity: "capacity calculations, projections, sizing, and whether numbers are methodical. Do NOT comment on component design or API routes.",
   api: "endpoint/message design, protocols, REST conventions or WebSocket patterns. Do NOT comment on backend architecture or data modeling.",
-  hld: "component choices, architecture patterns, scalability, redundancy, and operational readiness. This is where infrastructure and design pattern feedback belongs.",
+  hld: "component choices, architecture patterns, scalability, redundancy, and operational readiness. This is where infrastructure and design pattern feedback belongs. You will also receive other sections (NFR, Entities, Capacity, API) as cross-reference context. Use them to verify consistency — do NOT flag something as missing if it's addressed in another section.",
 };
 
 const INDIVIDUAL_RESPONSE_SCHEMA = `

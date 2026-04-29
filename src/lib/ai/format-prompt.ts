@@ -56,8 +56,27 @@ export function formatSectionForReview(
     lines.push("=== SECTION UNDER REVIEW: HIGH-LEVEL DESIGN ===");
     lines.push("");
 
-    // Also include HLD text section if it exists
-    // (ParsedDiagram.sections doesn't have an hld text field, so we skip)
+    // Include other sections as cross-reference context for the HLD reviewer.
+    // This prevents false flags like "no capacity sizing" when the user
+    // already addressed it in the Capacity Calculations section.
+    const crossRefSections = [
+      { key: "nonFunctionalRequirements" as const, label: "NON-FUNCTIONAL REQUIREMENTS" },
+      { key: "coreEntities" as const, label: "CORE ENTITIES" },
+      { key: "capacityCalculations" as const, label: "CAPACITY CALCULATIONS" },
+      { key: "apiRoutes" as const, label: "API ROUTES" },
+    ];
+
+    const crossRefContent = crossRefSections
+      .filter(s => sections[s.key]?.trim())
+      .map(s => `${s.label}:\n${sections[s.key].trim()}`)
+      .join("\n\n");
+
+    if (crossRefContent) {
+      lines.push("=== OTHER SECTIONS (cross-reference context — do NOT re-review these, but use them to understand the full design) ===");
+      lines.push("");
+      lines.push(crossRefContent);
+      lines.push("");
+    }
 
     lines.push(`NODES (${hld.nodes.length} total):`);
     if (hld.nodes.length === 0) {
