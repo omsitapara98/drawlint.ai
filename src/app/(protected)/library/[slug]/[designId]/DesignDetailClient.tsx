@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Trash2, RefreshCw } from "lucide-react";
+import { LoadingSpinner } from "@/components/feedback/LoadingSpinner";
 import ExcalidrawViewer from "@/components/library/ExcalidrawViewer";
 import ReviewPanel from "@/components/library/ReviewPanel";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -141,7 +142,7 @@ export default function DesignDetailClient({
             </div>
           ) : !elements ? (
             <div className="flex h-full items-center justify-center">
-              <p className="animate-pulse text-sm text-muted-foreground">Loading diagram…</p>
+              <LoadingSpinner message="Loading diagram…" />
             </div>
           ) : (
             <ExcalidrawViewer elements={elements} />

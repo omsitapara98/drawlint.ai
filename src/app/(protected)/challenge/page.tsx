@@ -13,6 +13,7 @@ import {
   Lock,
   ChevronRight,
 } from "lucide-react";
+import { LoadingSpinner } from "@/components/feedback/LoadingSpinner";
 
 /* ── Types ────────────────────────────────────────────────────── */
 
@@ -228,7 +229,7 @@ export default function ChallengePage() {
       <div className="flex min-h-screen flex-col bg-background text-foreground">
         <Header />
         <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+          <LoadingSpinner message="Loading challenge…" />
         </div>
       </div>
     );

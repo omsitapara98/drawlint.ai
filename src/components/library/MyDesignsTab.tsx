@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Loader2, FileEdit, Eye, Pencil, Sparkles, Zap, Key } from "lucide-react";
+import { FileEdit, Eye, Pencil, Sparkles, Zap, Key } from "lucide-react";
+import { LoadingSpinner } from "@/components/feedback/LoadingSpinner";
 
 interface UserDesign {
   _id: string;
@@ -113,8 +114,8 @@ export function MyDesignsTab() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="py-20">
+        <LoadingSpinner message="Loading your designs…" />
       </div>
     );
   }

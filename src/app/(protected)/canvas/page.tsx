@@ -17,6 +17,7 @@ import { parseDiagram, createWhiteboardTemplate, createChallengeTemplate } from 
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
 import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save, Pencil, Zap, Trash2, Link2, AlertTriangle } from "lucide-react";
+import { LoadingSpinner } from "@/components/feedback/LoadingSpinner";
 import Link from "next/link";
 
 /* ── Topic gate types ─────────────────────────────────────────── */
@@ -1026,7 +1027,7 @@ function CanvasPageInner() {
   if (initialData === null) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p className="animate-pulse text-sm text-muted-foreground">Loading…</p>
+        <LoadingSpinner message="Loading canvas…" />
       </div>
     );
   }

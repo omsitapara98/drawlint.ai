@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ArrowRight, Loader2, Search, Sparkles, Zap, Key, X } from "lucide-react";
+import { ArrowRight, Search, Sparkles, Zap, Key, X } from "lucide-react";
+import { LoadingSpinner } from "@/components/feedback/LoadingSpinner";
 import { motion } from "framer-motion";
 
 interface GalleryDesign {
@@ -85,9 +86,8 @@ export function DesignGalleryTab() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center gap-3 py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">Loading designs…</p>
+      <div className="py-20">
+        <LoadingSpinner message="Loading designs…" />
       </div>
     );
   }
