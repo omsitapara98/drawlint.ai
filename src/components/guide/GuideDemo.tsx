@@ -231,32 +231,36 @@ const SEVERITY_LABEL: Record<Severity, string> = {
 const HIRE_SIGNAL_CLASS = "bg-emerald-400 text-white";
 const LEAN_HIRE_SIGNAL_CLASS = "bg-yellow-400 text-white";
 
-// 9-box layered architecture (entry / services / data).
+// Realistic layered architecture (entry / services / data) with varied shapes.
+type ArchShape = "rect" | "cylinder" | "hexagon" | "diamond" | "rounded";
 type ArchNode = {
   id: string;
   label: string;
   icon: string;
   x: number;
   y: number;
+  w: number;
+  h: number;
   layer: "entry" | "services" | "data";
+  shape: ArchShape;
 };
-const BOX_W = 64;
-const BOX_H = 38;
 
 const ENTRY_NODES: ArchNode[] = [
-  { id: "client", label: "Client", icon: "🌐", x: 60, y: 30, layer: "entry" },
-  { id: "cdn", label: "CDN", icon: "☁️", x: 208, y: 30, layer: "entry" },
-  { id: "apigw", label: "API GW", icon: "🚪", x: 356, y: 30, layer: "entry" },
+  { id: "mobile", label: "Mobile", icon: "📱", x: 100, y: 8, w: 58, h: 30, layer: "entry", shape: "rounded" },
+  { id: "web", label: "Web App", icon: "🌐", x: 270, y: 8, w: 62, h: 30, layer: "entry", shape: "rounded" },
+  { id: "lb", label: "LB", icon: "◇", x: 204, y: 52, w: 36, h: 36, layer: "entry", shape: "diamond" },
+  { id: "apigw", label: "API Gateway", icon: "🚪", x: 178, y: 100, w: 88, h: 32, layer: "entry", shape: "rect" },
 ];
 const SERVICE_NODES: ArchNode[] = [
-  { id: "auth", label: "Auth", icon: "🔐", x: 60, y: 140, layer: "services" },
-  { id: "review", label: "Review", icon: "🎯", x: 208, y: 140, layer: "services" },
-  { id: "notif", label: "Notif", icon: "📨", x: 356, y: 140, layer: "services" },
+  { id: "auth", label: "Auth Svc", icon: "🔐", x: 32, y: 155, w: 68, h: 32, layer: "services", shape: "rect" },
+  { id: "booking", label: "Booking Svc", icon: "🎫", x: 172, y: 155, w: 100, h: 34, layer: "services", shape: "rect" },
+  { id: "payment", label: "Payment Svc", icon: "💳", x: 340, y: 155, w: 86, h: 32, layer: "services", shape: "rect" },
+  { id: "notif", label: "Notif Svc", icon: "📨", x: 185, y: 210, w: 74, h: 28, layer: "services", shape: "rect" },
 ];
 const DATA_NODES: ArchNode[] = [
-  { id: "pg", label: "Postgres", icon: "🐘", x: 60, y: 250, layer: "data" },
-  { id: "redis", label: "Redis", icon: "🔴", x: 208, y: 250, layer: "data" },
-  { id: "s3", label: "S3", icon: "📦", x: 356, y: 250, layer: "data" },
+  { id: "pg", label: "Postgres", icon: "🐘", x: 42, y: 260, w: 62, h: 40, layer: "data", shape: "cylinder" },
+  { id: "redis", label: "Redis", icon: "🔴", x: 186, y: 260, w: 58, h: 40, layer: "data", shape: "cylinder" },
+  { id: "blob", label: "Blob Store", icon: "📦", x: 340, y: 264, w: 72, h: 34, layer: "data", shape: "hexagon" },
 ];
 const ALL_NODES = [...ENTRY_NODES, ...SERVICE_NODES, ...DATA_NODES];
 
@@ -267,13 +271,19 @@ const LAYER_STROKE: Record<ArchNode["layer"], string> = {
 };
 
 function nodeCenter(n: ArchNode) {
-  return { cx: n.x + BOX_W / 2, cy: n.y + BOX_H / 2 };
+  return { cx: n.x + n.w / 2, cy: n.y + n.h / 2 };
 }
 function nodeBottom(n: ArchNode) {
-  return { x: n.x + BOX_W / 2, y: n.y + BOX_H };
+  return { x: n.x + n.w / 2, y: n.y + n.h };
 }
 function nodeTop(n: ArchNode) {
-  return { x: n.x + BOX_W / 2, y: n.y };
+  return { x: n.x + n.w / 2, y: n.y };
+}
+function nodeRight(n: ArchNode) {
+  return { x: n.x + n.w, y: n.y + n.h / 2 };
+}
+function nodeLeft(n: ArchNode) {
+  return { x: n.x, y: n.y + n.h / 2 };
 }
 
 /* ───────────────────────── Hook: stage timeline ───────────────────────── */
@@ -477,41 +487,106 @@ function ArchBox({
   delay: number;
 }) {
   const stroke = LAYER_STROKE[node.layer];
+  const { x, y, w, h, shape } = node;
+  const isBooking = node.id === "booking";
+  const sw = isBooking ? 2 : 1.5;
+
+  const labelX = x + w / 2;
+  const labelY = shape === "cylinder" ? y + 6 + (h - 12) / 2 + 3 : y + h / 2 + 3;
+
+  const renderShape = () => {
+    switch (shape) {
+      case "cylinder": {
+        const capRy = 6;
+        return (
+          <g>
+            {/* body */}
+            <motion.rect
+              x={x} y={y + capRy} width={w} height={h - capRy * 2}
+              fill="transparent" stroke={stroke} strokeWidth={sw}
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: reveal ? 1 : 0, opacity: reveal ? 1 : 0 }}
+              transition={{ duration: 0.9, delay, ease: "easeOut" }}
+            />
+            {/* bottom cap */}
+            <motion.ellipse
+              cx={x + w / 2} cy={y + h - capRy} rx={w / 2} ry={capRy}
+              fill="transparent" stroke={stroke} strokeWidth={sw}
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: reveal ? 1 : 0, opacity: reveal ? 1 : 0 }}
+              transition={{ duration: 0.7, delay: delay + 0.15, ease: "easeOut" }}
+            />
+            {/* top cap */}
+            <motion.ellipse
+              cx={x + w / 2} cy={y + capRy} rx={w / 2} ry={capRy}
+              fill="transparent" stroke={stroke} strokeWidth={sw}
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: reveal ? 1 : 0, opacity: reveal ? 1 : 0 }}
+              transition={{ duration: 0.7, delay: delay + 0.1, ease: "easeOut" }}
+            />
+          </g>
+        );
+      }
+      case "diamond": {
+        const cx = x + w / 2;
+        const cy = y + h / 2;
+        const pts = `${cx},${y} ${x + w},${cy} ${cx},${y + h} ${x},${cy}`;
+        return (
+          <motion.polygon
+            points={pts}
+            fill="transparent" stroke={stroke} strokeWidth={sw}
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: reveal ? 1 : 0, opacity: reveal ? 1 : 0 }}
+            transition={{ duration: 0.9, delay, ease: "easeOut" }}
+          />
+        );
+      }
+      case "hexagon": {
+        const indent = 10;
+        const cy = y + h / 2;
+        const pts = `${x + indent},${y} ${x + w - indent},${y} ${x + w},${cy} ${x + w - indent},${y + h} ${x + indent},${y + h} ${x},${cy}`;
+        return (
+          <motion.polygon
+            points={pts}
+            fill="transparent" stroke={stroke} strokeWidth={sw}
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: reveal ? 1 : 0, opacity: reveal ? 1 : 0 }}
+            transition={{ duration: 0.9, delay, ease: "easeOut" }}
+          />
+        );
+      }
+      case "rounded":
+        return (
+          <motion.rect
+            x={x} y={y} width={w} height={h} rx={h / 2} ry={h / 2}
+            fill="transparent" stroke={stroke} strokeWidth={sw}
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: reveal ? 1 : 0, opacity: reveal ? 1 : 0 }}
+            transition={{ duration: 0.9, delay, ease: "easeOut" }}
+          />
+        );
+      default:
+        return (
+          <motion.rect
+            x={x} y={y} width={w} height={h} rx={5} ry={5}
+            fill="transparent" stroke={stroke} strokeWidth={sw}
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: reveal ? 1 : 0, opacity: reveal ? 1 : 0 }}
+            transition={{ duration: 0.9, delay, ease: "easeOut" }}
+          />
+        );
+    }
+  };
+
   return (
     <g>
-      <motion.rect
-        x={node.x}
-        y={node.y}
-        width={BOX_W}
-        height={BOX_H}
-        rx={6}
-        ry={6}
-        fill="transparent"
-        stroke={stroke}
-        strokeWidth={1.5}
-        initial={{ pathLength: 0, opacity: 0 }}
-        animate={{
-          pathLength: reveal ? 1 : 0,
-          opacity: reveal ? 1 : 0,
-        }}
-        transition={{ duration: 0.9, delay, ease: "easeOut" }}
-      />
+      {renderShape()}
       <motion.text
-        x={node.x + 9}
-        y={node.y + BOX_H / 2 + 3}
+        x={labelX}
+        y={labelY}
+        textAnchor="middle"
         className="fill-foreground"
-        style={{ fontSize: 10 }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: reveal ? 1 : 0 }}
-        transition={{ duration: 0.3, delay: delay + 0.7 }}
-      >
-        {node.icon}
-      </motion.text>
-      <motion.text
-        x={node.x + 24}
-        y={node.y + BOX_H / 2 + 3}
-        className="fill-foreground"
-        style={{ fontSize: 8.5, fontWeight: 500 }}
+        style={{ fontSize: shape === "diamond" ? 7 : 8, fontWeight: 500 }}
         initial={{ opacity: 0 }}
         animate={{ opacity: reveal ? 1 : 0 }}
         transition={{ duration: 0.3, delay: delay + 0.7 }}
@@ -527,28 +602,96 @@ function ArchArrow({
   to,
   reveal,
   delay,
+  label,
 }: {
   from: { x: number; y: number };
   to: { x: number; y: number };
   reveal: boolean;
   delay: number;
+  label?: string;
+}) {
+  const mx = (from.x + to.x) / 2;
+  const my = (from.y + to.y) / 2;
+  return (
+    <g>
+      <motion.line
+        x1={from.x}
+        y1={from.y}
+        x2={to.x}
+        y2={to.y}
+        stroke="rgb(148,163,184)"
+        strokeWidth={1.1}
+        markerEnd="url(#guide-demo-arrow)"
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{
+          pathLength: reveal ? 1 : 0,
+          opacity: reveal ? 0.85 : 0,
+        }}
+        transition={{ duration: 0.45, delay }}
+      />
+      {label && (
+        <motion.text
+          x={mx}
+          y={my - 3}
+          textAnchor="middle"
+          style={{ fontSize: 6.5, fontWeight: 400, fill: "rgb(148,163,184)" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: reveal ? 0.85 : 0 }}
+          transition={{ duration: 0.3, delay: delay + 0.2 }}
+        >
+          {label}
+        </motion.text>
+      )}
+    </g>
+  );
+}
+
+function ArchAnnotation({
+  x, y, w, h, text, reveal, delay,
+}: {
+  x: number; y: number; w: number; h: number; text: string;
+  reveal: boolean; delay: number;
 }) {
   return (
-    <motion.line
-      x1={from.x}
-      y1={from.y}
-      x2={to.x}
-      y2={to.y}
-      stroke="rgb(148,163,184)"
-      strokeWidth={1.1}
-      markerEnd="url(#guide-demo-arrow)"
-      initial={{ pathLength: 0, opacity: 0 }}
-      animate={{
-        pathLength: reveal ? 1 : 0,
-        opacity: reveal ? 0.85 : 0,
-      }}
-      transition={{ duration: 0.45, delay }}
-    />
+    <motion.g
+      initial={{ opacity: 0 }}
+      animate={{ opacity: reveal ? 1 : 0 }}
+      transition={{ duration: 0.5, delay }}
+    >
+      <rect
+        x={x} y={y} width={w} height={h} rx={3}
+        fill="transparent"
+        stroke="rgb(139,92,246)"
+        strokeWidth={0.8}
+        strokeDasharray="3 2"
+      />
+      <text
+        x={x + w / 2} y={y + h / 2 + 3}
+        textAnchor="middle"
+        style={{ fontSize: 6, fontWeight: 400, fill: "rgb(139,92,246)" }}
+      >
+        {text}
+      </text>
+    </motion.g>
+  );
+}
+
+function LayerLabel({
+  text, y, reveal, delay,
+}: {
+  text: string; y: number; reveal: boolean; delay: number;
+}) {
+  return (
+    <motion.text
+      x={8}
+      y={y}
+      style={{ fontSize: 7, fontWeight: 500, fill: "rgb(148,163,184)", letterSpacing: "0.04em" }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: reveal ? 0.55 : 0 }}
+      transition={{ duration: 0.4, delay }}
+    >
+      {text}
+    </motion.text>
   );
 }
 
@@ -564,21 +707,28 @@ function RightPaneCanvas({ stage }: { stage: Stage }) {
     !isAtOrAfter(stage, "click-button");
   const buttonClicked = isAtOrAfter(stage, "click-button");
 
-  // Trail path: Client → CDN → API GW → Review → Postgres
-  const client = ENTRY_NODES[0];
-  const cdn = ENTRY_NODES[1];
-  const apigw = ENTRY_NODES[2];
-  const review = SERVICE_NODES[1];
+  // Node aliases for arrow wiring
+  const mobile = ENTRY_NODES[0];
+  const web = ENTRY_NODES[1];
+  const lb = ENTRY_NODES[2];
+  const apigw = ENTRY_NODES[3];
+  const auth = SERVICE_NODES[0];
+  const booking = SERVICE_NODES[1];
+  const payment = SERVICE_NODES[2];
+  const notif = SERVICE_NODES[3];
   const pg = DATA_NODES[0];
+  const redis = DATA_NODES[1];
+  const blob = DATA_NODES[2];
 
+  // Trail path: Web App → LB → API GW → Booking Svc → Postgres
   const trailD = (() => {
-    const p1 = { x: client.x + BOX_W, y: client.y + BOX_H / 2 };
-    const p2 = { x: cdn.x, y: cdn.y + BOX_H / 2 };
-    const p3 = { x: cdn.x + BOX_W, y: cdn.y + BOX_H / 2 };
-    const p4 = { x: apigw.x, y: apigw.y + BOX_H / 2 };
+    const p1 = nodeBottom(web);
+    const p2 = nodeTop(lb);
+    const p3 = nodeBottom(lb);
+    const p4 = nodeTop(apigw);
     const p5 = nodeBottom(apigw);
-    const p6 = nodeTop(review);
-    const p7 = nodeBottom(review);
+    const p6 = nodeTop(booking);
+    const p7 = nodeBottom(booking);
     const p8 = nodeTop(pg);
     return `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y} M ${p3.x} ${p3.y} L ${p4.x} ${p4.y} M ${p5.x} ${p5.y} L ${p6.x} ${p6.y} M ${p7.x} ${p7.y} L ${p8.x} ${p8.y}`;
   })();
@@ -601,13 +751,19 @@ function RightPaneCanvas({ stage }: { stage: Stage }) {
             </marker>
           </defs>
 
+          {/* Layer labels */}
+          <LayerLabel text="Clients" y={26} reveal={showEntry} delay={0} />
+          <LayerLabel text="Gateway" y={115} reveal={showEntry} delay={0.4} />
+          <LayerLabel text="Services" y={168} reveal={showServices} delay={0} />
+          <LayerLabel text="Data" y={278} reveal={showData} delay={0} />
+
           {/* Entry layer */}
           {ENTRY_NODES.map((n, i) => (
             <ArchBox
               key={n.id}
               node={n}
               reveal={showEntry}
-              delay={showEntry ? i * 0.6 : 0}
+              delay={showEntry ? i * 0.45 : 0}
             />
           ))}
           {/* Services layer */}
@@ -616,7 +772,7 @@ function RightPaneCanvas({ stage }: { stage: Stage }) {
               key={n.id}
               node={n}
               reveal={showServices}
-              delay={showServices ? i * 0.4 : 0}
+              delay={showServices ? i * 0.35 : 0}
             />
           ))}
           {/* Data layer */}
@@ -625,74 +781,113 @@ function RightPaneCanvas({ stage }: { stage: Stage }) {
               key={n.id}
               node={n}
               reveal={showData}
-              delay={showData ? i * 0.4 : 0}
+              delay={showData ? i * 0.35 : 0}
             />
           ))}
 
-          {/* Arrows: entry chain */}
+          {/* Arrows: clients → LB */}
           <ArchArrow
-            from={{ x: client.x + BOX_W, y: client.y + BOX_H / 2 }}
-            to={{ x: cdn.x, y: cdn.y + BOX_H / 2 }}
+            from={nodeBottom(mobile)}
+            to={nodeTop(lb)}
             reveal={showArrows}
             delay={0.0}
+            label="HTTPS"
           />
           <ArchArrow
-            from={{ x: cdn.x + BOX_W, y: cdn.y + BOX_H / 2 }}
-            to={{ x: apigw.x, y: apigw.y + BOX_H / 2 }}
+            from={nodeBottom(web)}
+            to={nodeTop(lb)}
             reveal={showArrows}
-            delay={0.1}
+            delay={0.05}
           />
 
-          {/* API GW fanout to services */}
+          {/* LB → API GW */}
           <ArchArrow
-            from={nodeBottom(apigw)}
-            to={nodeTop(SERVICE_NODES[0])}
+            from={nodeBottom(lb)}
+            to={nodeTop(apigw)}
+            reveal={showArrows}
+            delay={0.15}
+          />
+
+          {/* API GW → services */}
+          <ArchArrow
+            from={{ x: apigw.x + 20, y: apigw.y + apigw.h }}
+            to={nodeTop(auth)}
             reveal={showArrows}
             delay={0.25}
+            label="JWT verify"
           />
           <ArchArrow
             from={nodeBottom(apigw)}
-            to={nodeTop(SERVICE_NODES[1])}
+            to={nodeTop(booking)}
             reveal={showArrows}
             delay={0.3}
+            label="POST /book"
           />
           <ArchArrow
-            from={nodeBottom(apigw)}
-            to={nodeTop(SERVICE_NODES[2])}
+            from={{ x: apigw.x + apigw.w - 20, y: apigw.y + apigw.h }}
+            to={nodeTop(payment)}
             reveal={showArrows}
             delay={0.35}
           />
 
-          {/* Services to data */}
+          {/* Booking → Payment */}
           <ArchArrow
-            from={nodeBottom(SERVICE_NODES[0])}
-            to={nodeTop(DATA_NODES[0])}
+            from={nodeRight(booking)}
+            to={nodeLeft(payment)}
+            reveal={showArrows}
+            delay={0.45}
+            label="charge()"
+          />
+
+          {/* Booking → Notification (async) */}
+          <ArchArrow
+            from={nodeBottom(booking)}
+            to={nodeTop(notif)}
             reveal={showArrows}
             delay={0.5}
+            label="async"
           />
+
+          {/* Services to data */}
           <ArchArrow
-            from={nodeBottom(SERVICE_NODES[1])}
-            to={nodeTop(DATA_NODES[0])}
+            from={nodeBottom(auth)}
+            to={nodeTop(pg)}
             reveal={showArrows}
             delay={0.55}
           />
           <ArchArrow
-            from={nodeBottom(SERVICE_NODES[1])}
-            to={nodeTop(DATA_NODES[1])}
+            from={{ x: booking.x + 30, y: booking.y + booking.h }}
+            to={nodeTop(pg)}
             reveal={showArrows}
             delay={0.6}
+            label="write"
           />
           <ArchArrow
-            from={nodeBottom(SERVICE_NODES[2])}
-            to={nodeTop(DATA_NODES[1])}
+            from={{ x: booking.x + booking.w - 30, y: booking.y + booking.h }}
+            to={nodeTop(redis)}
             reveal={showArrows}
             delay={0.65}
+            label="cache"
           />
           <ArchArrow
-            from={nodeBottom(SERVICE_NODES[2])}
-            to={nodeTop(DATA_NODES[2])}
+            from={nodeBottom(notif)}
+            to={nodeTop(blob)}
             reveal={showArrows}
             delay={0.7}
+          />
+
+          {/* Annotation boxes (appear during draw-arrows) */}
+          <ArchAnnotation
+            x={352} y={187} w={85} h={14}
+            text="Idempotent w/ UUID"
+            reveal={showArrows}
+            delay={0.85}
+          />
+          <ArchAnnotation
+            x={164} y={300} w={52} h={12}
+            text="TTL: 5min"
+            reveal={showArrows}
+            delay={0.95}
           />
 
           {/* Request trail (dashed violet) */}
