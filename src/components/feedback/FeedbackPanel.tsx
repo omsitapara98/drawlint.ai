@@ -452,11 +452,11 @@ function AIReviewContent({
     }
     return map;
   });
-  const canRespond = !!isAuthor && !!designId && (status === "complete" || showPreviousReview);
-
   // When quota/email error hits, the old review is preserved in the `review` prop.
   // This flag lets the user toggle to see their previous review from the error screen.
   const [showPreviousReview, setShowPreviousReview] = useState(false);
+
+  const canRespond = !!isAuthor && !!designId && (status === "complete" || showPreviousReview);
 
   // Also fetch responses when designId changes (for cases where initialResponses wasn't available)
   useEffect(() => {
