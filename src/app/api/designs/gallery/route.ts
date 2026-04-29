@@ -40,7 +40,7 @@ export async function GET(request: Request) {
     db
       .collection("users")
       .find({ _id: { $in: userIds.map((id) => new ObjectId(id)) } })
-      .project({ _id: 1, name: 1, image: 1 })
+      .project({ _id: 1, name: 1, image: 1, role: 1 })
       .toArray(),
     db
       .collection("reviews")
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
       reviewLevel: review?.level ?? d.reviewLevel ?? "mid",
       reviewedBy: review?.reviewedBy ?? null,
       submissionType: d.submissionType ?? "regular",
-      isPremium: d.isPremium ?? false,
+      isPremium: (d.isPremium ?? false) || user?.role === "premium" || user?.role === "admin",
       createdAt: d.createdAt,
     };
   });
