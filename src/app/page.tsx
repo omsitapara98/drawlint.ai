@@ -11,10 +11,10 @@ import GuideDemo from "@/components/guide/GuideDemo";
 
 // Typewriter words for hero
 const TYPEWRITER_WORDS = [
-  "System Design Interviews",
-  "Architecture Tradeoffs",
-  "Hire Signal Drills",
-  "Mock Rounds",
+  "System Design Problems",
+  "Daily Architecture Practice",
+  "Weekly Design Challenges",
+  "Build Your Design Streak",
 ];
 
 // Steps data
@@ -640,7 +640,7 @@ export default function LandingPage() {
         <p className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent font-semibold tracking-wide">
           For developers, by developers.
         </p>
-        <p className="mt-1 text-xs text-muted-foreground/60">Built for system design interview practice.</p>
+        <p className="mt-1 text-xs text-muted-foreground/60">The system design practice platform.</p>
         <div className="mt-3 flex items-center justify-center">
           <a
             href="https://github.com/omsitapara98/drawlint.ai"

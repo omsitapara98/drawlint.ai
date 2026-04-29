@@ -24,9 +24,9 @@ const spaceGrotesk = Space_Grotesk({
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://drawlint-ai.in";
 
 export const metadata: Metadata = {
-  title: "DrawLint.ai — AI-Powered System Design Review",
+  title: "DrawLint.ai — The System Design Practice Platform",
   description:
-    "Draw system design diagrams and get instant AI feedback from 6 specialized reviewers. Weekly challenges, leaderboards, and streaks. Practice for system design interviews with real-time architecture analysis.",
+    "Submit system design diagrams and get instant AI feedback from 6 specialized reviewers. Weekly challenges, leaderboards, streaks, and a public library of solutions. Practice system design like you practice algorithms.",
   metadataBase: new URL(APP_URL),
   keywords: [
     "system design",
@@ -49,9 +49,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: APP_URL,
     siteName: "DrawLint.ai",
-    title: "DrawLint.ai — AI-Powered System Design Review",
+    title: "DrawLint.ai — The System Design Practice Platform",
     description:
-      "Draw your architecture, get instant review from 6 AI reviewers. Practice system design interviews with real-time feedback.",
+      "Submit system design diagrams and get instant AI feedback from 6 specialized reviewers. Weekly challenges, leaderboards, streaks, and a public library of solutions. Practice system design like you practice algorithms.",
     images: [
       {
         url: "/opengraph-image",
@@ -63,9 +63,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "DrawLint.ai — AI-Powered System Design Review",
+    title: "DrawLint.ai — The System Design Practice Platform",
     description:
-      "Draw your architecture, get instant review from 6 AI reviewers. Free to start.",
+      "Submit system design diagrams and get instant AI feedback from 6 specialized reviewers. Weekly challenges, leaderboards, streaks, and a public library of solutions. Practice system design like you practice algorithms.",
     images: ["/opengraph-image"],
   },
   robots: {
