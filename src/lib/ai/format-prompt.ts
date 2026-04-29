@@ -85,6 +85,31 @@ export function formatSectionForReview(
     }
     lines.push("");
 
+    // Compute annotation-only nodes (in flow via annotations, not drawn arrows)
+    const edgeConnectedIds = new Set(hld.edges.flatMap((e) => [e.from, e.to]));
+    const annotationOnlyNodes = hld.nodes.filter(
+      (n) =>
+        !edgeConnectedIds.has(n.id) &&
+        hld.annotations.some((a) => a.nearestNodeId === n.id)
+    );
+
+    if (annotationOnlyNodes.length > 0) {
+      lines.push(
+        `ANNOTATION-CONNECTED NODES (${annotationOnlyNodes.length} total — in flow via annotations, not drawn arrows):`
+      );
+      for (const node of annotationOnlyNodes) {
+        const relatedAnns = hld.annotations
+          .filter((a) => a.nearestNodeId === node.id)
+          .map((a) => `"${a.text}"`)
+          .join(", ");
+        lines.push(`  - [${node.type.toUpperCase()}] "${node.label}" (referenced in: ${relatedAnns})`);
+      }
+      lines.push(
+        "  NOTE: These nodes ARE connected to the flow via the above flow-step annotations."
+      );
+      lines.push("");
+    }
+
     if (hld.clusters.length > 0) {
       lines.push(`CLUSTERS (${hld.clusters.length} total):`);
       for (const cluster of hld.clusters) {
@@ -99,6 +124,9 @@ export function formatSectionForReview(
         const nearLabel = labelById.get(ann.nearestNodeId) ?? ann.nearestNodeId;
         lines.push(`  - "${ann.text}" (near: ${nearLabel})`);
       }
+      lines.push(
+        "  (Nodes with 'near:' references above are part of the design flow even without drawn arrows)"
+      );
       lines.push("");
     }
   } else {
