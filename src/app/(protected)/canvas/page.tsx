@@ -707,7 +707,8 @@ function CanvasPageInner() {
     setPanelOpen(true);
     setAiStatus("analyzing");
     setAiError(undefined);
-    setAiReview(null);
+    // Don't clear aiReview yet — only clear once server accepts the request,
+    // so a quota/email rejection can still show the previous review.
     setInitialResponses([]);
     setViewModePolling(false);
     startReviewerProgress();
@@ -779,7 +780,10 @@ function CanvasPageInner() {
 
       if (!res.body) throw new Error("No response body");
 
-      // Consume the NDJSON stream — each line is a JSON event
+      // Server accepted — safe to clear the previous review and start fresh
+      setAiReview(null);
+
+      // Consume the NDJSON stream— each line is a JSON event
       const reader = res.body.getReader();
       streamReaderRef.current = reader;
       const decoder = new TextDecoder();

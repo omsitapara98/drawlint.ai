@@ -454,6 +454,10 @@ function AIReviewContent({
   });
   const canRespond = !!isAuthor && !!designId && status === "complete";
 
+  // When quota/email error hits, the old review is preserved in the `review` prop.
+  // This flag lets the user toggle to see their previous review from the error screen.
+  const [showPreviousReview, setShowPreviousReview] = useState(false);
+
   // Also fetch responses when designId changes (for cases where initialResponses wasn't available)
   useEffect(() => {
     if (!designId) return;
@@ -481,6 +485,11 @@ function AIReviewContent({
     }
     prevReviewRef.current = review;
   }, [review]);
+
+  // Reset "view previous review" toggle whenever we leave the error state
+  useEffect(() => {
+    if (status !== "error") setShowPreviousReview(false);
+  }, [status]);
 
   // Handle submitting a response
   const handleRespond = useCallback(async (section: string, issueIndex: number, text: string): Promise<StoredResponse | null> => {
@@ -664,7 +673,7 @@ function AIReviewContent({
   }
 
   // Error
-  if (status === "error") {
+  if (status === "error" && !showPreviousReview) {
     const isQuotaError = (error ?? "").includes("reviews this month");
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
@@ -684,6 +693,11 @@ function AIReviewContent({
             <Button variant="default" size="sm" onClick={onOpenSettings} className="w-full">
               <Settings className="mr-1.5 h-3.5 w-3.5" />
               Open Settings
+            </Button>
+          )}
+          {review && (
+            <Button variant="outline" size="sm" onClick={() => setShowPreviousReview(true)} className="w-full">
+              View Previous Review
             </Button>
           )}
           {onRetry && !isQuotaError && (
