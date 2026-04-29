@@ -246,16 +246,19 @@ type ArchNode = {
 };
 
 const ENTRY_NODES: ArchNode[] = [
-  { id: "client", label: "Client App", icon: "🌐", x: 185, y: 15, w: 80, h: 32, layer: "entry", shape: "rounded" },
-  { id: "apigw", label: "API Gateway", icon: "🚪", x: 175, y: 80, w: 100, h: 34, layer: "entry", shape: "rect" },
+  { id: "client", label: "Client App", icon: "🌐", x: 190, y: 10, w: 78, h: 30, layer: "entry", shape: "rounded" },
+  { id: "apigw", label: "API Gateway", icon: "🚪", x: 180, y: 65, w: 98, h: 32, layer: "entry", shape: "rect" },
 ];
 const SERVICE_NODES: ArchNode[] = [
-  { id: "booking", label: "Booking Svc", icon: "🎫", x: 70, y: 155, w: 90, h: 34, layer: "services", shape: "rect" },
-  { id: "payment", label: "Payment Svc", icon: "💳", x: 280, y: 155, w: 90, h: 34, layer: "services", shape: "rect" },
+  { id: "booking", label: "Booking Svc", icon: "🎫", x: 30, y: 130, w: 88, h: 32, layer: "services", shape: "rect" },
+  { id: "payment", label: "Payment Svc", icon: "💳", x: 185, y: 130, w: 88, h: 32, layer: "services", shape: "rect" },
+  { id: "notif", label: "Notif Svc", icon: "📨", x: 340, y: 130, w: 78, h: 32, layer: "services", shape: "rect" },
 ];
 const DATA_NODES: ArchNode[] = [
-  { id: "pg", label: "Postgres", icon: "🐘", x: 75, y: 235, w: 70, h: 42, layer: "data", shape: "cylinder" },
-  { id: "redis", label: "Redis", icon: "🔴", x: 290, y: 235, w: 65, h: 42, layer: "data", shape: "cylinder" },
+  { id: "pg", label: "Postgres", icon: "🐘", x: 30, y: 230, w: 68, h: 40, layer: "data", shape: "cylinder" },
+  { id: "redis", label: "Redis", icon: "🔴", x: 175, y: 230, w: 62, h: 40, layer: "data", shape: "cylinder" },
+  { id: "queue", label: "Queue", icon: "📬", x: 290, y: 195, w: 62, h: 30, layer: "data", shape: "hexagon" },
+  { id: "blob", label: "Blob Store", icon: "📦", x: 350, y: 230, w: 72, h: 40, layer: "data", shape: "cylinder" },
 ];
 const ALL_NODES = [...ENTRY_NODES, ...SERVICE_NODES, ...DATA_NODES];
 
@@ -660,14 +663,17 @@ function RightPaneCanvas({ stage }: { stage: Stage }) {
   const apigw = ENTRY_NODES[1];
   const booking = SERVICE_NODES[0];
   const payment = SERVICE_NODES[1];
+  const notif = SERVICE_NODES[2];
   const pg = DATA_NODES[0];
   const redis = DATA_NODES[1];
+  const queue = DATA_NODES[2];
+  const blob = DATA_NODES[3];
 
   // Trail path: Client → API Gateway → Booking → Postgres
   const trailD = (() => {
     const p1 = nodeBottom(client);
     const p2 = nodeTop(apigw);
-    const p3 = nodeBottom(apigw);
+    const p3 = { x: apigw.x + 25, y: apigw.y + apigw.h };
     const p4 = nodeTop(booking);
     const p5 = nodeBottom(booking);
     const p6 = nodeTop(pg);
@@ -721,54 +727,27 @@ function RightPaneCanvas({ stage }: { stage: Stage }) {
           ))}
 
           {/* Client → API Gateway */}
-          <ArchArrow
-            from={nodeBottom(client)}
-            to={nodeTop(apigw)}
-            reveal={showArrows}
-            delay={0.0}
-          />
+          <ArchArrow from={nodeBottom(client)} to={nodeTop(apigw)} reveal={showArrows} delay={0.0} />
 
-          {/* API Gateway → Booking */}
-          <ArchArrow
-            from={{ x: apigw.x + 20, y: apigw.y + apigw.h }}
-            to={nodeTop(booking)}
-            reveal={showArrows}
-            delay={0.1}
-            label="POST /book"
-          />
-
-          {/* API Gateway → Payment */}
-          <ArchArrow
-            from={{ x: apigw.x + apigw.w - 20, y: apigw.y + apigw.h }}
-            to={nodeTop(payment)}
-            reveal={showArrows}
-            delay={0.2}
-            label="charge()"
-          />
+          {/* API GW fanout to services */}
+          <ArchArrow from={{ x: apigw.x + 25, y: apigw.y + apigw.h }} to={nodeTop(booking)} reveal={showArrows} delay={0.15} label="POST /book" />
+          <ArchArrow from={nodeBottom(apigw)} to={nodeTop(payment)} reveal={showArrows} delay={0.2} />
+          <ArchArrow from={{ x: apigw.x + apigw.w - 25, y: apigw.y + apigw.h }} to={nodeTop(notif)} reveal={showArrows} delay={0.25} />
 
           {/* Booking → Postgres */}
-          <ArchArrow
-            from={nodeBottom(booking)}
-            to={nodeTop(pg)}
-            reveal={showArrows}
-            delay={0.3}
-          />
+          <ArchArrow from={nodeBottom(booking)} to={nodeTop(pg)} reveal={showArrows} delay={0.35} />
 
           {/* Payment → Redis */}
-          <ArchArrow
-            from={nodeBottom(payment)}
-            to={nodeTop(redis)}
-            reveal={showArrows}
-            delay={0.4}
-          />
+          <ArchArrow from={nodeBottom(payment)} to={nodeTop(redis)} reveal={showArrows} delay={0.4} label="cache" />
 
-          {/* Booking → Payment */}
-          <ArchArrow
-            from={nodeRight(booking)}
-            to={nodeLeft(payment)}
-            reveal={showArrows}
-            delay={0.5}
-          />
+          {/* Notif → Queue (async) */}
+          <ArchArrow from={nodeBottom(notif)} to={nodeTop(queue)} reveal={showArrows} delay={0.45} label="async" />
+
+          {/* Notif → Blob */}
+          <ArchArrow from={{ x: notif.x + notif.w - 15, y: notif.y + notif.h }} to={nodeTop(blob)} reveal={showArrows} delay={0.5} />
+
+          {/* Booking → Redis (cross-connection) */}
+          <ArchArrow from={{ x: booking.x + booking.w, y: booking.y + booking.h / 2 }} to={{ x: redis.x, y: redis.y + redis.h / 2 }} reveal={showArrows} delay={0.55} />
 
           {/* Request trail (dashed violet) */}
           <motion.path
