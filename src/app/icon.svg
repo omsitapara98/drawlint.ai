@@ -1,17 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+    <linearGradient id="bg" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#8b5cf6"/>
       <stop offset="100%" stop-color="#4f46e5"/>
     </linearGradient>
-    <linearGradient id="accent" x1="12" y1="8" x2="22" y2="24" gradientUnits="userSpaceOnUse">
+    <linearGradient id="accent" x1="50" y1="30" x2="90" y2="100" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#a78bfa"/>
       <stop offset="100%" stop-color="#22d3ee"/>
     </linearGradient>
   </defs>
-  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
-  <path d="M10 8h5.5c5 0 9 3.5 9 8s-4 8-9 8H10V8z" fill="none" stroke="white" stroke-width="2" stroke-linejoin="round"/>
-  <line x1="12.5" y1="13" x2="19" y2="13" stroke="url(#accent)" stroke-width="1.2" stroke-linecap="round" opacity="0.85"/>
-  <line x1="12.5" y1="16" x2="20.5" y2="16" stroke="url(#accent)" stroke-width="1.2" stroke-linecap="round" opacity="0.85"/>
-  <line x1="12.5" y1="19" x2="19" y2="19" stroke="url(#accent)" stroke-width="1.2" stroke-linecap="round" opacity="0.85"/>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <!-- Letter D -->
+  <path d="M40 32h22c20 0 36 14 36 32s-16 32-36 32H40V32z" fill="none" stroke="white" stroke-width="7" stroke-linejoin="round"/>
+  <!-- Small architecture accent: two horizontal lines inside the D to hint at system layers -->
+  <line x1="50" y1="52" x2="76" y2="52" stroke="url(#accent)" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+  <line x1="50" y1="64" x2="82" y2="64" stroke="url(#accent)" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+  <line x1="50" y1="76" x2="76" y2="76" stroke="url(#accent)" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
 </svg>
