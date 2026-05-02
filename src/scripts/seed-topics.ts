@@ -15,8 +15,6 @@ const TOPICS: { name: string; description: string; difficulty: Difficulty }[] = 
   { name: "URL Shortener", description: "Design a URL shortening service like bit.ly", difficulty: "easy" },
   { name: "Rate Limiter", description: "Design a distributed rate limiting system", difficulty: "easy" },
   { name: "Typeahead / Autocomplete", description: "Design an autocomplete suggestion service", difficulty: "easy" },
-  { name: "Parking Lot System", description: "Design an automated parking lot management system", difficulty: "easy" },
-  { name: "Elevator System", description: "Design an elevator scheduling system", difficulty: "easy" },
   { name: "Load Balancer Design", description: "Design a load balancing system", difficulty: "easy" },
   { name: "Distributed Lock", description: "Design a distributed locking mechanism", difficulty: "easy" },
   { name: "API Gateway", description: "Design an API gateway for microservices", difficulty: "easy" },
