@@ -4,7 +4,15 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Pre-deploy gate: re-run the same lint / typecheck / test / build that CI runs,
+  # so a manual workflow_dispatch from a red commit cannot ship. Uses the shared
+  # reusable workflow (.github/workflows/checks.yml) so the gate stays single-sourced
+  # with ci.yml — fixing a check in one place fixes it for both pipelines.
+  precheck:
+    uses: ./.github/workflows/checks.yml
+
   build-and-deploy:
+    needs: precheck
     runs-on: ubuntu-latest
 
     steps:

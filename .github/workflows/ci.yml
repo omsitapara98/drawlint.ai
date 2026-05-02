@@ -6,32 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel duplicate runs when a developer rapidly pushes to the same PR branch.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    name: Run tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      # Cache the mongodb-memory-server binary so it isn't re-downloaded every run
-      - name: Cache mongodb-memory-server binary
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/mongodb-binaries
-          key: mongodb-binaries-${{ runner.os }}
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm test
-        env:
-          # Keeps the binary cache in a predictable location
-          MONGOMS_DOWNLOAD_DIR: ~/.cache/mongodb-binaries
+  # Delegates to the shared reusable workflow so deploy.yml can invoke the exact
+  # same gate as a pre-deploy precheck. Single source of truth for CI checks.
+  checks:
+    uses: ./.github/workflows/checks.yml
