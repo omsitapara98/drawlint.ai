@@ -1,16 +1,8 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
-import { MongoClient, ObjectId } from "mongodb";
-import { vi, describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
+import { ObjectId } from "mongodb";
+import { vi, describe, it, expect } from "vitest";
+import { mongoMock, useMongoFixture } from "../_helpers/mongo";
 
-const { deferred, resolveClient } = vi.hoisted(() => {
-  let resolveClient!: (c: MongoClient) => void;
-  const deferred: Promise<MongoClient> = new Promise((r) => {
-    resolveClient = r;
-  });
-  return { deferred, resolveClient };
-});
-
-vi.mock("@/lib/db/mongodb", () => ({ default: deferred }));
+vi.mock("@/lib/db/mongodb", () => ({ default: mongoMock.deferred }));
 
 import {
   upsertResponse,
@@ -19,25 +11,8 @@ import {
   getReEvalSignal,
 } from "@/lib/db/responses";
 
-let mongod: MongoMemoryServer;
-let client: MongoClient;
-
-beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  client = new MongoClient(mongod.getUri());
-  await client.connect();
-  resolveClient(client);
-});
-
-afterAll(async () => {
-  await client.close();
-  await mongod.stop();
-});
-
-afterEach(async () => {
-  const db = client.db("drawlint-db");
-  const cols = await db.listCollections().toArray();
-  await Promise.all(cols.map((c) => db.collection(c.name).deleteMany({})));
+const fixture = useMongoFixture({
+  collections: ["responses", "reeval_signals"],
 });
 
 function makeIds() {
@@ -172,8 +147,8 @@ describe("upsertReEvalSignal / getReEvalSignal", () => {
     expect(result!.resolvedCount).toBe(4);
 
     // Confirm only one document exists (upsert, not duplicate)
-    const count = await client
-      .db("drawlint-db")
+    const count = await fixture
+      .getDb()
       .collection("reeval_signals")
       .countDocuments({ reviewId: new ObjectId(reviewId) });
     expect(count).toBe(1);

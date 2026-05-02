@@ -1,17 +1,8 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
-import { MongoClient, ObjectId } from "mongodb";
-import { vi, describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
+import { ObjectId } from "mongodb";
+import { vi, describe, it, expect } from "vitest";
+import { mongoMock, useMongoFixture } from "../_helpers/mongo";
 
-// Create a deferred client promise at hoist time so the mock factory can reference it
-const { deferred, resolveClient } = vi.hoisted(() => {
-  let resolveClient!: (c: MongoClient) => void;
-  const deferred: Promise<MongoClient> = new Promise((r) => {
-    resolveClient = r;
-  });
-  return { deferred, resolveClient };
-});
-
-vi.mock("@/lib/db/mongodb", () => ({ default: deferred }));
+vi.mock("@/lib/db/mongodb", () => ({ default: mongoMock.deferred }));
 
 import {
   createChallengeSubmission,
@@ -19,33 +10,20 @@ import {
   updateUserStreak,
 } from "@/lib/db/challenges";
 
-let mongod: MongoMemoryServer;
-let client: MongoClient;
-
-beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  client = new MongoClient(mongod.getUri());
-  await client.connect();
-  resolveClient(client);
-
-  // Mirror production indexes for accurate test behavior
-  const db = client.db("drawlint-db");
-  await db.collection("challenge_submissions").createIndex(
-    { challengeId: 1, userId: 1 },
-    { unique: true },
-  );
-  await db.collection("user_streaks").createIndex({ userId: 1 }, { unique: true });
-});
-
-afterAll(async () => {
-  await client.close();
-  await mongod.stop();
-});
-
-afterEach(async () => {
-  const db = client.db("drawlint-db");
-  const cols = await db.listCollections().toArray();
-  await Promise.all(cols.map((c) => db.collection(c.name).deleteMany({})));
+const fixture = useMongoFixture({
+  collections: ["challenge_submissions", "user_streaks"],
+  indexes: [
+    (db) =>
+      db
+        .collection("challenge_submissions")
+        .createIndex({ challengeId: 1, userId: 1 }, { unique: true })
+        .then(() => undefined),
+    (db) =>
+      db
+        .collection("user_streaks")
+        .createIndex({ userId: 1 }, { unique: true })
+        .then(() => undefined),
+  ],
 });
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -90,12 +68,41 @@ describe("createChallengeSubmission", () => {
       signal: "strong-hire",
     });
 
-    const doc = await client
-      .db("drawlint-db")
+    const doc = await fixture
+      .getDb()
       .collection("challenge_submissions")
       .findOne({ _id: created._id });
     expect(doc).not.toBeNull();
     expect(doc?.signal).toBe("strong-hire");
+  });
+
+  // T4 — duplicate-submission test: locks in the unique-index contract from setup-indexes.ts
+  it("rejects a duplicate submission for the same {challengeId, userId}", async () => {
+    const { userId, challengeId, designId } = makeIds();
+    await createChallengeSubmission({
+      challengeId,
+      userId,
+      designId,
+      score: 4,
+      signal: "hire",
+    });
+
+    await expect(
+      createChallengeSubmission({
+        challengeId,
+        userId,
+        designId: new ObjectId().toString(),
+        score: 5,
+        signal: "strong-hire",
+      }),
+    ).rejects.toThrow();
+
+    // Confirm only one submission exists
+    const count = await fixture
+      .getDb()
+      .collection("challenge_submissions")
+      .countDocuments({});
+    expect(count).toBe(1);
   });
 });
 
