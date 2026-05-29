@@ -470,20 +470,20 @@ export default function GuidePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5 }}
-              className="mt-5 rounded-xl border border-violet-500/30 bg-violet-950/20 dark:bg-violet-950/30 overflow-hidden"
+              className="mt-5 rounded-xl border border-violet-300 dark:border-violet-500/30 bg-violet-50 dark:bg-violet-950/30 overflow-hidden"
             >
               {/* Panel header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-violet-500/20 bg-violet-500/5">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-violet-300 dark:border-violet-500/20 bg-violet-100/60 dark:bg-violet-500/5">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-violet-400" />
-                  <span className="text-xs font-semibold text-violet-300 tracking-wide">EXPLAIN YOUR DESIGN</span>
+                  <div className="h-2 w-2 rounded-full bg-violet-500 dark:bg-violet-400" />
+                  <span className="text-xs font-semibold text-violet-600 dark:text-violet-300 tracking-wide">EXPLAIN YOUR DESIGN</span>
                 </div>
-                <span className="text-[10px] text-violet-400/60">0 / 2000 words</span>
+                <span className="text-[10px] text-violet-500/70 dark:text-violet-400/60">0 / 2000 words</span>
               </div>
               {/* Fake textarea content */}
               <div className="px-5 py-4 space-y-2">
                 <motion.p
-                  className="text-sm text-violet-200/80 leading-6"
+                  className="text-sm text-violet-900/80 dark:text-violet-200/80 leading-6"
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}
@@ -492,7 +492,7 @@ export default function GuidePage() {
                   I chose Kafka over a direct DB write because the write volume at peak (≈ 50k msg/s) would saturate Postgres. Kafka lets me buffer and fan-out to both the timeline service and the notification worker without coupling them...
                 </motion.p>
                 <motion.p
-                  className="text-sm text-violet-200/50 leading-6"
+                  className="text-sm text-violet-900/50 dark:text-violet-200/50 leading-6"
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}
