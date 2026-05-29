@@ -326,8 +326,8 @@ function IssueRow({
             </div>
           )}
 
-          {/* Respond button / input — not for resolved issues or critical severity */}
-          {canRespond && !showInput && issue.severity !== "critical" && verdict?.verdict !== "resolved" && (
+          {/* Respond button / input — not for resolved issues */}
+          {canRespond && !showInput && verdict?.verdict !== "resolved" && (
             <button
               onClick={() => setShowInput(true)}
               className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
@@ -335,13 +335,6 @@ function IssueRow({
               <MessageSquare className="h-3 w-3" />
               {verdict ? "Respond again" : "Respond"}
             </button>
-          )}
-
-          {/* Critical issues — show fix-in-design hint instead */}
-          {canRespond && issue.severity === "critical" && !verdict && (
-            <p className="mt-2 text-[10px] text-muted-foreground italic">
-              ⚠️ Critical issues should be fixed in the design, not addressed verbally.
-            </p>
           )}
 
           {showInput && (
@@ -495,15 +488,17 @@ function AIReviewContent({
   const handleRespond = useCallback(async (section: string, issueIndex: number, text: string): Promise<StoredResponse | null> => {
     if (!designId) return null;
 
-    // Get BYO credentials
+    // Get BYO credentials only if server-side aiMode is not managed
     let creds: Record<string, string> = {};
     try {
-      const { getCredentialsForRequest, getAIConfig } = await import("@/lib/storage/ai-config");
-      const config = getAIConfig();
-      let provider: "managed" | "gemini" | "azure" = "managed";
-      if (config.gemini?.apiKey) provider = "gemini";
-      if (config.azure?.apiKey) provider = "azure";
-      creds = getCredentialsForRequest(provider);
+      const settingsRes = await fetch("/api/user/settings");
+      if (settingsRes.ok) {
+        const settings = (await settingsRes.json()) as { aiMode?: string };
+        if (settings.aiMode && settings.aiMode !== "managed") {
+          const { getCredentialsForRequest } = await import("@/lib/storage/ai-config");
+          creds = getCredentialsForRequest(settings.aiMode as "gemini" | "azure");
+        }
+      }
     } catch {}
 
     try {
@@ -593,12 +588,14 @@ function AIReviewContent({
 
     let creds: Record<string, string> = {};
     try {
-      const { getCredentialsForRequest, getAIConfig } = await import("@/lib/storage/ai-config");
-      const config = getAIConfig();
-      let provider: "managed" | "gemini" | "azure" = "managed";
-      if (config.gemini?.apiKey) provider = "gemini";
-      if (config.azure?.apiKey) provider = "azure";
-      creds = getCredentialsForRequest(provider);
+      const settingsRes = await fetch("/api/user/settings");
+      if (settingsRes.ok) {
+        const settings = (await settingsRes.json()) as { aiMode?: string };
+        if (settings.aiMode && settings.aiMode !== "managed") {
+          const { getCredentialsForRequest } = await import("@/lib/storage/ai-config");
+          creds = getCredentialsForRequest(settings.aiMode as "gemini" | "azure");
+        }
+      }
     } catch {}
 
     try {
