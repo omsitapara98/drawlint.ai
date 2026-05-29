@@ -340,6 +340,7 @@ const CHECKLIST = [
   "Key connections are labeled with what flows through them",
   "At least FR and Assumptions are filled in",
   "Design decisions are written as text near the relevant component",
+  "Explanation panel filled in — walk through your component choices, data flow, and key tradeoffs",
 ];
 
 /* ── Page ─────────────────────────────────────────────────── */
@@ -452,7 +453,70 @@ export default function GuidePage() {
 
         <Divider />
 
-        {/* Section 7 — Pre-Submit Checklist */}
+        {/* Section 7 — Explain Your Design */}
+        <section>
+          <div className="rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm p-8 shadow-md shadow-black/[0.04] dark:shadow-none space-y-4">
+            <SectionHeading emoji="💬" title="Explain Your Design" />
+            <p className="text-base leading-7 text-muted-foreground">
+              Click the <strong className="text-foreground">Explain Design</strong> button in the top-right of the canvas to open the explanation panel. This is a free-text field — separate from your diagram — where you talk through your design as if you&apos;re in a live interview.
+            </p>
+            <p className="text-base leading-7 text-muted-foreground">
+              Cover your <strong className="text-foreground">component choices</strong>, <strong className="text-foreground">data flow reasoning</strong>, and <strong className="text-foreground">key tradeoffs</strong>. The AI reads both your diagram <em>and</em> this explanation together, so concrete reasoning here earns real credit — even if your diagram doesn&apos;t show every detail.
+            </p>
+
+            {/* Explanation panel mockup */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5 }}
+              className="mt-5 rounded-xl border border-violet-500/30 bg-violet-950/20 dark:bg-violet-950/30 overflow-hidden"
+            >
+              {/* Panel header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-violet-500/20 bg-violet-500/5">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-violet-400" />
+                  <span className="text-xs font-semibold text-violet-300 tracking-wide">EXPLAIN YOUR DESIGN</span>
+                </div>
+                <span className="text-[10px] text-violet-400/60">0 / 2000 words</span>
+              </div>
+              {/* Fake textarea content */}
+              <div className="px-5 py-4 space-y-2">
+                <motion.p
+                  className="text-sm text-violet-200/80 leading-6"
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.3, duration: 0.6 }}
+                >
+                  I chose Kafka over a direct DB write because the write volume at peak (≈ 50k msg/s) would saturate Postgres. Kafka lets me buffer and fan-out to both the timeline service and the notification worker without coupling them...
+                </motion.p>
+                <motion.p
+                  className="text-sm text-violet-200/50 leading-6"
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.7, duration: 0.6 }}
+                >
+                  Redis stores the hot timeline (last 200 posts) with TTL=1h. For cold reads I fall back to Postgres with a covering index on (user_id, created_at DESC)...
+                </motion.p>
+                <motion.span
+                  className="inline-block w-0.5 h-4 bg-violet-400 animate-pulse"
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 1.1 }}
+                />
+              </div>
+            </motion.div>
+
+            <Tip>Think of this as your verbal walkthrough. The AI treats concrete mechanisms (&ldquo;Kafka at 50k msg/s&rdquo;) as real evidence. Vague claims (&ldquo;it scales&rdquo;) earn no credit.</Tip>
+          </div>
+        </section>
+
+        <Divider />
+
+        {/* Section 8 — Pre-Submit Checklist */}
         <section>
           <div className="rounded-2xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 backdrop-blur-sm p-8 shadow-md shadow-black/[0.04] dark:shadow-none space-y-4">
             <SectionHeading emoji="✅" title="Pre-Submit Checklist" />

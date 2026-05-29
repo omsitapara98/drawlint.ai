@@ -9,7 +9,7 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const pathname = nextUrl.pathname;
 
-      const protectedPrefixes = ["/canvas", "/library", "/guide", "/challenge"];
+      const protectedPrefixes = ["/canvas", "/library", "/challenge"];
       const isProtected = protectedPrefixes.some(
         (p) => pathname === p || pathname.startsWith(p + "/"),
       );
