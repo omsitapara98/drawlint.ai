@@ -12,6 +12,7 @@ GROUND RULES — READ CAREFULLY:
 6. Do NOT invent requirements. If the FR says "match players 1v1", do not flag missing team/party support. If the FR says "text chat", do not flag missing voice/video. Stay strictly within the scope of the stated FR.
 7. BE BRUTALLY HONEST. If the content is gibberish, random characters, placeholder text, or clearly low-effort, say so directly. Do NOT manufacture strengths or positives for empty or nonsensical content. An empty section deserves zero highlights. A section with "asdf123" or random text is NOT a valid design decision worth praising. If NOTHING is genuinely good, the highlights array MUST be empty.
 8. Do NOT nitpick exact numbers. If the candidate says "99.9% availability" do not flag that it should be "99.99%". If capacity calculations show the right methodology and ballpark, do not argue about precise RAM overhead, exact shard counts, or specific node sizing. Focus on whether the APPROACH is sound, not whether the arithmetic is pixel-perfect. The Capacity section handles numerical accuracy — other reviewers should focus on design implications.
+9. The candidate's EXPLANATION (a separate written walkthrough, shown as "CANDIDATE'S EXPLANATION" when present) is FIRST-CLASS design evidence — weigh it equally with what is drawn. If the explanation SPECIFICALLY and SUBSTANTIVELY addresses a concern with a concrete mechanism (e.g. "Redis runs HA via Sentinel with automatic failover"), do NOT flag that concern as missing just because it is not on the diagram. BUT vague or hand-wavy claims ("it's highly available", "it scales", "we'll cache it") earn NO credit — require a specific mechanism. Only credit explanation content relevant to YOUR section.
 `;
 
 /* ── Cumulative criteria per dimension ────────────────────────── */
@@ -48,7 +49,7 @@ const ENTITIES_SENIOR = [
 ];
 const ENTITIES_STAFF = [
   ...ENTITIES_SENIOR,
-  "What are the key fields on each entity? (at least the fields that matter for queries and indexes)",
+  "Are the query-relevant fields reasoned about? (the fields that matter for queries and indexes — prose is fine, no formal schema required)",
   "What's the hottest read path? Can the DB serve it efficiently? (think about access patterns, not just schema)",
   "Is there a sharding/partitioning key? What happens if it's wrong? (hot partitions, cross-shard queries)",
   "Are there any hot keys or skewed access patterns? (celebrity problem, popular items)",
@@ -67,7 +68,7 @@ const CAPACITY_MID = [
 ];
 const CAPACITY_SENIOR = [
   ...CAPACITY_MID,
-  "Is there a logical chain? (DAU → QPS → storage → bandwidth — not just random numbers)",
+  "Does the reasoning hold from users to infrastructure? (DAU → QPS → storage → bandwidth — the logic must be sound, but it need not be written out step-by-step)",
   "Does the architecture generally fit the calculated scale? (don't nitpick exact node counts)",
   "Are component choices justified by scale? (why Kafka vs SQS, why Redis vs Memcached for THIS load?)",
 ];
@@ -276,6 +277,29 @@ Return a JSON object with this EXACT structure:
 }`;
 
 /**
+ * Sections that get the "lenient on format, strict on reasoning" treatment.
+ * For these, the reviewer must NOT penalize presentation/format gaps, but must
+ * still flag substantive coverage gaps — scaled to the current review level.
+ */
+const LENIENT_GUIDANCE: Partial<Record<ReviewerSection, string>> = {
+  entities: `THIS SECTION — "LENIENT ON FORMAT, STRICT ON REASONING":
+- Do NOT flag presentation/format: no formal schema or table, fields described in prose, no ER diagram, informal notation. Identifying the right nouns and relationships informally is FULL marks.
+- Reward the right entities and clear relationships even if loosely written. Reasoning beats formatting.
+- DO flag substantive coverage gaps that are EXPECTED AT THIS LEVEL (use "warning"): e.g. a relationship left undefined, or access patterns/partitioning not reasoned about (Staff+ only).
+- Use "critical" ONLY when a core entity required for the happy path is missing entirely, or the section is essentially absent/nonsensical.`,
+  capacity: `THIS SECTION — "LENIENT ON FORMAT, STRICT ON REASONING":
+- Do NOT flag presentation/format: the full chain need not be written out step-by-step, intermediate arithmetic may be skipped, informal notation is fine. "~100TB/day × 30d ≈ 3PB" is FULL marks without showing every step.
+- Reward a correct order-of-magnitude over perfect math. The reasoning must hold from users to infrastructure, but it need not be spelled out.
+- DO flag substantive coverage gaps that are EXPECTED AT THIS LEVEL (use "warning"): a missing major dimension such as peak load, storage growth, or replication overhead — only those the level expects.
+- Use "critical" ONLY when capacity is essentially absent, or a number is wrong by an order of magnitude.`,
+  api: `THIS SECTION — "LENIENT ON FORMAT, STRICT ON REASONING":
+- Do NOT flag presentation/format: full request/response schemas need not be written, not every field must be listed, minor REST verb/status-code imperfections and informal endpoint notation are fine.
+- Reward endpoints that cover the core flow even if loosely specified. Reasoning beats formatting.
+- DO flag substantive coverage gaps that are EXPECTED AT THIS LEVEL (use "warning"): e.g. error/retry handling, pagination on list endpoints, or idempotency/versioning (Staff+) — only those the level expects.
+- Use "critical" ONLY when the core functional requirements cannot be used through the API at all, the protocol is wrong for the use case, or the section is essentially absent.`,
+};
+
+/**
  * Build a focused system prompt for a single section reviewer (multi-call mode).
  */
 export function getReviewerPrompt(reviewer: ReviewerSection, level: ReviewLevel): string {
@@ -283,17 +307,7 @@ export function getReviewerPrompt(reviewer: ReviewerSection, level: ReviewLevel)
   const focus = REVIEWER_FOCUS[reviewer];
   const checklist = buildDimensionChecklist(level, reviewer);
   const label = LEVEL_LABELS[level];
-
-  // De-weighted sections: surface ONLY critical, production-breaking issues.
-  const criticalOnly = reviewer === "entities" || reviewer === "capacity";
-  const issuesGuidance = criticalOnly
-    ? `"issues" array — report ONLY "critical" issues (this section is de-weighted):
-- "critical": This would cause the system to fail in production. Frame as: "What happens when X? The system would Y."
-- Do NOT report "warning" or "info" issues for this section. Minor gaps, nice-to-haves, and suggestions must be omitted entirely. If there is no production-breaking problem, return an empty issues array.`
-    : `"issues" array — gaps, risks, and missed trade-offs (use "critical", "warning", or "info"):
-- "critical": This would cause the system to fail in production. Frame as: "What happens when X? The system would Y."
-- "warning": An important gap the candidate should think about. Frame as: "Have you considered what happens if...?"
-- "info": A suggestion that would strengthen the design. Frame as: "You could improve this by..."`;
+  const lenientBlock = LENIENT_GUIDANCE[reviewer];
 
   return `You are the ${name} on a system design interview panel. You are reviewing at ${label}.
 
@@ -309,14 +323,17 @@ YOUR CHECKLIST (${CRITERIA[level][reviewer].length} criteria — check each one)
 ${checklist}
 
 CRITERIA ARE CUMULATIVE: Check ALL criteria from lower levels IN ADDITION to level-specific criteria. The checklist above already includes all accumulated criteria.
-
+${lenientBlock ? `\n${lenientBlock}\n` : ""}
 FEEDBACK — TWO SEPARATE ARRAYS:
 
 "highlights" array — things done WELL (use "strong" or "good"):
 - "strong": A design choice that shows real depth — the candidate clearly thought about failure modes, trade-offs, or edge cases. Use sparingly.
 - "good": A solid, thoughtful decision worth acknowledging — not just "they drew a box."
 
-${issuesGuidance}
+"issues" array — gaps, risks, and missed trade-offs (use "critical", "warning", or "info"):
+- "critical": This would cause the system to fail in production. Frame as: "What happens when X? The system would Y."
+- "warning": An important gap the candidate should think about. Frame as: "Have you considered what happens if...?"
+- "info": A suggestion that would strengthen the design. Frame as: "You could improve this by..."
 
 Do NOT force highlights — if nothing stands out as genuinely good, leave the array empty.
 

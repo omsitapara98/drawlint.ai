@@ -22,7 +22,7 @@ interface AnalyzeOptions {
   deployment?: string;
   level?: ReviewLevel;
   signal?: AbortSignal;
-  /** Candidate's free-text walkthrough injected into HLD reviewer and Lead Reviewer */
+  /** Candidate's free-text walkthrough injected into every reviewer and the Lead Reviewer */
   hldExplanation?: string;
   onSectionComplete?: (key: ReviewerKey, data: ReviewDimension) => void;
   onLeadStarted?: () => void;
@@ -133,22 +133,6 @@ function validateLeadReviewer(raw: unknown): LeadReviewer {
 
 const REVIEWER_SECTIONS: ReviewerSection[] = ["nfr", "entities", "capacity", "api", "hld"];
 
-/**
- * Sections that are de-weighted: only `critical` issues are surfaced for these.
- * Warning/info issues are dropped so the review focuses on critical problems.
- * Highlights (positives) are unaffected.
- */
-const CRITICAL_ONLY_SECTIONS = new Set<ReviewerSection>(["entities", "capacity"]);
-
-/** Drop non-critical issues for de-weighted sections; other sections pass through unchanged. */
-function applySeverityWeighting(section: ReviewerSection, dimension: ReviewDimension): ReviewDimension {
-  if (!CRITICAL_ONLY_SECTIONS.has(section)) return dimension;
-  return {
-    highlights: dimension.highlights,
-    issues: dimension.issues.filter((issue) => issue.severity === "critical"),
-  };
-}
-
 const SECTION_TO_KEY: Record<ReviewerSection, Exclude<ReviewerKey, "leadReviewer">> = {
   nfr: "nfrReview",
   entities: "entitiesReview",
@@ -225,9 +209,9 @@ export async function analyzeDesign(
   const reviewerTasks = REVIEWER_SECTIONS.map((section) => {
     return async () => {
       const systemPrompt = getReviewerPrompt(section, level);
-      const userContent = formatSectionForReview(diagram, section, level, section === "hld" ? options?.hldExplanation : undefined);
+      const userContent = formatSectionForReview(diagram, section, level, options?.hldExplanation);
       const result = await callReviewer(systemPrompt, userContent);
-      const dimension = applySeverityWeighting(section, validateDimension(result));
+      const dimension = validateDimension(result);
       dimensions[section] = dimension;
       options?.onSectionComplete?.(SECTION_TO_KEY[section], dimension);
     };
@@ -285,9 +269,9 @@ function buildLeadReviewerInput(
   }
 
   if (hldExplanation?.trim()) {
-    lines.push("=== CANDIDATE'S EXPLANATION ===");
+    lines.push("=== CANDIDATE'S EXPLANATION (overall design walkthrough) ===");
     lines.push("");
-    lines.push(hldExplanation.trim());
+    lines.push(hldExplanation.trim().slice(0, 5000));
     lines.push("");
   }
 

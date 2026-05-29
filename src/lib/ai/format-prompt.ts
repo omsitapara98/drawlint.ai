@@ -23,6 +23,8 @@ const SECTION_TO_FIELD: Record<Exclude<SectionKey, "hld">, { key: keyof ParsedDi
  * Format only the relevant section data for a single reviewer call.
  * FR + Assumptions are always included as context.
  * For HLD: includes the full graph (nodes, edges, clusters, annotations).
+ * The candidate's explanation (if any) is appended for every section so each
+ * reviewer can credit concerns addressed in writing (see Ground Rule #9).
  */
 export function formatSectionForReview(
   diagram: ParsedDiagram,
@@ -149,14 +151,6 @@ export function formatSectionForReview(
       );
       lines.push("");
     }
-
-    if (hldExplanation?.trim()) {
-      const safeExplanation = hldExplanation.trim().slice(0, 5000);
-      lines.push("=== CANDIDATE'S EXPLANATION ===");
-      lines.push("");
-      lines.push(safeExplanation);
-      lines.push("");
-    }
   } else {
     // Text-based sections (nfr, entities, capacity, api)
     const mapping = SECTION_TO_FIELD[section];
@@ -170,6 +164,18 @@ export function formatSectionForReview(
       lines.push(`(No ${mapping.label.toLowerCase()} content provided by the candidate)`);
       lines.push("");
     }
+  }
+
+  // The candidate's written walkthrough is shown to every reviewer so they can
+  // credit concerns addressed in words even when not drawn (see Ground Rule #9).
+  if (hldExplanation?.trim()) {
+    const safeExplanation = hldExplanation.trim().slice(0, 5000);
+    lines.push("=== CANDIDATE'S EXPLANATION (overall design walkthrough) ===");
+    lines.push("");
+    lines.push(safeExplanation);
+    lines.push("");
+    lines.push("(Credit points in this explanation that are relevant to YOUR section. Do not re-review other sections.)");
+    lines.push("");
   }
 
   return lines.join("\n");
