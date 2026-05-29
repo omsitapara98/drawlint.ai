@@ -22,11 +22,6 @@ const CHANGELOG = [
         badge: "New" as const,
       },
       {
-        title: "Capacity Calculator",
-        description: "Structured input fields for DAU, requests/day, object size, peak multiplier, and retention period. Auto-derives avg QPS, peak QPS, daily storage, total retained storage, replication overhead, and network bandwidth. Removes blank-page anxiety for capacity estimation.",
-        badge: "New" as const,
-      },
-      {
         title: "Smarter AI Feedback",
         description: "Entities and capacity reviewers are now lenient-on-format, strict-on-reasoning. Your explanation is shared with all reviewers as first-class evidence. Fewer noisy criticals — only real issues get flagged.",
         badge: null,
