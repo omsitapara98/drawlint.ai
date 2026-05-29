@@ -28,6 +28,7 @@ export function formatSectionForReview(
   diagram: ParsedDiagram,
   section: SectionKey,
   level: ReviewLevel = "senior",
+  hldExplanation?: string,
 ): string {
   const lines: string[] = [];
   const { sections, hld } = diagram;
@@ -146,6 +147,13 @@ export function formatSectionForReview(
       lines.push(
         "  (Nodes with 'near:' references above are part of the design flow even without drawn arrows)"
       );
+      lines.push("");
+    }
+
+    if (hldExplanation?.trim()) {
+      lines.push("=== CANDIDATE'S EXPLANATION ===");
+      lines.push("");
+      lines.push(hldExplanation.trim());
       lines.push("");
     }
   } else {

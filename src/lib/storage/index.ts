@@ -1,2 +1,2 @@
 // localStorage helpers
-export { saveDiagram, loadDiagram, clearDiagram } from "./diagram-storage";
+export { saveDiagram, loadDiagram, clearDiagram, saveExplanation, loadExplanation, clearExplanation } from "./diagram-storage";

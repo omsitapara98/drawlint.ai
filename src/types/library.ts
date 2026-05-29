@@ -42,6 +42,8 @@ export interface Design {
   forkedFrom?: ObjectId;
   reviewLevel: ReviewLevel;
   anonymousName?: string;
+  /** Candidate's free-text walkthrough of their HLD design choices and tradeoffs */
+  hldExplanation?: string;
   /** Set when this design was submitted as part of a weekly challenge */
   challengeId?: ObjectId;
   /** How this design was submitted */
@@ -130,6 +132,8 @@ export interface SubmitDesignInput {
   reviewLevel?: ReviewLevel;
   forkedFrom?: string;
   anonymous?: boolean;
+  /** Candidate's free-text walkthrough of their HLD design choices and tradeoffs */
+  hldExplanation?: string;
   /** "challenge" when submitted via weekly challenge flow */
   submissionType?: "regular" | "challenge";
   /** BYO key mode: sent from client localStorage, never stored server-side */

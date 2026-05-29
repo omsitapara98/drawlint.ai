@@ -188,6 +188,8 @@ export async function PUT(
     reviewLevel?: ReviewLevel;
     anonymous?: boolean;
     draft?: boolean;
+    /** Candidate's free-text walkthrough of their HLD design choices and tradeoffs */
+    hldExplanation?: string;
     /** BYO key mode: sent from client localStorage, never stored server-side */
     apiKey?: string;
     endpoint?: string;
@@ -247,10 +249,15 @@ export async function PUT(
 
     // Update design document — keep status as "draft"
     const col = (await clientPromise).db(DB_NAME).collection("designs");
-    await col.updateOne(
-      { _id: new ObjectId(designId) },
-      { $set: { blobUrl, blobKey, version, reviewLevel, status: "draft" as const, updatedAt: new Date() } },
-    );
+    const draftSet: Record<string, unknown> = { blobUrl, blobKey, version, reviewLevel, status: "draft" as const, updatedAt: new Date() };
+    if (typeof body.hldExplanation === "string" && body.hldExplanation.trim()) {
+      draftSet.hldExplanation = body.hldExplanation.trim();
+    }
+    const draftUpdate: Record<string, unknown> = { $set: draftSet };
+    if (!draftSet.hldExplanation) {
+      draftUpdate.$unset = { hldExplanation: "" };
+    }
+    await col.updateOne({ _id: new ObjectId(designId) }, draftUpdate);
 
     return NextResponse.json({
       designId,
@@ -357,7 +364,7 @@ export async function PUT(
   }
 
   // 3. Update design document
-  await updateDesignBlob(designId, blobUrl, blobKey);
+  await updateDesignBlob(designId, blobUrl, blobKey, typeof body.hldExplanation === "string" ? body.hldExplanation : undefined);
   const col = (await clientPromise).db(DB_NAME).collection("designs");
   const updateFields: Record<string, unknown> = { version, reviewLevel, updatedAt: new Date() };
   if (anonymousName) {
@@ -409,6 +416,7 @@ export async function PUT(
         const aiResult = await analyzeDesign(diagram, {
           credentials,
           level: reviewLevel,
+          hldExplanation: typeof body.hldExplanation === "string" ? body.hldExplanation : undefined,
           onSectionComplete: (key, data) => {
             enqueue({ type: "section", section: key, data });
           },

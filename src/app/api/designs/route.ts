@@ -131,6 +131,7 @@ export async function POST(request: Request) {
       version,
       forkedFrom: body.forkedFrom,
       status: "draft",
+      hldExplanation: typeof body.hldExplanation === "string" ? body.hldExplanation : undefined,
     });
 
     return NextResponse.json({
@@ -251,6 +252,7 @@ export async function POST(request: Request) {
     version,
     forkedFrom: body.forkedFrom,
     anonymousName,
+    hldExplanation: typeof body.hldExplanation === "string" ? body.hldExplanation : undefined,
     submissionType: isValidChallenge ? "challenge" : "regular",
   });
 
@@ -284,6 +286,7 @@ export async function POST(request: Request) {
         const aiResult = await analyzeDesign(diagram, {
           credentials,
           level: reviewLevel,
+          hldExplanation: typeof body.hldExplanation === "string" ? body.hldExplanation : undefined,
           onSectionComplete: (key, data) => {
             enqueue({ type: "section", section: key, data });
           },

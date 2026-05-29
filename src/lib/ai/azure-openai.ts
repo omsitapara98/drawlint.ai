@@ -22,6 +22,8 @@ interface AnalyzeOptions {
   deployment?: string;
   level?: ReviewLevel;
   signal?: AbortSignal;
+  /** Candidate's free-text walkthrough injected into HLD reviewer and Lead Reviewer */
+  hldExplanation?: string;
   onSectionComplete?: (key: ReviewerKey, data: ReviewDimension) => void;
   onLeadStarted?: () => void;
 }
@@ -207,7 +209,7 @@ export async function analyzeDesign(
   const reviewerTasks = REVIEWER_SECTIONS.map((section) => {
     return async () => {
       const systemPrompt = getReviewerPrompt(section, level);
-      const userContent = formatSectionForReview(diagram, section, level);
+      const userContent = formatSectionForReview(diagram, section, level, section === "hld" ? options?.hldExplanation : undefined);
       const result = await callReviewer(systemPrompt, userContent);
       const dimension = validateDimension(result);
       dimensions[section] = dimension;
@@ -219,7 +221,7 @@ export async function analyzeDesign(
 
   // Step 2: Build lead reviewer input from section results
   options?.onLeadStarted?.();
-  const leadUserContent = buildLeadReviewerInput(diagram, dimensions, level);
+  const leadUserContent = buildLeadReviewerInput(diagram, dimensions, level, options?.hldExplanation);
   const leadSystemPrompt = getLeadReviewerPrompt(level);
   const leadResult = await callReviewer(leadSystemPrompt, leadUserContent) as Record<string, unknown>;
 
@@ -246,6 +248,7 @@ function buildLeadReviewerInput(
   diagram: ParsedDiagram,
   dimensions: Record<string, ReviewDimension>,
   level: ReviewLevel,
+  hldExplanation?: string,
 ): string {
   const lines: string[] = [];
   const { sections } = diagram;
@@ -262,6 +265,13 @@ function buildLeadReviewerInput(
   if (sections.assumptions?.trim()) {
     lines.push("ASSUMPTIONS:");
     lines.push(sections.assumptions.trim());
+    lines.push("");
+  }
+
+  if (hldExplanation?.trim()) {
+    lines.push("=== CANDIDATE'S EXPLANATION ===");
+    lines.push("");
+    lines.push(hldExplanation.trim());
     lines.push("");
   }
 

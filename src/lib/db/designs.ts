@@ -73,6 +73,7 @@ export async function createDesign(input: {
   version: number;
   forkedFrom?: string;
   anonymousName?: string;
+  hldExplanation?: string;
   submissionType?: "regular" | "challenge";
   challengeId?: string;
   status?: Design["status"];
@@ -100,6 +101,9 @@ export async function createDesign(input: {
   if (input.anonymousName) {
     doc.anonymousName = input.anonymousName;
   }
+  if (input.hldExplanation?.trim()) {
+    doc.hldExplanation = input.hldExplanation.trim();
+  }
   if (input.challengeId) {
     doc.challengeId = new ObjectId(input.challengeId);
   }
@@ -120,17 +124,23 @@ export async function updateDesignStatus(
   );
 }
 
-/** Update a design's blob reference and reset status for re-review. */
+/** Update a design's blob reference, explanation, and reset status for re-review. */
 export async function updateDesignBlob(
   designId: string,
   blobUrl: string,
   blobKey: string,
+  hldExplanation?: string,
 ): Promise<void> {
   const col = await collection();
-  await col.updateOne(
-    { _id: new ObjectId(designId) },
-    { $set: { blobUrl, blobKey, status: "reviewing" as const, updatedAt: new Date() } },
-  );
+  const setFields: Record<string, unknown> = { blobUrl, blobKey, status: "reviewing" as const, updatedAt: new Date() };
+  if (hldExplanation?.trim()) {
+    setFields.hldExplanation = hldExplanation.trim();
+  }
+  const update: Record<string, unknown> = { $set: setFields };
+  if (!hldExplanation?.trim()) {
+    update.$unset = { hldExplanation: "" };
+  }
+  await col.updateOne({ _id: new ObjectId(designId) }, update);
 }
 
 /** Delete a design by ID. */

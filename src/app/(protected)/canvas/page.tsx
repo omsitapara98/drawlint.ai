@@ -11,7 +11,7 @@ import { Header } from "@/components/layout";
 import { AuthGate } from "@/components/auth";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks";
-import { loadDiagram } from "@/lib/storage";
+import { loadDiagram, loadExplanation, saveExplanation, clearExplanation } from "@/lib/storage";
 import { hasAnyCredentials, getCredentialsForRequest, getAIConfig } from "@/lib/storage/ai-config";
 import { parseDiagram, createWhiteboardTemplate, createChallengeTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
@@ -127,7 +127,20 @@ function CanvasPageInner() {
   const streamReaderRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const activeStreamRef = useRef(false);
 
+  /* ── HLD explanation text state ─────────────────────────────── */
+  const [hldExplanation, setHldExplanation] = useState("");
+  const [showExplanation, setShowExplanation] = useState(false);
+
   useAutoSave(elements);
+
+  /* ── Load HLD explanation from localStorage on mount ──────── */
+  useEffect(() => {
+    const saved = loadExplanation();
+    if (saved) {
+      setHldExplanation(saved);
+      setShowExplanation(true);
+    }
+  }, []);
 
   /* ── Load anonymous mode preference from localStorage ──────── */
   useEffect(() => {
@@ -273,13 +286,17 @@ function CanvasPageInner() {
         const metaRes = await fetch(`/api/designs/${editDesignId}`);
         if (metaRes.ok) {
           const metaData = (await metaRes.json()) as {
-            design: { reviewLevel?: string; submissionType?: string };
+            design: { reviewLevel?: string; submissionType?: string; hldExplanation?: string };
           };
           if (metaData.design.reviewLevel) {
             setReviewLevel(metaData.design.reviewLevel as ReviewLevel);
           }
           if (metaData.design.submissionType === "challenge") {
             setChallengeMode(true);
+          }
+          if (metaData.design.hldExplanation) {
+            setHldExplanation(metaData.design.hldExplanation);
+            setShowExplanation(true);
           }
         }
 
@@ -327,6 +344,7 @@ function CanvasPageInner() {
             anonymousName?: string;
             challengeId?: string;
             submissionType?: "regular" | "challenge";
+            hldExplanation?: string;
             status: "draft" | "submitted" | "reviewing" | "reviewed";
           };
           review: AIReviewResponse | null;
@@ -358,6 +376,11 @@ function CanvasPageInner() {
 
         if (metaData.design.reviewLevel) {
           setReviewLevel(metaData.design.reviewLevel as ReviewLevel);
+        }
+
+        if (metaData.design.hldExplanation) {
+          setHldExplanation(metaData.design.hldExplanation);
+          setShowExplanation(true);
         }
 
         // Check if current user is the author
@@ -534,6 +557,8 @@ function CanvasPageInner() {
     setAiStatus("idle");
     setAiError(undefined);
     setSubmittedDesignId(null);
+    setHldExplanation("");
+    clearExplanation();
     setPhase("draw");
   }, [selectedTopic, reviewLevel]);
 
@@ -746,6 +771,7 @@ function CanvasPageInner() {
           elements: elements as unknown[],
           reviewLevel,
           anonymous: anonymousMode,
+          ...(hldExplanation.trim() ? { hldExplanation } : {}),
           ...(challengeMode ? { submissionType: "challenge" } : {}),
           // Include BYO credentials only if configured — server uses them if present
           ...(byoCreds.apiKey ? {
@@ -888,7 +914,7 @@ function CanvasPageInner() {
       stopReviewerProgress("error");
       activeStreamRef.current = false;
     }
-  }, [selectedTopic, authStatus, router, elements, reviewLevel, anonymousMode, editDesignId, submittedDesignId, viewDesignId, challengeMode, challengeWeekId, aiMode, startReviewerProgress, stopReviewerProgress]);
+  }, [selectedTopic, authStatus, router, elements, reviewLevel, anonymousMode, hldExplanation, editDesignId, submittedDesignId, viewDesignId, challengeMode, challengeWeekId, aiMode, startReviewerProgress, stopReviewerProgress]);
 
   /** Save design as a draft — no AI review, stays private. */
   const handleSaveDraft = useCallback(async () => {
@@ -915,6 +941,7 @@ function CanvasPageInner() {
           elements: elements as unknown[],
           reviewLevel,
           draft: true,
+          ...(hldExplanation.trim() ? { hldExplanation } : {}),
         }),
       });
 
@@ -935,7 +962,7 @@ function CanvasPageInner() {
       setDraftToast(err instanceof Error ? err.message : "Failed to save draft.");
       setTimeout(() => setDraftToast(null), 5000);
     }
-  }, [selectedTopic, authStatus, router, elements, reviewLevel, editDesignId, submittedDesignId, viewDesignId, elementFingerprint]);
+  }, [selectedTopic, authStatus, router, elements, reviewLevel, hldExplanation, editDesignId, submittedDesignId, viewDesignId, elementFingerprint]);
 
   /** Delete the current draft/design. */
   const handleDeleteDraft = useCallback(async () => {
@@ -1461,7 +1488,42 @@ function CanvasPageInner() {
               </div>
             </div>
 
-            {/* Delete draft confirmation dialog */}
+            {/* HLD Explanation panel — collapsible, shown in edit/draw modes */}
+            {((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode) || !!editDesignId) && (
+              <div className="border-b border-border/40 dark:border-white/[0.06] bg-background/30 dark:bg-white/[0.01] shrink-0">
+                {showExplanation ? (
+                  <div className="flex flex-col px-3 py-2 gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[0.65rem] font-semibold text-muted-foreground uppercase tracking-wider">Design Explanation</span>
+                      <button
+                        onClick={() => setShowExplanation(false)}
+                        className="text-[0.65rem] text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        Hide
+                      </button>
+                    </div>
+                    <textarea
+                      value={hldExplanation}
+                      onChange={(e) => {
+                        setHldExplanation(e.target.value);
+                        saveExplanation(e.target.value);
+                      }}
+                      placeholder="Walk us through your design — explain your component choices, data flow, and key tradeoffs as if you're talking to an interviewer."
+                      className="w-full resize-none rounded-lg border border-border/60 dark:border-white/[0.1] bg-background/80 dark:bg-zinc-900/60 px-3 py-2 text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-violet-500/50 dark:focus:ring-violet-400/40 transition-shadow"
+                      rows={4}
+                    />
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowExplanation(true)}
+                    className="flex w-full items-center gap-1.5 px-3 py-1.5 text-[0.65rem] text-muted-foreground hover:text-violet-500 hover:bg-violet-50/40 dark:hover:bg-violet-900/10 transition-colors"
+                  >
+                    <span className="text-violet-400 text-sm leading-none">+</span>
+                    Add design explanation (optional — AI reads this during review)
+                  </button>
+                )}
+              </div>
+            )}
             {showDeleteDraftConfirm && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                 <div className="w-full max-w-sm rounded-xl border bg-background p-6 shadow-xl space-y-4">
