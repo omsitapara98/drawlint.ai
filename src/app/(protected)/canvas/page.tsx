@@ -1259,7 +1259,8 @@ function CanvasPageInner() {
         {phase === "draw" && (
           <>
             {/* Info bar: topic + level + actions (all controls here, nothing floating on canvas) */}
-            <div className="flex h-10 items-center border-b border-border/40 dark:border-white/[0.06] bg-background/50 dark:bg-white/[0.02] backdrop-blur-sm px-4 gap-3 shrink-0 min-w-0">
+            <div className="relative shrink-0">
+            <div className="flex h-10 items-center border-b border-border/40 dark:border-white/[0.06] bg-background/50 dark:bg-white/[0.02] backdrop-blur-sm px-4 gap-3 min-w-0">
               {/* Left: info chips */}
               <div className="flex items-center gap-1.5 min-w-0">
                 {/* Topic + Level group */}
@@ -1344,6 +1345,24 @@ function CanvasPageInner() {
                       </>
                     )}
                   </span>
+                )}
+
+                {/* Explanation toggle chip */}
+                {((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode) || !!editDesignId) && (
+                  <button
+                    onClick={() => setShowExplanation((v) => !v)}
+                    className={`inline-flex h-6 items-center gap-1.5 rounded-lg px-2.5 text-[0.7rem] font-medium border transition-all shrink-0 ${
+                      showExplanation
+                        ? "bg-violet-100 text-violet-700 border-violet-300 dark:bg-violet-900/40 dark:text-violet-300 dark:border-violet-700"
+                        : hldExplanation.trim()
+                        ? "bg-violet-50 text-violet-600 border-violet-200 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-800"
+                        : "bg-zinc-100/80 text-muted-foreground border-zinc-200/50 dark:bg-zinc-800/40 dark:border-zinc-700/30 hover:text-violet-500 hover:border-violet-300 dark:hover:border-violet-700"
+                    }`}
+                    title="Add design explanation — AI reads this during review"
+                  >
+                    <Pencil className="h-3 w-3 shrink-0" />
+                    <span className="shrink-0">{hldExplanation.trim() ? "Explanation ✓" : "Explain design"}</span>
+                  </button>
                 )}
               </div>
 
@@ -1488,6 +1507,36 @@ function CanvasPageInner() {
               </div>
             </div>
 
+            {/* HLD explanation dropdown panel — drops below info bar, overlays canvas */}
+            {((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode) || !!editDesignId) && showExplanation && (
+              <div className="absolute left-0 right-0 top-full z-30 px-4 pt-2 pb-3 bg-background/98 dark:bg-zinc-950/98 backdrop-blur-md border-b border-border/60 shadow-lg">
+                <div className="flex items-start gap-3 max-w-4xl">
+                  <textarea
+                    value={hldExplanation}
+                    onChange={(e) => {
+                      setHldExplanation(e.target.value);
+                      saveExplanation(e.target.value);
+                    }}
+                    placeholder="Walk us through your design — explain your component choices, data flow, and key tradeoffs as if you're talking to an interviewer."
+                    className="flex-1 resize-none rounded-lg border border-border/60 dark:border-white/[0.1] bg-background dark:bg-zinc-900 px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-shadow"
+                    rows={4}
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => setShowExplanation(false)}
+                    className="mt-1 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+                    title="Close"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <p className="mt-1.5 text-[0.65rem] text-muted-foreground/70 max-w-4xl">
+                  AI reads this alongside your diagram during review. No word limit.
+                </p>
+              </div>
+            )}
+            </div>
+
             {showDeleteDraftConfirm && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                 <div className="w-full max-w-sm rounded-xl border bg-background p-6 shadow-xl space-y-4">
@@ -1547,38 +1596,6 @@ function CanvasPageInner() {
             {/* Full-width Excalidraw canvas — NO floating controls */}
             <div className="relative flex-1 min-h-0">
               <DiagramCanvas key={canvasKey} onChange={handleChange} initialData={initialData} readOnly={!!viewDesignId ? !viewEditMode : submitted} />
-
-              {/* Floating HLD explanation panel — bottom-left overlay */}
-              {((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode) || !!editDesignId) && (
-                <div className="absolute bottom-4 left-4 z-20">
-                  {showExplanation ? (
-                    <div className="w-80 rounded-xl border border-border/60 bg-background/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-xl flex flex-col">
-                      <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
-                        <span className="text-[0.65rem] font-semibold text-muted-foreground uppercase tracking-wider">Design Explanation</span>
-                        <button onClick={() => setShowExplanation(false)} className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded">
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                      <textarea
-                        value={hldExplanation}
-                        onChange={(e) => { setHldExplanation(e.target.value); saveExplanation(e.target.value); }}
-                        placeholder="Walk us through your design — explain your component choices, data flow, and key tradeoffs as if you're talking to an interviewer."
-                        className="mx-2 mb-2 resize-none rounded-lg border border-border/60 dark:border-white/[0.1] bg-background/80 dark:bg-zinc-900/60 px-2.5 py-2 text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-violet-500/50 dark:focus:ring-violet-400/40 transition-shadow"
-                        rows={6}
-                      />
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setShowExplanation(true)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/90 dark:bg-zinc-900/90 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-violet-500 hover:border-violet-300 dark:hover:border-violet-700 shadow-sm transition-all"
-                      title="Add design explanation — AI reads this during review"
-                    >
-                      <Pencil className="h-3 w-3" />
-                      {hldExplanation.trim() ? "Edit explanation" : "Add explanation"}
-                    </button>
-                  )}
-                </div>
-              )}
 
               {/* Floating Feedback Panel — slides in from right */}
               <div
