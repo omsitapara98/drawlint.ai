@@ -1488,42 +1488,6 @@ function CanvasPageInner() {
               </div>
             </div>
 
-            {/* HLD Explanation panel — collapsible, shown in edit/draw modes */}
-            {((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode) || !!editDesignId) && (
-              <div className="border-b border-border/40 dark:border-white/[0.06] bg-background/30 dark:bg-white/[0.01] shrink-0">
-                {showExplanation ? (
-                  <div className="flex flex-col px-3 py-2 gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[0.65rem] font-semibold text-muted-foreground uppercase tracking-wider">Design Explanation</span>
-                      <button
-                        onClick={() => setShowExplanation(false)}
-                        className="text-[0.65rem] text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        Hide
-                      </button>
-                    </div>
-                    <textarea
-                      value={hldExplanation}
-                      onChange={(e) => {
-                        setHldExplanation(e.target.value);
-                        saveExplanation(e.target.value);
-                      }}
-                      placeholder="Walk us through your design — explain your component choices, data flow, and key tradeoffs as if you're talking to an interviewer."
-                      className="w-full resize-none rounded-lg border border-border/60 dark:border-white/[0.1] bg-background/80 dark:bg-zinc-900/60 px-3 py-2 text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-violet-500/50 dark:focus:ring-violet-400/40 transition-shadow"
-                      rows={4}
-                    />
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setShowExplanation(true)}
-                    className="flex w-full items-center gap-1.5 px-3 py-1.5 text-[0.65rem] text-muted-foreground hover:text-violet-500 hover:bg-violet-50/40 dark:hover:bg-violet-900/10 transition-colors"
-                  >
-                    <span className="text-violet-400 text-sm leading-none">+</span>
-                    Add design explanation (optional — AI reads this during review)
-                  </button>
-                )}
-              </div>
-            )}
             {showDeleteDraftConfirm && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                 <div className="w-full max-w-sm rounded-xl border bg-background p-6 shadow-xl space-y-4">
@@ -1583,6 +1547,38 @@ function CanvasPageInner() {
             {/* Full-width Excalidraw canvas — NO floating controls */}
             <div className="relative flex-1 min-h-0">
               <DiagramCanvas key={canvasKey} onChange={handleChange} initialData={initialData} readOnly={!!viewDesignId ? !viewEditMode : submitted} />
+
+              {/* Floating HLD explanation panel — bottom-left overlay */}
+              {((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode) || !!editDesignId) && (
+                <div className="absolute bottom-4 left-4 z-20">
+                  {showExplanation ? (
+                    <div className="w-80 rounded-xl border border-border/60 bg-background/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-xl flex flex-col">
+                      <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
+                        <span className="text-[0.65rem] font-semibold text-muted-foreground uppercase tracking-wider">Design Explanation</span>
+                        <button onClick={() => setShowExplanation(false)} className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <textarea
+                        value={hldExplanation}
+                        onChange={(e) => { setHldExplanation(e.target.value); saveExplanation(e.target.value); }}
+                        placeholder="Walk us through your design — explain your component choices, data flow, and key tradeoffs as if you're talking to an interviewer."
+                        className="mx-2 mb-2 resize-none rounded-lg border border-border/60 dark:border-white/[0.1] bg-background/80 dark:bg-zinc-900/60 px-2.5 py-2 text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-violet-500/50 dark:focus:ring-violet-400/40 transition-shadow"
+                        rows={6}
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowExplanation(true)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/90 dark:bg-zinc-900/90 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-violet-500 hover:border-violet-300 dark:hover:border-violet-700 shadow-sm transition-all"
+                      title="Add design explanation — AI reads this during review"
+                    >
+                      <Pencil className="h-3 w-3" />
+                      {hldExplanation.trim() ? "Edit explanation" : "Add explanation"}
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Floating Feedback Panel — slides in from right */}
               <div
