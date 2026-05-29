@@ -16,7 +16,7 @@ import { hasAnyCredentials, getCredentialsForRequest, getAIConfig } from "@/lib/
 import { parseDiagram, createWhiteboardTemplate, createChallengeTemplate } from "@/lib/diagram";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
-import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save, Pencil, Zap, Trash2, Link2, AlertTriangle } from "lucide-react";
+import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save, Pencil, FileText, Zap, Trash2, Link2, AlertTriangle } from "lucide-react";
 import { LoadingSpinner } from "@/components/feedback/LoadingSpinner";
 import Link from "next/link";
 
@@ -1364,6 +1364,21 @@ function CanvasPageInner() {
                     <span className="shrink-0">{hldExplanation.trim() ? "Explanation ✓" : "Explain design"}</span>
                   </button>
                 )}
+                {/* Read-only explanation chip — shown post-submit or in view mode when explanation exists */}
+                {((submitted && !viewDesignId) || (!!viewDesignId && !viewEditMode)) && hldExplanation.trim() && (
+                  <button
+                    onClick={() => setShowExplanation((v) => !v)}
+                    className={`inline-flex h-6 items-center gap-1.5 rounded-lg px-2.5 text-[0.7rem] font-medium border transition-all shrink-0 ${
+                      showExplanation
+                        ? "bg-violet-100 text-violet-700 border-violet-300 dark:bg-violet-900/40 dark:text-violet-300 dark:border-violet-700"
+                        : "bg-violet-50 text-violet-600 border-violet-200 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-800"
+                    }`}
+                    title="View submitted explanation"
+                  >
+                    <FileText className="h-3 w-3 shrink-0" />
+                    <span className="shrink-0">Explanation ✓</span>
+                  </button>
+                )}
               </div>
 
               {/* Right: action buttons */}
@@ -1508,20 +1523,26 @@ function CanvasPageInner() {
             </div>
 
             {/* HLD explanation dropdown panel — drops below info bar, overlays canvas */}
-            {((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode) || !!editDesignId) && showExplanation && (
+            {(((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode) || !!editDesignId) || ((submitted && !viewDesignId) || (!!viewDesignId && !viewEditMode)) && hldExplanation.trim()) && showExplanation && (
               <div className="absolute left-0 right-0 top-full z-30 px-4 pt-2 pb-3 bg-background/98 dark:bg-zinc-950/98 backdrop-blur-md border-b border-border/60 shadow-lg">
                 <div className="flex items-start gap-3 max-w-4xl">
-                  <textarea
-                    value={hldExplanation}
-                    onChange={(e) => {
-                      setHldExplanation(e.target.value);
-                      saveExplanation(e.target.value);
-                    }}
-                    placeholder="Walk us through your design — explain your component choices, data flow, and key tradeoffs as if you're talking to an interviewer."
-                    className="flex-1 resize-none rounded-lg border border-border/60 dark:border-white/[0.1] bg-background dark:bg-zinc-900 px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-shadow"
-                    rows={4}
-                    autoFocus
-                  />
+                  {(submitted || (!!viewDesignId && !viewEditMode)) ? (
+                    <p className="flex-1 rounded-lg border border-border/60 dark:border-white/[0.1] bg-background dark:bg-zinc-900 px-3 py-2.5 text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+                      {hldExplanation}
+                    </p>
+                  ) : (
+                    <textarea
+                      value={hldExplanation}
+                      onChange={(e) => {
+                        setHldExplanation(e.target.value);
+                        saveExplanation(e.target.value);
+                      }}
+                      placeholder="Walk us through your design — explain your component choices, data flow, and key tradeoffs as if you're talking to an interviewer."
+                      className="flex-1 resize-none rounded-lg border border-border/60 dark:border-white/[0.1] bg-background dark:bg-zinc-900 px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-shadow"
+                      rows={4}
+                      autoFocus
+                    />
+                  )}
                   <button
                     onClick={() => setShowExplanation(false)}
                     className="mt-1 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
@@ -1531,7 +1552,9 @@ function CanvasPageInner() {
                   </button>
                 </div>
                 <p className="mt-1.5 text-[0.65rem] text-muted-foreground/70 max-w-4xl">
-                  AI reads this alongside your diagram during review. No word limit.
+                  {(submitted || (!!viewDesignId && !viewEditMode))
+                    ? "This explanation was included in the AI review."
+                    : "AI reads this alongside your diagram during review. No word limit."}
                 </p>
               </div>
             )}
