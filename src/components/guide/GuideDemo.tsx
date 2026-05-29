@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Send,
   RefreshCw,
+  FileText,
 } from "lucide-react";
 
 /* ───────────────────────── Types & constants ───────────────────────── */
@@ -33,6 +34,9 @@ type Stage =
   | "draw-data"
   | "draw-arrows"
   | "trail-anim"
+  | "explanation-open"
+  | "explanation-typing"
+  | "explanation-done"
   | "cursor-to-button"
   | "click-button"
   | "analyzing"
@@ -74,29 +78,32 @@ const STAGES: { stage: Stage; t: number }[] = [
   { stage: "draw-data", t: 14.0 },
   { stage: "draw-arrows", t: 15.2 },
   { stage: "trail-anim", t: 16.2 },
-  { stage: "cursor-to-button", t: 17.4 },
-  { stage: "click-button", t: 18.4 },
-  { stage: "analyzing", t: 18.9 },
-  { stage: "complete-header", t: 22.0 },
-  { stage: "complete-cards", t: 22.6 },
-  { stage: "complete-lead", t: 23.4 },
-  { stage: "hold-1", t: 24.0 },
-  { stage: "respond-nfr-arrow", t: 24.5 },
-  { stage: "respond-nfr-click", t: 24.9 },
-  { stage: "respond-nfr-typing", t: 25.4 },
-  { stage: "respond-nfr-evaluating", t: 28.4 },
-  { stage: "respond-nfr-verdict", t: 29.4 },
-  { stage: "respond-api-arrow", t: 29.9 },
-  { stage: "respond-api-click", t: 30.3 },
-  { stage: "respond-api-typing", t: 30.8 },
-  { stage: "respond-api-evaluating", t: 33.3 },
-  { stage: "respond-api-verdict", t: 34.3 },
-  { stage: "reeval-banner", t: 34.8 },
-  { stage: "reeval-arrow", t: 35.3 },
-  { stage: "reeval-click", t: 35.7 },
-  { stage: "reeval-running", t: 35.8 },
-  { stage: "reeval-complete", t: 37.2 },
-  { stage: "done", t: 38.2 },
+  { stage: "explanation-open", t: 16.8 },
+  { stage: "explanation-typing", t: 17.4 },
+  { stage: "explanation-done", t: 20.9 },
+  { stage: "cursor-to-button", t: 22.4 },
+  { stage: "click-button", t: 23.4 },
+  { stage: "analyzing", t: 23.9 },
+  { stage: "complete-header", t: 27.0 },
+  { stage: "complete-cards", t: 27.6 },
+  { stage: "complete-lead", t: 28.4 },
+  { stage: "hold-1", t: 29.0 },
+  { stage: "respond-nfr-arrow", t: 29.5 },
+  { stage: "respond-nfr-click", t: 29.9 },
+  { stage: "respond-nfr-typing", t: 30.4 },
+  { stage: "respond-nfr-evaluating", t: 33.4 },
+  { stage: "respond-nfr-verdict", t: 34.4 },
+  { stage: "respond-api-arrow", t: 34.9 },
+  { stage: "respond-api-click", t: 35.3 },
+  { stage: "respond-api-typing", t: 35.8 },
+  { stage: "respond-api-evaluating", t: 38.3 },
+  { stage: "respond-api-verdict", t: 39.3 },
+  { stage: "reeval-banner", t: 39.8 },
+  { stage: "reeval-arrow", t: 40.3 },
+  { stage: "reeval-click", t: 40.7 },
+  { stage: "reeval-running", t: 40.8 },
+  { stage: "reeval-complete", t: 42.2 },
+  { stage: "done", t: 43.2 },
 ];
 
 const FR_BULLETS = [
@@ -112,6 +119,9 @@ const ASSUMPTIONS_TEXT =
   "• Reviewers are stateless LLM workers\n• Designs stored as JSON + Excalidraw scenes\n• Read-heavy workload (10:1 read/write)";
 const API_TEXT =
   "POST /api/designs/{id}/review\nGET  /api/designs/{id}/feedback\nPOST /api/designs/{id}/respond";
+
+const EXPLANATION_TEXT =
+  "We use stateless reviewer workers so they scale horizontally. Redis handles session state so any worker can pick up a job. The booking service is the hot path — it writes to Postgres and publishes to the queue atomically to avoid dual-write issues.";
 
 const TYPE_DURATIONS = {
   fr: 2500,
@@ -646,6 +656,48 @@ function ArchArrow({
 
 
 
+function ExplanationPanelOverlay({ stage }: { stage: Stage }) {
+  const visible =
+    isAtOrAfter(stage, "explanation-open") &&
+    !isAtOrAfter(stage, "cursor-to-button");
+
+  const typingActive = stage === "explanation-typing";
+  const typingDone = isAtOrAfter(stage, "explanation-done");
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: visible ? 1 : 0, x: visible ? 0 : -20 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="absolute left-2 top-2 bottom-2 z-20 w-[160px] rounded-xl border border-violet-300/60 dark:border-violet-700/40 bg-card/95 backdrop-blur-sm shadow-lg flex flex-col pointer-events-none"
+    >
+      {/* Header */}
+      <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-border/50">
+        <FileText className="h-3 w-3 text-violet-500 shrink-0" />
+        <span className="flex-1 text-[10px] font-semibold truncate">
+          Design Walkthrough
+        </span>
+        <span className="text-[10px] text-muted-foreground/60 leading-none">
+          ×
+        </span>
+      </div>
+      {/* Body */}
+      <div className="flex-1 p-2 text-[9px] leading-relaxed text-foreground/80 overflow-hidden">
+        <Typewriter
+          fullText={EXPLANATION_TEXT}
+          durationMs={3500}
+          active={typingActive}
+          done={typingDone}
+        />
+      </div>
+      {/* Footer */}
+      <div className="px-2 py-1 border-t border-border/50 text-[8px] text-muted-foreground/60">
+        AI reads this alongside your diagram
+      </div>
+    </motion.div>
+  );
+}
+
 function RightPaneCanvas({ stage }: { stage: Stage }) {
   const showEntry = isAtOrAfter(stage, "draw-entry");
   const showServices = isAtOrAfter(stage, "draw-services");
@@ -767,6 +819,8 @@ function RightPaneCanvas({ stage }: { stage: Stage }) {
 
         </svg>
       </div>
+
+      <ExplanationPanelOverlay stage={stage} />
 
       {/* Action button bottom-right */}
       <div className="absolute bottom-3 right-3">
