@@ -1524,7 +1524,7 @@ function CanvasPageInner() {
 
             {/* HLD explanation floating card — fixed to left side of viewport, overlays canvas */}
             {(((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode) || !!editDesignId) || ((submitted && !viewDesignId) || (!!viewDesignId && !viewEditMode)) && hldExplanation.trim()) && showExplanation && (
-              <div className="fixed left-4 top-14 z-40 w-[400px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] overflow-y-auto rounded-xl border border-border/60 bg-background dark:bg-zinc-950 shadow-xl flex flex-col">
+              <div className="fixed left-4 top-14 z-40 w-[400px] max-w-[calc(100vw-2rem)] h-[calc(100vh-5rem)] rounded-xl border border-border/60 bg-background dark:bg-zinc-950 shadow-xl flex flex-col">
                 {/* Card header */}
                 <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-border/40 shrink-0">
                   <span className="text-xs font-semibold text-foreground">Design Explanation</span>
@@ -1537,9 +1537,9 @@ function CanvasPageInner() {
                   </button>
                 </div>
                 {/* Card body */}
-                <div className="flex-1 px-4 py-3">
+                <div className="flex-1 px-4 py-3 overflow-y-auto flex flex-col">
                   {((submitted && !viewDesignId) || (!!viewDesignId && !viewEditMode)) ? (
-                    <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+                    <p className="flex-1 text-sm leading-relaxed text-foreground whitespace-pre-wrap">
                       {hldExplanation}
                     </p>
                   ) : (
@@ -1550,7 +1550,7 @@ function CanvasPageInner() {
                         saveExplanation(e.target.value);
                       }}
                       placeholder="Walk us through your design — explain your component choices, data flow, and key tradeoffs as if you're talking to an interviewer."
-                      className="w-full min-h-[200px] resize-y rounded-lg border border-border/60 dark:border-white/[0.1] bg-muted/30 dark:bg-zinc-900 px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-shadow"
+                      className="flex-1 w-full resize-none h-full rounded-lg border border-border/60 dark:border-white/[0.1] bg-muted/30 dark:bg-zinc-900 px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-shadow"
                       autoFocus
                     />
                   )}
