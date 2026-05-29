@@ -8,6 +8,42 @@ export const metadata: Metadata = {
 
 const CHANGELOG = [
   {
+    date: "May 2026",
+    tag: "Update",
+    items: [
+      {
+        title: "HLD Explanation Panel",
+        description: "New free-text field alongside the canvas — explain your component choices, data flow, and key tradeoffs as if talking to an interviewer. AI reads both the diagram and your explanation together. Concrete reasoning earns real credit; vague claims don't.",
+        badge: "New" as const,
+      },
+      {
+        title: "Criticals Are Now Respondable",
+        description: "Critical issues no longer force a diagram redraw. Respond with how you'd fix it in text — AI evaluates your response and updates the verdict. Severity label is preserved so you always know what mattered most.",
+        badge: "New" as const,
+      },
+      {
+        title: "Capacity Calculator",
+        description: "Structured input fields for DAU, requests/day, object size, peak multiplier, and retention period. Auto-derives avg QPS, peak QPS, daily storage, total retained storage, replication overhead, and network bandwidth. Removes blank-page anxiety for capacity estimation.",
+        badge: "New" as const,
+      },
+      {
+        title: "Smarter AI Feedback",
+        description: "Entities and capacity reviewers are now lenient-on-format, strict-on-reasoning. Your explanation is shared with all reviewers as first-class evidence. Fewer noisy criticals — only real issues get flagged.",
+        badge: null,
+      },
+      {
+        title: "Drawing Guide Now Public",
+        description: "The Drawing Guide and AI Setup Guide are now publicly accessible — no sign-in required. Includes a new 'Explain Your Design' section showing how to use the explanation panel effectively.",
+        badge: null,
+      },
+      {
+        title: "Explanation Panel in Demo",
+        description: "The homepage animated demo now includes the explanation panel stage, showing new users how to walk through their design before submitting.",
+        badge: null,
+      },
+    ],
+  },
+  {
     date: "April 2026",
     tag: "Launch",
     items: [
