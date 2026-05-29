@@ -133,6 +133,22 @@ function validateLeadReviewer(raw: unknown): LeadReviewer {
 
 const REVIEWER_SECTIONS: ReviewerSection[] = ["nfr", "entities", "capacity", "api", "hld"];
 
+/**
+ * Sections that are de-weighted: only `critical` issues are surfaced for these.
+ * Warning/info issues are dropped so the review focuses on critical problems.
+ * Highlights (positives) are unaffected.
+ */
+const CRITICAL_ONLY_SECTIONS = new Set<ReviewerSection>(["entities", "capacity"]);
+
+/** Drop non-critical issues for de-weighted sections; other sections pass through unchanged. */
+function applySeverityWeighting(section: ReviewerSection, dimension: ReviewDimension): ReviewDimension {
+  if (!CRITICAL_ONLY_SECTIONS.has(section)) return dimension;
+  return {
+    highlights: dimension.highlights,
+    issues: dimension.issues.filter((issue) => issue.severity === "critical"),
+  };
+}
+
 const SECTION_TO_KEY: Record<ReviewerSection, Exclude<ReviewerKey, "leadReviewer">> = {
   nfr: "nfrReview",
   entities: "entitiesReview",
@@ -211,7 +227,7 @@ export async function analyzeDesign(
       const systemPrompt = getReviewerPrompt(section, level);
       const userContent = formatSectionForReview(diagram, section, level, section === "hld" ? options?.hldExplanation : undefined);
       const result = await callReviewer(systemPrompt, userContent);
-      const dimension = validateDimension(result);
+      const dimension = applySeverityWeighting(section, validateDimension(result));
       dimensions[section] = dimension;
       options?.onSectionComplete?.(SECTION_TO_KEY[section], dimension);
     };

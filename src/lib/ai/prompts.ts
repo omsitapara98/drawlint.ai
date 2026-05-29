@@ -284,6 +284,17 @@ export function getReviewerPrompt(reviewer: ReviewerSection, level: ReviewLevel)
   const checklist = buildDimensionChecklist(level, reviewer);
   const label = LEVEL_LABELS[level];
 
+  // De-weighted sections: surface ONLY critical, production-breaking issues.
+  const criticalOnly = reviewer === "entities" || reviewer === "capacity";
+  const issuesGuidance = criticalOnly
+    ? `"issues" array — report ONLY "critical" issues (this section is de-weighted):
+- "critical": This would cause the system to fail in production. Frame as: "What happens when X? The system would Y."
+- Do NOT report "warning" or "info" issues for this section. Minor gaps, nice-to-haves, and suggestions must be omitted entirely. If there is no production-breaking problem, return an empty issues array.`
+    : `"issues" array — gaps, risks, and missed trade-offs (use "critical", "warning", or "info"):
+- "critical": This would cause the system to fail in production. Frame as: "What happens when X? The system would Y."
+- "warning": An important gap the candidate should think about. Frame as: "Have you considered what happens if...?"
+- "info": A suggestion that would strengthen the design. Frame as: "You could improve this by..."`;
+
   return `You are the ${name} on a system design interview panel. You are reviewing at ${label}.
 
 ${GROUND_RULES}
@@ -305,10 +316,7 @@ FEEDBACK — TWO SEPARATE ARRAYS:
 - "strong": A design choice that shows real depth — the candidate clearly thought about failure modes, trade-offs, or edge cases. Use sparingly.
 - "good": A solid, thoughtful decision worth acknowledging — not just "they drew a box."
 
-"issues" array — gaps, risks, and missed trade-offs (use "critical", "warning", or "info"):
-- "critical": This would cause the system to fail in production. Frame as: "What happens when X? The system would Y."
-- "warning": An important gap the candidate should think about. Frame as: "Have you considered what happens if...?"
-- "info": A suggestion that would strengthen the design. Frame as: "You could improve this by..."
+${issuesGuidance}
 
 Do NOT force highlights — if nothing stands out as genuinely good, leave the array empty.
 
