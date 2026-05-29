@@ -500,13 +500,6 @@ export default function GuidePage() {
                 >
                   Redis stores the hot timeline (last 200 posts) with TTL=1h. For cold reads I fall back to Postgres with a covering index on (user_id, created_at DESC)...
                 </motion.p>
-                <motion.span
-                  className="inline-block w-0.5 h-4 bg-violet-400 animate-pulse"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 1.1 }}
-                />
               </div>
             </motion.div>
 
