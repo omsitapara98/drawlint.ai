@@ -1524,9 +1524,9 @@ function CanvasPageInner() {
 
             {/* HLD explanation dropdown panel — drops below info bar, overlays canvas */}
             {(((!submitted && !viewDesignId) || (!!viewDesignId && viewEditMode) || !!editDesignId) || ((submitted && !viewDesignId) || (!!viewDesignId && !viewEditMode)) && hldExplanation.trim()) && showExplanation && (
-              <div className="absolute left-0 right-0 top-full z-30 px-4 pt-2 pb-3 bg-background/98 dark:bg-zinc-950/98 backdrop-blur-md border-b border-border/60 shadow-lg">
-                <div className="flex items-start gap-3 max-w-4xl">
-                  {(submitted || (!!viewDesignId && !viewEditMode)) ? (
+              <div className="absolute left-0 top-full z-30 mt-1 w-[480px] max-w-[calc(100vw-2rem)] rounded-xl border border-border/60 bg-background/98 dark:bg-zinc-950/98 backdrop-blur-md shadow-xl px-4 pt-2 pb-3">
+                <div className="flex items-start gap-3">
+                  {((submitted && !viewDesignId) || (!!viewDesignId && !viewEditMode)) ? (
                     <p className="flex-1 rounded-lg border border-border/60 dark:border-white/[0.1] bg-background dark:bg-zinc-900 px-3 py-2.5 text-sm leading-relaxed text-foreground whitespace-pre-wrap">
                       {hldExplanation}
                     </p>
@@ -1551,8 +1551,8 @@ function CanvasPageInner() {
                     <X className="h-4 w-4" />
                   </button>
                 </div>
-                <p className="mt-1.5 text-[0.65rem] text-muted-foreground/70 max-w-4xl">
-                  {(submitted || (!!viewDesignId && !viewEditMode))
+                <p className="mt-1.5 text-[0.65rem] text-muted-foreground/70">
+                  {((submitted && !viewDesignId) || (!!viewDesignId && !viewEditMode))
                     ? "This explanation was included in the AI review."
                     : "AI reads this alongside your diagram during review. No word limit."}
                 </p>
