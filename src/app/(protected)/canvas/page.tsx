@@ -1551,17 +1551,27 @@ function CanvasPageInner() {
                       }}
                       placeholder="Walk us through your design — explain your component choices, data flow, and key tradeoffs as if you're talking to an interviewer."
                       className="flex-1 w-full resize-none h-full rounded-lg border border-border/60 dark:border-white/[0.1] bg-muted/30 dark:bg-zinc-900 px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-shadow"
+                      maxLength={5000}
                       autoFocus
                     />
                   )}
                 </div>
                 {/* Card footer */}
                 <div className="px-4 pb-3 shrink-0">
-                  <p className="text-[0.65rem] text-muted-foreground/70">
-                    {((submitted && !viewDesignId) || (!!viewDesignId && !viewEditMode))
-                      ? "This explanation was included in the AI review."
-                      : "AI reads this alongside your diagram during review. No word limit."}
-                  </p>
+                  {((submitted && !viewDesignId) || (!!viewDesignId && !viewEditMode)) ? (
+                    <p className="text-[0.65rem] text-muted-foreground/70">
+                      This explanation was included in the AI review.
+                    </p>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <p className="text-[0.65rem] text-muted-foreground/70">
+                        AI reads this alongside your diagram during review.
+                      </p>
+                      <span className={`text-[0.65rem] tabular-nums ${hldExplanation.length > 4500 ? "text-amber-500" : "text-muted-foreground/50"}`}>
+                        {hldExplanation.length}/5000
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

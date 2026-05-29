@@ -151,9 +151,10 @@ export function formatSectionForReview(
     }
 
     if (hldExplanation?.trim()) {
+      const safeExplanation = hldExplanation.trim().slice(0, 5000);
       lines.push("=== CANDIDATE'S EXPLANATION ===");
       lines.push("");
-      lines.push(hldExplanation.trim());
+      lines.push(safeExplanation);
       lines.push("");
     }
   } else {
