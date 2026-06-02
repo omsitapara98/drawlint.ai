@@ -14,6 +14,7 @@ import { useAutoSave } from "@/hooks";
 import { loadDiagram, loadExplanation, saveExplanation, clearExplanation } from "@/lib/storage";
 import { hasAnyCredentials, getCredentialsForRequest, getAIConfig } from "@/lib/storage/ai-config";
 import { parseDiagram, createWhiteboardTemplate, createChallengeTemplate } from "@/lib/diagram";
+import { countWords, truncateWords } from "@/lib/utils";
 import type { ParsedDiagram } from "@/types/diagram";
 import type { AIReviewResponse, AnalysisStatus, ReviewLevel, ReviewerProgress, ReviewerKey } from "@/types/feedback";
 import { X, RotateCcw, Monitor, Send, ChevronDown, Plus, Loader2, ArrowRight, ExternalLink, EyeOff, Cpu, Key, Save, Pencil, FileText, Zap, Trash2, Link2, AlertTriangle } from "lucide-react";
@@ -135,12 +136,16 @@ function CanvasPageInner() {
 
   /* ── Load HLD explanation from localStorage on mount ──────── */
   useEffect(() => {
+    // The localStorage explanation belongs to the in-progress new draft.
+    // When viewing or editing an existing design, that design's own
+    // explanation is authoritative, so don't pull in the stale local copy.
+    if (editDesignId || viewDesignId) return;
     const saved = loadExplanation();
     if (saved) {
       setHldExplanation(saved);
       setShowExplanation(true);
     }
-  }, []);
+  }, [editDesignId, viewDesignId]);
 
   /* ── Load anonymous mode preference from localStorage ──────── */
   useEffect(() => {
@@ -297,6 +302,11 @@ function CanvasPageInner() {
           if (metaData.design.hldExplanation) {
             setHldExplanation(metaData.design.hldExplanation);
             setShowExplanation(true);
+          } else {
+            // This design has no explanation — clear any stale value
+            // loaded from localStorage on mount.
+            setHldExplanation("");
+            setShowExplanation(false);
           }
         }
 
@@ -381,6 +391,11 @@ function CanvasPageInner() {
         if (metaData.design.hldExplanation) {
           setHldExplanation(metaData.design.hldExplanation);
           setShowExplanation(true);
+        } else {
+          // This design has no explanation — clear any stale value
+          // loaded from localStorage on mount.
+          setHldExplanation("");
+          setShowExplanation(false);
         }
 
         // Check if current user is the author
@@ -1546,12 +1561,12 @@ function CanvasPageInner() {
                     <textarea
                       value={hldExplanation}
                       onChange={(e) => {
-                        setHldExplanation(e.target.value);
-                        saveExplanation(e.target.value);
+                        const limited = truncateWords(e.target.value, 5000);
+                        setHldExplanation(limited);
+                        saveExplanation(limited);
                       }}
                       placeholder="Walk us through your design — explain your component choices, data flow, and key tradeoffs as if you're talking to an interviewer."
                       className="flex-1 w-full resize-none h-full rounded-lg border border-border/60 dark:border-white/[0.1] bg-muted/30 dark:bg-zinc-900 px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-violet-500/40 transition-shadow"
-                      maxLength={5000}
                       autoFocus
                     />
                   )}
@@ -1567,8 +1582,8 @@ function CanvasPageInner() {
                       <p className="text-[0.65rem] text-muted-foreground/70">
                         AI reads this alongside your diagram during review.
                       </p>
-                      <span className={`text-[0.65rem] tabular-nums ${hldExplanation.length > 4500 ? "text-amber-500" : "text-muted-foreground/50"}`}>
-                        {hldExplanation.length}/5000
+                      <span className={`text-[0.65rem] tabular-nums ${countWords(hldExplanation) > 4500 ? "text-amber-500" : "text-muted-foreground/50"}`}>
+                        {countWords(hldExplanation)}/5000 words
                       </span>
                     </div>
                   )}

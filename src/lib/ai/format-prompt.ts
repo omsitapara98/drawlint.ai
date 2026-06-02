@@ -1,5 +1,6 @@
 import type { ParsedDiagram } from "@/types/diagram";
 import type { ReviewLevel } from "@/types/feedback";
+import { truncateWords } from "@/lib/utils";
 
 const LEVEL_LABELS: Record<ReviewLevel, string> = {
   mid: "Mid-Level (L4-L5)",
@@ -169,7 +170,7 @@ export function formatSectionForReview(
   // The candidate's written walkthrough is shown to every reviewer so they can
   // credit concerns addressed in words even when not drawn (see Ground Rule #9).
   if (hldExplanation?.trim()) {
-    const safeExplanation = hldExplanation.trim().slice(0, 5000);
+    const safeExplanation = truncateWords(hldExplanation.trim(), 5000);
     lines.push("=== CANDIDATE'S EXPLANATION (overall design walkthrough) ===");
     lines.push("");
     lines.push(safeExplanation);

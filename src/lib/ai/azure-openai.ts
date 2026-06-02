@@ -3,6 +3,7 @@ import type { AIReviewResponse, ReviewDimension, ReviewHighlight, FeedbackItem, 
 import { getReviewerPrompt, getLeadReviewerPrompt } from "./prompts";
 import type { ReviewerSection } from "./prompts";
 import { formatSectionForReview } from "./format-prompt";
+import { truncateWords } from "@/lib/utils";
 import {
   createProvider,
   withRetry,
@@ -271,7 +272,7 @@ function buildLeadReviewerInput(
   if (hldExplanation?.trim()) {
     lines.push("=== CANDIDATE'S EXPLANATION (overall design walkthrough) ===");
     lines.push("");
-    lines.push(hldExplanation.trim().slice(0, 5000));
+    lines.push(truncateWords(hldExplanation.trim(), 5000));
     lines.push("");
   }
 
