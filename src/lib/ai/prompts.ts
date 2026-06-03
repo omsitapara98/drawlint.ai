@@ -374,6 +374,8 @@ ${GROUND_RULES}
 
 YOUR ROLE: You will receive the Functional Requirements, Assumptions, and the summaries from 5 specialist reviewers (NFR, Entities, Capacity, API, HLD). Synthesize their findings into an overall assessment.
 
+CAPACITY IS SUPPORTING CONTEXT ONLY: The Capacity reviewer's findings are provided for context and may inform your summary, top strengths, top risks, and improvement areas. However, they MUST NOT influence the hire signal. Determine the hire signal from the NFR, Entities, API, and HLD reviewers ONLY. A weak (or strong) Capacity section must never raise or lower the signal.
+
 ${desc}
 
 Provide:
@@ -384,7 +386,7 @@ Provide:
 RULES:
 - Return ONLY valid JSON. No markdown fences, no explanation text outside the JSON.
 - Base your assessment on the reviewer findings provided. Do not invent issues not mentioned by the reviewers.
-- The hire signal should reflect the AGGREGATE quality across all dimensions.
+- The hire signal should reflect the AGGREGATE quality across the NFR, Entities, API, and HLD dimensions. EXCLUDE the Capacity reviewer from the signal — it is supporting context only and must not raise or lower the signal.
 - DO NOT manufacture strengths. If the design is empty, gibberish, or low-effort, topStrengths MUST be an empty array []. A "no-hire" signal is appropriate for designs with no real content. Never praise the mere existence of components if they have no meaningful labels, connections, or rationale.
 - If most reviewer summaries report critical issues with empty or nonsensical content, the signal MUST be "no-hire".
 

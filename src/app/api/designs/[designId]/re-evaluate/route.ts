@@ -27,6 +27,7 @@ RULES:
 - RESOLVED issues should be treated as if the design addressed them — upgrade your signal accordingly.
 - PARTIALLY-ADDRESSED issues should reduce the weight of that concern but not eliminate it.
 - NOT-ADDRESSED issues remain as-is.
+- CAPACITY IS SUPPORTING CONTEXT ONLY: Ignore responses from the "Capacity Calculations" section when deciding the updated signal. Capacity must never raise or lower the hire signal.
 - The updated signal should reflect what the candidate demonstrated through BOTH the design AND their verbal responses — this is closer to a real interview outcome.
 - Be fair: if a candidate resolves the critical gaps that drove a lower signal, upgrade the signal.
 
@@ -66,19 +67,24 @@ export async function POST(
     return NextResponse.json({ error: "No review found." }, { status: 404 });
   }
 
-  // Rate limit: max 5 re-evaluations per design
-  const existingReeval = await getReEvalSignal(review._id.toString());
-  if (existingReeval) {
-    // Check if created recently (within 5 minutes)
-    const client = await import("@/lib/db/mongodb").then((m) => m.default);
-    const reevalDoc = await client.db("drawlint-db").collection("reeval_signals").findOne({ reviewId: review._id });
-    if (reevalDoc?.createdAt) {
-      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
-      if (new Date(reevalDoc.createdAt as string) > fiveMinAgo) {
-        return NextResponse.json(
-          { error: "Please wait a few minutes before re-evaluating again." },
-          { status: 429 },
-        );
+  // Resolve user settings up-front (premium/admin exempt from limits; reused for provider below)
+  const userSettings = await getUserAiSettings(session.user.id);
+
+  // Rate limit: max 5 re-evaluations per design + 5-min cooldown (free tier only)
+  if (userSettings.role === "free") {
+    const existingReeval = await getReEvalSignal(review._id.toString());
+    if (existingReeval) {
+      // Check if created recently (within 5 minutes)
+      const client = await import("@/lib/db/mongodb").then((m) => m.default);
+      const reevalDoc = await client.db("drawlint-db").collection("reeval_signals").findOne({ reviewId: review._id });
+      if (reevalDoc?.createdAt) {
+        const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+        if (new Date(reevalDoc.createdAt as string) > fiveMinAgo) {
+          return NextResponse.json(
+            { error: "Please wait a few minutes before re-evaluating again." },
+            { status: 429 },
+          );
+        }
       }
     }
   }
@@ -106,7 +112,6 @@ export async function POST(
   }
 
   // Resolve provider
-  const userSettings = await getUserAiSettings(session.user.id);
   const providerResult = resolveAnalysisProvider(userSettings, body);
   if (isResolutionError(providerResult)) {
     return NextResponse.json(

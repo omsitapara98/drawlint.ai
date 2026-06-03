@@ -76,8 +76,11 @@ export async function POST(
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
 
-  // In-memory rate limit (managed mode only — BYO key users exempt)
-  if (!body.apiKey) {
+  // Resolve user settings up-front (also reused for provider resolution below)
+  const userSettings = await getUserAiSettings(session.user.id);
+
+  // In-memory rate limit (managed mode only — BYO key users & premium/admin exempt)
+  if (!body.apiKey && userSettings.role === "free") {
     const userId = session.user.id;
     const now = Date.now();
     const record = respondAttempts.get(userId) ?? { count: 0, windowStart: now };
@@ -136,7 +139,6 @@ export async function POST(
   }
 
   // Resolve AI provider (same as analyze routes)
-  const userSettings = await getUserAiSettings(session.user.id);
   const providerResult = resolveAnalysisProvider(userSettings, body);
   if (isResolutionError(providerResult)) {
     return NextResponse.json(

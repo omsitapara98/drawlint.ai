@@ -284,6 +284,9 @@ function buildLeadReviewerInput(
     const name = SECTION_DISPLAY_NAME[section];
 
     lines.push(`--- ${name} Reviewer ---`);
+    if (section === "capacity") {
+      lines.push("(SUPPORTING CONTEXT ONLY — do NOT factor into the hire signal)");
+    }
 
     if (dim.highlights.length > 0) {
       lines.push("Highlights:");
