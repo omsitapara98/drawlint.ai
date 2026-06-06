@@ -292,6 +292,8 @@ function CanvasPageInner() {
         if (metaRes.ok) {
           const metaData = (await metaRes.json()) as {
             design: { reviewLevel?: string; submissionType?: string; hldExplanation?: string };
+            review: AIReviewResponse | null;
+            responses?: { section: string; issueIndex: number; userResponse: string; verdict: string; explanation: string }[];
           };
           if (metaData.design.reviewLevel) {
             setReviewLevel(metaData.design.reviewLevel as ReviewLevel);
@@ -307,6 +309,17 @@ function CanvasPageInner() {
             // loaded from localStorage on mount.
             setHldExplanation("");
             setShowExplanation(false);
+          }
+
+          // Carry the existing review into edit mode so it stays visible while
+          // the user edits the diagram, until a new "Post + AI Review" replaces it.
+          if (metaData.review) {
+            setAiReview(metaData.review);
+            setAiStatus("complete");
+            setParsedDiagram(parseDiagram([] as ExcalidrawElement[]));
+            if (metaData.responses && metaData.responses.length > 0) {
+              setInitialResponses(metaData.responses);
+            }
           }
         }
 
@@ -628,13 +641,11 @@ function CanvasPageInner() {
   }, [elements]);
 
   useEffect(() => {
-    const prev = prevFingerprintRef.current;
+    // The diagram fingerprint is tracked for the "dirty" indicator only.
+    // We intentionally do NOT clear the existing AI review when the diagram
+    // changes — the previous review stays visible until the user runs a new
+    // "Post + AI Review", which replaces it once the server accepts.
     prevFingerprintRef.current = elementFingerprint;
-    if (prev !== "" && prev !== elementFingerprint) {
-      setAiReview(null);
-      setAiStatus("idle");
-      setAiError(undefined);
-    }
   }, [elementFingerprint]);
 
   // Seed the "clean" fingerprint once after the initial element load so the
