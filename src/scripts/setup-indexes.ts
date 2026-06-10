@@ -78,6 +78,38 @@ async function main() {
     }
     console.log("✓ user_streaks indexes created");
 
+    // ── Daily Drills ─────────────────────────────────────────────
+    const dailyDrills = db.collection("daily_drills");
+    try {
+      await dailyDrills.createIndex({ dayId: 1, category: 1 }, { unique: true });
+    } catch (e) {
+      console.log("  ⚠ daily_drills unique index skipped:", (e as Error).message);
+    }
+    console.log("✓ daily_drills indexes created");
+
+    // ── Drill Attempts ───────────────────────────────────────────
+    const drillAttempts = db.collection("drill_attempts");
+    try {
+      await drillAttempts.createIndex(
+        { userId: 1, dayId: 1, category: 1 },
+        { unique: true, name: "one_attempt_per_user_per_day" },
+      );
+    } catch (e) {
+      console.log("  ⚠ drill_attempts unique index skipped:", (e as Error).message);
+    }
+    await drillAttempts.createIndex({ dayId: 1, category: 1, score: -1, durationMs: 1 });
+    console.log("✓ drill_attempts indexes created");
+
+    // ── User Drill Stats ─────────────────────────────────────────
+    const drillStats = db.collection("user_drill_stats");
+    try {
+      await drillStats.createIndex({ userId: 1 }, { unique: true });
+    } catch (e) {
+      console.log("  ⚠ user_drill_stats unique index skipped:", (e as Error).message);
+    }
+    await drillStats.createIndex({ totalPoints: -1 });
+    console.log("✓ user_drill_stats indexes created");
+
     console.log("Index setup complete.");
   } finally {
     await client.close();

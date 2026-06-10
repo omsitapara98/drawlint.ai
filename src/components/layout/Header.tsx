@@ -8,7 +8,7 @@ import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { SignInButton, UserMenu } from "@/components/auth";
 import { SettingsModal, AccountModal } from "@/components/settings";
-import { Moon, Sun, Flame } from "lucide-react";
+import { Moon, Sun, Flame, Target } from "lucide-react";
 
 export default function Header() {
   const { theme, setTheme } = useTheme();
@@ -16,6 +16,31 @@ export default function Header() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [challengeStreak, setChallengeStreak] = useState(0);
+  const [drillStreak, setDrillStreak] = useState(0);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let cancelled = false;
+    fetch("/api/challenge/streak")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { streak?: { currentStreak?: number } } | null) => {
+        if (!cancelled && d?.streak?.currentStreak) setChallengeStreak(d.streak.currentStreak);
+      })
+      .catch(() => {});
+    fetch("/api/drills/stats")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { stats?: { currentStreak?: number } } | null) => {
+        if (!cancelled && d?.stats?.currentStreak) setDrillStreak(d.stats.currentStreak);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
+
+  const challengeStreakDisplay = status === "authenticated" ? challengeStreak : 0;
+  const drillStreakDisplay = status === "authenticated" ? drillStreak : 0;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -57,6 +82,30 @@ export default function Header() {
           >
             <Flame className="h-3.5 w-3.5 text-orange-500" />
             Challenge
+            {challengeStreakDisplay > 0 && (
+              <span
+                className="ml-0.5 rounded-full bg-orange-500/15 px-1.5 py-0.5 text-[0.6rem] font-bold text-orange-500"
+                title={`${challengeStreakDisplay}-week Challenge streak`}
+              >
+                {challengeStreakDisplay}
+              </span>
+            )}
+          </Link>
+          <Link
+            data-tour="header-drills"
+            href="/drills"
+            className="relative inline-flex items-center gap-1 rounded-lg px-2.5 h-8 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-gradient-to-r after:from-cyan-500 after:to-violet-500 after:transition-all after:duration-300"
+          >
+            <Target className="h-3.5 w-3.5 text-cyan-500" />
+            Drills
+            {drillStreakDisplay > 0 && (
+              <span
+                className="ml-0.5 rounded-full bg-cyan-500/15 px-1.5 py-0.5 text-[0.6rem] font-bold text-cyan-500"
+                title={`${drillStreakDisplay}-day Drills streak`}
+              >
+                {drillStreakDisplay}
+              </span>
+            )}
           </Link>
           <Link
             data-tour="header-library"
@@ -71,6 +120,13 @@ export default function Header() {
             className="relative inline-flex items-center rounded-lg px-2.5 h-8 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-gradient-to-r after:from-violet-500 after:to-cyan-500 after:transition-all after:duration-300"
           >
             Drawing Guide
+          </Link>
+          <Link
+            data-tour="header-learn"
+            href="/learn"
+            className="relative inline-flex items-center rounded-lg px-2.5 h-8 text-[0.8rem] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-gradient-to-r after:from-violet-500 after:to-cyan-500 after:transition-all after:duration-300"
+          >
+            Learn
           </Link>
           <Link
             data-tour="header-ai-setup"

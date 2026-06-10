@@ -23,10 +23,12 @@ const spaceGrotesk = Space_Grotesk({
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://drawlint-ai.in";
 
+const APP_DESCRIPTION =
+  "Practice system design like you practice algorithms. Submit diagrams for instant AI feedback from 6 specialized reviewers — plus a free learn workbook, a 27-pattern cheatsheet, daily MCQ drills, weekly challenges, leaderboards, and streaks.";
+
 export const metadata: Metadata = {
   title: "DrawLint.ai — The System Design Practice Platform",
-  description:
-    "Submit system design diagrams and get instant AI feedback from 6 specialized reviewers. Weekly challenges, leaderboards, streaks, and a public library of solutions. Practice system design like you practice algorithms.",
+  description: APP_DESCRIPTION,
   metadataBase: new URL(APP_URL),
   keywords: [
     "system design",
@@ -41,6 +43,13 @@ export const metadata: Metadata = {
     "low level design",
     "weekly challenge",
     "system design practice",
+    "learn system design",
+    "system design workbook",
+    "system design patterns",
+    "system design cheatsheet",
+    "daily drills",
+    "system design quiz",
+    "system design mcq",
   ],
   icons: {
     icon: [
@@ -58,8 +67,7 @@ export const metadata: Metadata = {
     url: APP_URL,
     siteName: "DrawLint.ai",
     title: "DrawLint.ai — The System Design Practice Platform",
-    description:
-      "Submit system design diagrams and get instant AI feedback from 6 specialized reviewers. Weekly challenges, leaderboards, streaks, and a public library of solutions. Practice system design like you practice algorithms.",
+    description: APP_DESCRIPTION,
     images: [
       {
         url: "/opengraph-image",
@@ -72,8 +80,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "DrawLint.ai — The System Design Practice Platform",
-    description:
-      "Submit system design diagrams and get instant AI feedback from 6 specialized reviewers. Weekly challenges, leaderboards, streaks, and a public library of solutions. Practice system design like you practice algorithms.",
+    description: APP_DESCRIPTION,
     images: ["/opengraph-image"],
   },
   robots: {
@@ -102,9 +109,17 @@ export default function RootLayout({
               "@type": "SoftwareApplication",
               name: "DrawLint.ai",
               url: APP_URL,
-              description: "AI-powered system design review platform. Draw architecture diagrams and get instant feedback from 6 specialized AI reviewers.",
+              description: APP_DESCRIPTION,
               applicationCategory: "DeveloperApplication",
               operatingSystem: "Web",
+              featureList: [
+                "AI system design review from 6 specialized reviewers",
+                "Free learn workbook (Fundamentals, Building Blocks, 27 Design Patterns)",
+                "System design pattern cheatsheet",
+                "Daily MCQ drills with leaderboards and streaks",
+                "Weekly system design challenges",
+                "Public library of community solutions",
+              ],
               offers: {
                 "@type": "Offer",
                 price: "0",

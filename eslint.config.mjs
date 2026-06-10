@@ -13,6 +13,14 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // Test helpers named like `use*` (e.g. useMongoFixture) are not React hooks;
+  // the rules-of-hooks check is a false positive in test files.
+  {
+    files: ["src/__tests__/**", "**/*.test.{ts,tsx}"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

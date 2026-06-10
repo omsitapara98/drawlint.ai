@@ -140,6 +140,22 @@ const FAQ_ITEMS: { q: string; a: React.ReactNode }[] = [
     a: "Every Monday, a new system design problem is posted. You have until Sunday to submit your solution. The AI reviews it for free (doesn\u2019t use your monthly quota), and you\u2019re ranked on the leaderboard by hire signal. Build your streak by completing consecutive weeks.",
   },
   {
+    q: "What is the Learn Workbook?",
+    a: "A free, beginner-friendly system design workbook covering Fundamentals, Core Building Blocks, and all 27 Design Patterns — explained in depth with examples and trade-offs. It has a collapsible sidebar that highlights your current lesson, a circular reading-progress ring, and cross-device progress tracking (green ticks for completed lessons). Sign in to save your progress across devices.",
+  },
+  {
+    q: "What is the Cheatsheet?",
+    a: "A clean, scannable quick-reference of all 27 design patterns, grouped by category with collapsible sections. It\u2019s the fast way to refresh the key ideas and trade-offs right before an interview. It\u2019s public — no sign-in required.",
+  },
+  {
+    q: "What are Daily Drills?",
+    a: "A fresh AI-generated quiz every day — 5 multiple-choice questions drawn from across all 27 system design patterns. Answer them, learn from the per-question explanations, and build a daily streak. There are daily and all-time leaderboards. Anyone can play; sign in to save your score and appear on the leaderboard.",
+  },
+  {
+    q: "Do Daily Drills count against my review quota?",
+    a: "No. Daily Drills are completely free and separate from your monthly AI review quota. You get one scored attempt per day, and you can keep playing extra practice rounds (which don\u2019t affect the leaderboard).",
+  },
+  {
     q: "Can I re-submit my weekly challenge?",
     a: "No \u2014 weekly challenge submissions are one-shot, just like a real interview. You get one submission per week. You can still respond to follow-up questions to improve your feedback, but the design itself is locked after submission.",
   },

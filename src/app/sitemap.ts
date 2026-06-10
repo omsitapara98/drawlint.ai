@@ -1,8 +1,16 @@
 import type { MetadataRoute } from "next";
+import { allLessonSlugs } from "@/app/learn/_content/registry";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://drawlint-ai.in";
   const now = new Date();
+
+  const lessonEntries: MetadataRoute.Sitemap = allLessonSlugs().map((slug) => ({
+    url: `${baseUrl}/learn/${slug}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.6,
+  }));
 
   return [
     {
@@ -25,6 +33,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}/guide`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/learn`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/drills`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.85,
+    },
+    ...lessonEntries,
+    {
+      url: `${baseUrl}/learn/cheatsheet`,
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.7,

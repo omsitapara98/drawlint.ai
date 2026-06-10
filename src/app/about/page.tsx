@@ -247,6 +247,9 @@ export default function AboutPage() {
             { value: 6, suffix: "", label: "AI Reviewers" },
             { value: 51, suffix: "", label: "Official Topics" },
             { value: 3, suffix: "", label: "AI Providers" },
+            { value: 46, suffix: "", label: "Workbook Lessons" },
+            { value: 27, suffix: "", label: "Design Patterns" },
+            { value: 1, suffix: "/day", label: "Daily Drill" },
             { value: 5, suffix: "", label: "Review Dimensions" },
             { value: 100, suffix: "%", label: "Public Code" },
             { value: 1, suffix: "/wk", label: "Weekly Challenge" },
@@ -366,6 +369,42 @@ export default function AboutPage() {
                   <p className="text-sm font-semibold text-foreground">Community Library</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Browse Official and Community tabs — learn from curated solutions and real submissions from other engineers.
+                  </p>
+                </div>
+              </motion.div>
+            </SpotlightCard>
+
+            <SpotlightCard>
+              <motion.div variants={fadeUp} className="flex flex-col items-center gap-3 text-center">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted/50 text-xl">📖</div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Learn Workbook</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    A free, beginner-friendly workbook — Fundamentals, Building Blocks, and 27 patterns explained with examples. Tracks your reading progress across devices.
+                  </p>
+                </div>
+              </motion.div>
+            </SpotlightCard>
+
+            <SpotlightCard>
+              <motion.div variants={fadeUp} className="flex flex-col items-center gap-3 text-center">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted/50 text-xl">🗂️</div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Pattern Cheatsheet</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    A clean, scannable quick-reference of all 27 design patterns, grouped by category with collapsible sections for fast recall.
+                  </p>
+                </div>
+              </motion.div>
+            </SpotlightCard>
+
+            <SpotlightCard>
+              <motion.div variants={fadeUp} className="flex flex-col items-center gap-3 text-center">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted/50 text-xl">🎯</div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Daily Drills</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    A fresh AI-generated 5-question quiz every day across all 27 patterns. Explanations, streaks, and daily + all-time leaderboards.
                   </p>
                 </div>
               </motion.div>

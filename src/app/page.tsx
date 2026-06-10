@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Zap, Shield, Star, ChevronDown, Brain, Layers, Target, Activity, Users, FileCheck, MessageSquareReply, RefreshCw } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Shield, Star, ChevronDown, Brain, Layers, Target, Activity, Users, FileCheck, MessageSquareReply, RefreshCw, BookOpen } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 import { Header } from "@/components/layout";
 import { ParticleBackground } from "@/components/ui/particle-background";
@@ -63,6 +63,16 @@ const features = [
     icon: Star,
     title: "Weekly Challenge",
     description: "New system design problem every week. Compete on the leaderboard, build your streak, and practice under real interview pressure.",
+  },
+  {
+    icon: BookOpen,
+    title: "Learn Workbook & Cheatsheet",
+    description: "A free, beginner-friendly workbook covering Fundamentals, Building Blocks, and all 27 design patterns — plus a scannable cheatsheet. Tracks your reading progress across devices.",
+  },
+  {
+    icon: Target,
+    title: "Daily Drills",
+    description: "A fresh AI-generated 5-question quiz every day across all 27 patterns. Learn from explanations, build a streak, and climb daily + all-time leaderboards.",
   },
 ];
 

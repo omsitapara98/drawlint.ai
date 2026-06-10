@@ -8,6 +8,42 @@ export const metadata: Metadata = {
 
 const CHANGELOG = [
   {
+    date: "June 2026",
+    tag: "Update",
+    items: [
+      {
+        title: "Daily Drills",
+        description: "A new free, AI-generated quiz every day — 5 multiple-choice questions spanning all 27 system design patterns. Answer, learn from the per-question explanations, and build a daily streak. Daily and all-time leaderboards, with one scored attempt per day and unlimited practice rounds. No sign-in needed to play; sign in to save your score.",
+        badge: "New" as const,
+      },
+      {
+        title: "Learn Workbook",
+        description: "A free, beginner-friendly system design workbook — Fundamentals, Core Building Blocks, and 27 Design Patterns explained in depth with examples and trade-offs. Collapsible left-glued sidebar that highlights your current lesson, a circular reading-progress ring, and cross-device progress tracking with green ticks for completed lessons.",
+        badge: "New" as const,
+      },
+      {
+        title: "Cheatsheet",
+        description: "A refreshed, quick-reference cheatsheet of all 27 design patterns — friendlier and far less cluttered, organized by category with collapsible sections so you can scan and recall fast before an interview.",
+        badge: "New" as const,
+      },
+      {
+        title: "Global Lesson Search",
+        description: "A search bar on the Learn hub matches anything you type to the right lesson or pattern, so you can jump straight to the topic you need.",
+        badge: null,
+      },
+      {
+        title: "Revamped Learn Hub",
+        description: "The /learn page now leads with clear entry points — jump straight into the Workbook, Cheatsheet, or Daily Drills — plus progress bars showing how far you've read.",
+        badge: null,
+      },
+      {
+        title: "Public-Page SEO",
+        description: "Canonical URLs, Open Graph and per-lesson OG images, and JSON-LD structured data across the public Learn, Cheatsheet, and Drills pages for better discoverability.",
+        badge: null,
+      },
+    ],
+  },
+  {
     date: "May 2026",
     tag: "Update",
     items: [

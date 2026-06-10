@@ -1,0 +1,310 @@
+import {
+  Prose,
+  LessonSection,
+  H3,
+  P,
+  Term,
+  XLink,
+  UL,
+  LI,
+  Callout,
+  Analogy,
+  CodeBlock,
+  CompareTable,
+  KeyTakeaways,
+  CheckYourself,
+} from "@/components/learn";
+
+export default function Lesson() {
+  return (
+    <Prose>
+      <P>
+        Networks fail in the most inconvenient place: after the server has done
+        the work, but before the client receives the response. A user taps{" "}
+        <em>Pay</em>, the payment succeeds, the response times out, and the app
+        retries because retrying is usually the right reliability move. Without a
+        guardrail, that retry can create a second order, send a second email, or
+        charge the card twice. <Term>Idempotency keys</Term> make a mutation safe
+        to retry by turning &quot;do this again&quot; into &quot;return the result
+        for the same logical operation&quot;.
+      </P>
+
+      <Analogy>
+        An idempotency key is like a coat-check ticket. You hand over one coat
+        and receive ticket <code>{"#42"}</code>. If you come back twice with the
+        same ticket, the attendant gives you the same coat record back; they do
+        not invent a second coat. The ticket names one real-world action, and the
+        system remembers what already happened for that ticket.
+      </Analogy>
+
+      <LessonSection id="problem" title="The problem: safe retries can duplicate side effects">
+        <P>
+          Retrying reads is usually harmless. Retrying writes is dangerous
+          because writes have <Term>side effects</Term>: money moves, inventory
+          changes, seats become reserved, and downstream services receive
+          messages. The nasty failure mode is not simply &quot;the first request
+          failed&quot;. It is &quot;the first request may have succeeded, but the
+          client cannot tell&quot;.
+        </P>
+        <CodeBlock label="a duplicate payment caused by an ambiguous timeout">{`1. Client → POST /payments {orderId: "o_123", amount: 50}
+2. API charges card successfully at the payment gateway
+3. API response is lost because the network times out
+4. Client retries the same POST /payments
+5. API charges card again because it treats the retry as a new request`}</CodeBlock>
+        <P>
+          This is common in real systems because clients, load balancers, message
+          queues, and job runners all retry. Mobile apps retry after spotty Wi-Fi.
+          Browsers retry after a tab resumes. Queue consumers retry after a worker
+          crashes. If the operation is expensive or irreversible, the server must
+          be able to recognize that two HTTP requests are really one logical
+          operation.
+        </P>
+        <Callout type="key" title="The core idea">
+          The client supplies a unique key for one intended mutation. The server
+          records that key and the first final result. Every retry with the same
+          key gets the recorded result, not a second execution.
+        </Callout>
+      </LessonSection>
+
+      <LessonSection id="mechanics" title="How it works: record first execution, replay retries">
+        <P>
+          The client creates a high-entropy key, usually a UUID, before sending a
+          mutation. The key travels in a header such as{" "}
+          <code>{"Idempotency-Key: 7b4c..."}</code>. The server scopes the key to
+          a caller and operation, atomically claims it, executes the work once,
+          stores the response, and replays that response for later attempts.
+        </P>
+        <CodeBlock label="request flow with an idempotency key">{`Client chooses key K = uuid()
+
+POST /orders
+Idempotency-Key: K
+Body: {cartId: "cart_9", paymentToken: "tok_abc"}
+
+Server:
+  1. Look up (tenant_id, endpoint, K)
+  2. If completed:
+       return stored status_code + response_body
+  3. If in_progress:
+       wait, poll, or return 409/202 so the client retries later
+  4. If missing:
+       atomically insert {K, request_hash, status: "in_progress"}
+       create order and charge payment exactly once
+       update {K, status: "completed", response_body, status_code}
+       return the response`}</CodeBlock>
+        <H3>Store the result, not only the fact that the key existed</H3>
+        <P>
+          A good idempotency table stores the final HTTP status and response body.
+          If the first attempt returns <code>201 Created</code> with{" "}
+          <code>{"{orderId: \"o_123\"}"}</code>, the retry should get that same
+          response. That makes the client state machine simple: retry until it
+          receives the result for the operation it already asked for.
+        </P>
+        <CompareTable
+          headers={["Stored field", "Why it matters", "Example"]}
+          rows={[
+            ["scope", "Prevents unrelated callers from colliding", "tenant + user + endpoint"],
+            ["key", "Names one logical operation", "UUID generated by the client"],
+            ["request_hash", "Detects accidental key reuse with a different body", "SHA-256 of canonical body"],
+            ["status", "Distinguishes in-progress from completed attempts", "in_progress / completed / failed"],
+            ["response", "Lets retries receive the same result", "HTTP 201 + order payload"],
+            ["expires_at", "Bounds storage growth", "24h, 7d, or business-specific"],
+          ]}
+        />
+      </LessonSection>
+
+      <LessonSection id="storage" title="Storage: Redis, databases, and unique constraints">
+        <P>
+          Idempotency is only as strong as the atomic claim on the key. Two
+          requests with the same key can arrive at the same millisecond, hit two
+          API servers, and race. The storage layer must make exactly one of them
+          the first executor.
+        </P>
+        <CodeBlock label="database-backed key claim">{`-- One row per logical request.
+CREATE TABLE idempotency_keys (
+  scope          text NOT NULL,
+  key            text NOT NULL,
+  request_hash   text NOT NULL,
+  status         text NOT NULL,
+  response_json  jsonb,
+  status_code    int,
+  expires_at     timestamptz NOT NULL,
+  PRIMARY KEY (scope, key)
+);
+
+-- Atomic claim. Only one concurrent request can insert this row.
+INSERT INTO idempotency_keys(scope, key, request_hash, status, expires_at)
+VALUES ($scope, $key, $hash, 'in_progress', now() + interval '24 hours')
+ON CONFLICT DO NOTHING;`}</CodeBlock>
+        <UL>
+          <LI>
+            <Term>Relational database:</Term> use a unique constraint on{" "}
+            <code>{"(scope, key)"}</code>. This is the most straightforward choice
+            when the mutation also writes to the same database, because claiming
+            the key and creating the order can live in one transaction.
+          </LI>
+          <LI>
+            <Term>Redis:</Term> use <code>SET key value NX PX ttl</code> or a Lua
+            script to atomically claim and update state. Redis is fast and useful
+            for high-volume APIs, but think carefully about persistence and
+            failover if the side effect is financial.
+          </LI>
+          <LI>
+            <Term>Payment gateway keys:</Term> many providers accept their own
+            idempotency key. Still store your local key too, so your order service
+            and your gateway call share one business operation.
+          </LI>
+        </UL>
+        <Callout type="tip" title="Make the business write and the key update consistent">
+          If possible, commit the business record and the idempotency result in
+          the same database transaction. If you must call an external system,
+          combine this pattern with an{" "}
+          <XLink href="/learn/pattern-outbox-cdc">outbox/CDC</XLink> flow so a
+          crash after the local commit does not lose the message that finishes
+          the workflow.
+        </Callout>
+      </LessonSection>
+
+      <LessonSection id="concurrency" title="Concurrent duplicates: lock or wait on the key">
+        <P>
+          The hardest duplicate is not a retry minutes later; it is two identical
+          attempts in flight at once. Maybe the user double-clicked, or an API
+          gateway retried while the first request was still running. If both
+          execute before either stores a result, idempotency has failed.
+        </P>
+        <CodeBlock label="handling an in-flight duplicate">{`result = try_insert_key(scope, key, request_hash)
+
+if result == "inserted":
+    try:
+        response = execute_mutation_once()
+        mark_completed(scope, key, response)
+        return response
+    except Exception as error:
+        mark_failed_or_delete_claim(scope, key, error)
+        raise
+
+existing = load_key(scope, key)
+if existing.request_hash != request_hash:
+    return 409 Conflict  # same key, different operation
+
+if existing.status == "completed":
+    return existing.stored_response
+
+if existing.status == "in_progress":
+    return 202 Accepted  # or wait briefly, then ask client to retry`}</CodeBlock>
+        <P>
+          Some systems block the second request until the first completes; others
+          return <code>202 Accepted</code> or <code>409 Conflict</code> with a
+          retry-after hint. The right choice depends on latency. For a
+          sub-second order creation, waiting is friendly. For a multi-minute
+          asynchronous workflow, returning a status endpoint is cleaner.
+        </P>
+        <CompareTable
+          headers={["Strategy", "How it handles in-flight duplicates", "Trade-off"]}
+          rows={[
+            ["Wait on the key", "Second request waits for the first result", "Best UX, but ties up a connection"],
+            ["Return 202", "Client polls or retries after a delay", "Scales well for long work"],
+            ["Return 409 in_progress", "Client learns the key is busy", "Simple, but clients need custom handling"],
+            ["Per-key lock", "Only the lock holder executes", "Correct, but lock TTLs must be chosen carefully"],
+          ]}
+        />
+      </LessonSection>
+
+      <LessonSection id="scope-ttl" title="Scope, TTL, and payload matching">
+        <P>
+          Keys are not globally magical. They need a <Term>scope</Term>, an
+          expiry, and a rule for mismatched payloads. Without those details, a
+          key from one user could collide with another user, storage would grow
+          forever, or a buggy client could accidentally reuse a key for a
+          different operation.
+        </P>
+        <UL>
+          <LI>
+            <Term>Scope:</Term> store keys under something like{" "}
+            <code>{"tenant_id + user_id + endpoint + key"}</code>. A key used for{" "}
+            <code>POST /orders</code> should not affect <code>POST /refunds</code>.
+          </LI>
+          <LI>
+            <Term>TTL:</Term> keep the record longer than all expected retries,
+            queue redeliveries, and client reconnect windows. Payments often use
+            at least 24 hours; business-critical workflows may keep keys for
+            days.
+          </LI>
+          <LI>
+            <Term>Payload hash:</Term> canonicalize the request body and store a
+            hash. If the same key arrives with a different hash, return{" "}
+            <code>409 Conflict</code> instead of guessing which operation the
+            client intended.
+          </LI>
+          <LI>
+            <Term>Failure semantics:</Term> decide whether to cache failures.
+            Validation errors can be replayed safely. Transient <code>500</code>{" "}
+            errors may be better marked failed and retried through a recovery path.
+          </LI>
+        </UL>
+        <Callout type="warning" title="Do not let the server silently generate the key">
+          If the server creates a new key for every HTTP request, retries still
+          look like new operations. The client, job producer, or upstream service
+          must generate and reuse the same key for the same logical action.
+        </Callout>
+      </LessonSection>
+
+      <LessonSection id="examples" title="Real-world examples and related patterns">
+        <P>
+          Idempotency keys appear anywhere at-least-once delivery meets side
+          effects. Stripe popularized the HTTP header for payments. Ecommerce
+          systems use keys to protect order creation. Email providers use message
+          IDs to avoid sending duplicates. Queue consumers use event IDs so a
+          replayed Kafka or outbox event updates the database once.
+        </P>
+        <CompareTable
+          headers={["Use case", "Key scope", "Stored result"]}
+          rows={[
+            ["Create order", "customer + cart + idempotency key", "order id and status"],
+            ["Charge payment", "merchant + payment key", "gateway charge id"],
+            ["Reserve booking", "user + itinerary + key", "reservation id or sold-out response"],
+            ["Consume event", "consumer name + event id", "processed marker and side effects"],
+          ]}
+        />
+        <Callout type="info" title="Where it fits">
+          Idempotency keys protect the boundaries of longer workflows. A{" "}
+          <XLink href="/learn/pattern-saga">saga</XLink> still needs each step
+          and each compensation to be safe to retry, and an{" "}
+          <XLink href="/learn/pattern-outbox-cdc">outbox/CDC</XLink> consumer
+          should treat every event ID as an idempotency key.
+        </Callout>
+      </LessonSection>
+
+      <KeyTakeaways
+        items={[
+          "Retries are necessary for reliability, but write retries can duplicate orders, payments, bookings, and messages unless the server recognizes the same logical operation.",
+          "The client supplies a unique idempotency key; the server atomically records the key, request hash, status, and final response for the first execution.",
+          "Retries with the same key and same payload replay the stored status and response instead of executing the side effect again.",
+          "Use Redis atomic commands or a database unique constraint to claim the key; handle concurrent in-flight duplicates with waiting, 202/409 responses, or a per-key lock.",
+          "Scope keys by caller and operation, keep them past the retry window with a TTL, and reject the same key with a different payload.",
+        ]}
+      />
+
+      <CheckYourself question="A payment succeeds, but the client times out before receiving the response. Why is retrying with the same idempotency key safe?">
+        The retry carries the same key, so the server looks up the completed
+        record and returns the stored payment response. It does not call the
+        payment gateway again. The customer sees the successful result, and the
+        card is charged once.
+      </CheckYourself>
+
+      <CheckYourself question="Why store a request hash with the key?">
+        It prevents accidental key reuse. If a client sends key{" "}
+        <code>{"K"}</code> for a <code>{"$50"}</code> payment and later sends the
+        same key for a <code>{"$70"}</code> payment, the server can detect the
+        different payload and return <code>409 Conflict</code> instead of
+        replaying the wrong result or executing a different operation.
+      </CheckYourself>
+
+      <CheckYourself question="Two identical requests with the same key reach two API servers at the same time. What must the storage layer provide?">
+        It must provide an atomic claim, such as a database unique constraint or
+        Redis <code>SET NX</code>. Only one request becomes the executor. The
+        other observes an in-progress or completed key and waits, retries later,
+        or replays the stored result.
+      </CheckYourself>
+    </Prose>
+  );
+}
