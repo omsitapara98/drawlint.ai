@@ -47,6 +47,7 @@ export default function DesignDetailClient({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const hasExplanation = !!hldExplanation && hldExplanation.trim().length > 0;
   const [explanationOpen, setExplanationOpen] = useState(true);
+  const [reviewOpen, setReviewOpen] = useState(true);
 
   // Memoized so its identity is stable across renders — FeedbackPanel clears the
   // fetched re-eval whenever the review prop identity changes, which would wipe the
@@ -177,11 +178,13 @@ export default function DesignDetailClient({
         <div className={hasExplanation ? "grid items-start gap-4 lg:grid-cols-2" : ""}>
           {/* Author's written explanation */}
           {hasExplanation && (
-            <div className="overflow-hidden rounded-xl border bg-card lg:sticky lg:top-4">
+            <div
+              className={`flex flex-col overflow-hidden rounded-xl border bg-card ${explanationOpen ? "lg:h-[78vh]" : ""}`}
+            >
               <button
                 type="button"
                 onClick={() => setExplanationOpen((v) => !v)}
-                className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/40"
+                className="flex w-full shrink-0 items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/40"
                 aria-expanded={explanationOpen}
               >
                 {explanationOpen ? (
@@ -195,7 +198,7 @@ export default function DesignDetailClient({
                 </span>
               </button>
               {explanationOpen && (
-                <div className="max-h-[68vh] overflow-auto border-t px-4 py-4">
+                <div className="min-h-0 max-h-[70vh] flex-1 overflow-auto border-t px-4 py-4 lg:max-h-none">
                   <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
                     {hldExplanation}
                   </p>
@@ -205,36 +208,52 @@ export default function DesignDetailClient({
           )}
 
           {/* Design Review */}
-          <div className="overflow-hidden rounded-xl border bg-card">
-            <div className="flex items-center gap-2 border-b px-4 py-3">
+          <div
+            className={`flex flex-col overflow-hidden rounded-xl border bg-card ${reviewOpen ? "lg:h-[78vh]" : ""}`}
+          >
+            <button
+              type="button"
+              onClick={() => setReviewOpen((v) => !v)}
+              className="flex w-full shrink-0 items-center gap-2 border-b px-4 py-3 text-left transition-colors hover:bg-muted/40"
+              aria-expanded={reviewOpen}
+            >
+              {reviewOpen ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-xs font-bold">
                 AI
               </div>
               <span className="text-sm font-semibold">Design Review</span>
-            </div>
-            {aiReview ? (
-              <FeedbackPanel
-                aiReview={aiReview}
-                aiStatus="complete"
-                designId={designId}
-                isAuthor={isAuthor}
-                layout="page"
-                defaultCollapsed
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center gap-3 p-8">
-                <p className="text-sm text-muted-foreground text-center">
-                  No review available yet.
-                </p>
-                {isAuthor && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs"
-                    onClick={() => router.push(`/canvas?edit=${designId}&topic=${topicSlug}`)}
-                  >
-                    Run AI Review
-                  </Button>
+            </button>
+            {reviewOpen && (
+              <div className="min-h-0 flex-1 overflow-auto">
+                {aiReview ? (
+                  <FeedbackPanel
+                    aiReview={aiReview}
+                    aiStatus="complete"
+                    designId={designId}
+                    isAuthor={isAuthor}
+                    layout="page"
+                    defaultCollapsed
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-3 p-8">
+                    <p className="text-sm text-muted-foreground text-center">
+                      No review available yet.
+                    </p>
+                    {isAuthor && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => router.push(`/canvas?edit=${designId}&topic=${topicSlug}`)}
+                      >
+                        Run AI Review
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             )}
