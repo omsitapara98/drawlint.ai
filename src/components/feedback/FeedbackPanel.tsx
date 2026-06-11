@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { AIReviewResponse, AnalysisStatus, FeedbackItem, ReviewHighlight, ReviewDimension, ReviewLevel, ReviewerProgress, ReviewerKey, ReviewerStatus } from "@/types/feedback";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import {
   Circle,
   MessageSquare,
   Send,
+  ArrowRight,
 } from "lucide-react";
 
 /* ── Response types ──────────────────────────────────────────── */
@@ -50,6 +51,10 @@ interface FeedbackPanelProps {
   isAuthor?: boolean;
   /** Pre-loaded responses from initial design fetch */
   initialResponses?: { section: string; issueIndex: number; userResponse: string; verdict: string; explanation: string }[];
+  /** "panel" (default) = side-panel with internal scroll; "page" = in-page flow, readable max-width */
+  layout?: "panel" | "page";
+  /** Start every collapsible section collapsed (lead reviewer, follow-ups, dimension cards) */
+  defaultCollapsed?: boolean;
 }
 
 const SEVERITY_STYLES: Record<string, string> = {
@@ -423,6 +428,8 @@ function AIReviewContent({
   designId,
   isAuthor,
   initialResponses,
+  layout = "panel",
+  defaultCollapsed = false,
 }: {
   review: AIReviewResponse | null;
   status: AnalysisStatus;
@@ -434,6 +441,8 @@ function AIReviewContent({
   designId?: string | null;
   isAuthor?: boolean;
   initialResponses?: { section: string; issueIndex: number; userResponse: string; verdict: string; explanation: string }[];
+  layout?: "panel" | "page";
+  defaultCollapsed?: boolean;
 }) {
   // Response state — initialize from pre-loaded data if available
   const [responses, setResponses] = useState<Map<string, StoredResponse>>(() => {
@@ -551,7 +560,9 @@ function AIReviewContent({
     partialCount: number;
   } | null>(null);
   const [reevaling, setReevaling] = useState(false);
-  const [allExpanded, setAllExpanded] = useState(true);
+  const [allExpanded, setAllExpanded] = useState(!defaultCollapsed);
+  const [leadOpen, setLeadOpen] = useState(!defaultCollapsed);
+  const [followupsOpen, setFollowupsOpen] = useState(!defaultCollapsed);
 
   // Clear stale reeval + responses whenever a genuinely new review object arrives.
   // Uses its own ref (not shared with response-clear) to avoid race conditions.
@@ -716,9 +727,51 @@ function AIReviewContent({
 
   const level = review.level ?? "deep";
 
-  return (
-    <ScrollArea className="h-full">
-      <div className="flex flex-col gap-3 p-4">
+  const verdictBanner =
+    layout === "page" && review.leadReviewer ? (
+      <Card className="border-violet-500/30 bg-violet-500/[0.03]">
+        <CardContent className="py-4">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Hire Signal
+            </span>
+            <Badge
+              className={`text-sm px-3 py-1 font-bold ${reeval ? "opacity-50 line-through" : ""} ${SIGNAL_STYLES[review.leadReviewer.signal] ?? "bg-gray-400 text-white"}`}
+            >
+              {SIGNAL_LABELS[review.leadReviewer.signal] ?? review.leadReviewer.signal}
+            </Badge>
+            {reeval && (
+              <>
+                <ArrowRight className="h-4 w-4 text-violet-500" />
+                <Badge
+                  className={`text-sm px-3 py-1 font-bold ${SIGNAL_STYLES[reeval.updatedSignal] ?? "bg-gray-400 text-white"}`}
+                >
+                  {SIGNAL_LABELS[reeval.updatedSignal] ?? reeval.updatedSignal}
+                </Badge>
+                <span className="text-[10px] font-medium text-violet-600 dark:text-violet-400">
+                  after responses ({reeval.resolvedCount} resolved)
+                </span>
+              </>
+            )}
+          </div>
+          {(reeval ? reeval.updatedSignalReason : review.leadReviewer.signalReason) && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {reeval ? reeval.updatedSignalReason : review.leadReviewer.signalReason}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    ) : null;
+
+  const body = (
+      <div
+        className={
+          layout === "page"
+            ? "mx-auto flex w-full max-w-4xl flex-col gap-3 p-4"
+            : "flex flex-col gap-3 p-4"
+        }
+      >
+        {verdictBanner}
         {/* Level + Summary Header */}
         <Card>
           <CardContent className="py-5">
@@ -763,12 +816,22 @@ function AIReviewContent({
         {/* Lead Reviewer Card */}
         {review.leadReviewer && (
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setLeadOpen((v) => !v)}
+              className="flex w-full items-center justify-between px-6 py-4 text-left"
+            >
+              <span className="text-sm font-semibold flex items-center gap-2">
                 🎯 Lead Reviewer
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </span>
+              {leadOpen ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
+            </button>
+            {leadOpen && (
+            <CardContent className="space-y-4 pt-0">
               {/* Hire Signal — original */}
               <div className="flex items-center gap-3">
                 <Badge className={`text-sm px-3 py-1 font-bold ${reeval ? "opacity-50 line-through" : ""} ${SIGNAL_STYLES[review.leadReviewer.signal] ?? "bg-gray-400 text-white"}`}>
@@ -861,6 +924,7 @@ function AIReviewContent({
                 </div>
               )}
             </CardContent>
+            )}
           </Card>
         )}
 
@@ -868,13 +932,26 @@ function AIReviewContent({
         {/* Follow-up Questions — respondable */}
         {review.followUpQuestions.length > 0 && (
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setFollowupsOpen((v) => !v)}
+              className="flex w-full items-center justify-between px-6 py-4 text-left"
+            >
+              <span className="text-sm font-semibold flex items-center gap-2">
                 <HelpCircle className="h-4 w-4" />
                 Follow-up Questions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                  {review.followUpQuestions.length}
+                </Badge>
+              </span>
+              {followupsOpen ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
+            </button>
+            {followupsOpen && (
+            <CardContent className="pt-0">
               <div className="space-y-2">
                 {review.followUpQuestions.map((q, i) => (
                   <IssueRow
@@ -890,11 +967,13 @@ function AIReviewContent({
                 ))}
               </div>
             </CardContent>
+            )}
           </Card>
         )}
       </div>
-    </ScrollArea>
   );
+
+  return layout === "page" ? body : <ScrollArea className="h-full">{body}</ScrollArea>;
 }
 /* ── Main FeedbackPanel ──────────────────────────────────────── */
 
@@ -908,6 +987,8 @@ export function FeedbackPanel({
   designId,
   isAuthor,
   initialResponses,
+  layout = "panel",
+  defaultCollapsed = false,
 }: FeedbackPanelProps) {
   const hasBYOKey = (() => {
     try {
@@ -939,6 +1020,8 @@ export function FeedbackPanel({
       designId={designId}
       isAuthor={isAuthor}
       initialResponses={initialResponses}
+      layout={layout}
+      defaultCollapsed={defaultCollapsed}
     />
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { LoadingSpinner } from "@/components/feedback/LoadingSpinner";
@@ -50,20 +50,26 @@ export default function DesignDetailClient({
     hasExplanation && hldExplanation!.trim().length <= 600,
   );
 
-  // FeedbackPanel expects an AIReviewResponse; SerializedReview is a superset.
-  const aiReview: AIReviewResponse | null = review
-    ? {
-        level: review.level,
-        summary: review.summary,
-        nfrReview: review.nfrReview,
-        entitiesReview: review.entitiesReview,
-        capacityReview: review.capacityReview,
-        apiReview: review.apiReview,
-        hldReview: review.hldReview,
-        leadReviewer: review.leadReviewer,
-        followUpQuestions: review.followUpQuestions,
-      }
-    : null;
+  // Memoized so its identity is stable across renders — FeedbackPanel clears the
+  // fetched re-eval whenever the review prop identity changes, which would wipe the
+  // Hire->Strong-Hire transition on every render if rebuilt inline.
+  const aiReview: AIReviewResponse | null = useMemo(
+    () =>
+      review
+        ? {
+            level: review.level,
+            summary: review.summary,
+            nfrReview: review.nfrReview,
+            entitiesReview: review.entitiesReview,
+            capacityReview: review.capacityReview,
+            apiReview: review.apiReview,
+            hldReview: review.hldReview,
+            leadReviewer: review.leadReviewer,
+            followUpQuestions: review.followUpQuestions,
+          }
+        : null,
+    [review],
+  );
 
   useEffect(() => {
     async function fetchElements() {
@@ -153,9 +159,9 @@ export default function DesignDetailClient({
         </div>
       )}
 
-      <div className="flex h-[calc(100vh-180px)] flex-col gap-4 lg:flex-row">
-        {/* Excalidraw Viewer */}
-        <div className="min-h-[55vh] flex-1 overflow-hidden rounded-xl border bg-card lg:min-h-0">
+      <div className="flex flex-col gap-4">
+        {/* Excalidraw Viewer — full width, large */}
+        <div className="h-[72vh] min-h-[420px] overflow-hidden rounded-xl border bg-card">
           {error ? (
             <div className="flex h-full items-center justify-center">
               <p className="text-sm text-destructive">{error}</p>
@@ -169,71 +175,71 @@ export default function DesignDetailClient({
           )}
         </div>
 
-        {/* Review Panel */}
-        <div className="flex w-full shrink-0 flex-col overflow-hidden rounded-xl border bg-card lg:w-[420px]">
+        {/* Author's written explanation */}
+        {hasExplanation && (
+          <div className="overflow-hidden rounded-xl border bg-card">
+            <button
+              type="button"
+              onClick={() => setExplanationOpen((v) => !v)}
+              className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/40"
+              aria-expanded={explanationOpen}
+            >
+              {explanationOpen ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
+              <span className="text-sm font-semibold">Author&apos;s explanation</span>
+              <span className="ml-auto text-[0.7rem] text-muted-foreground">
+                How the author described their design
+              </span>
+            </button>
+            {explanationOpen && (
+              <div className="border-t px-4 py-4">
+                <p className="mx-auto max-w-4xl whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+                  {hldExplanation}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Design Review — full width below the diagram */}
+        <div className="overflow-hidden rounded-xl border bg-card">
           <div className="flex items-center gap-2 border-b px-4 py-3">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-xs font-bold">
               AI
             </div>
             <span className="text-sm font-semibold">Design Review</span>
           </div>
-          <div className="min-h-0 flex-1 overflow-hidden">
-            {aiReview ? (
-              <FeedbackPanel
-                aiReview={aiReview}
-                aiStatus="complete"
-                designId={designId}
-                isAuthor={isAuthor}
-              />
-            ) : (
-              <div className="flex h-full flex-col items-center justify-center gap-3 p-8">
-                <p className="text-sm text-muted-foreground text-center">
-                  No review available yet.
-                </p>
-                {isAuthor && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs"
-                    onClick={() => router.push(`/canvas?edit=${designId}&topic=${topicSlug}`)}
-                  >
-                    Run AI Review
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Author's written explanation */}
-      {hasExplanation && (
-        <div className="mt-4 overflow-hidden rounded-xl border bg-card">
-          <button
-            type="button"
-            onClick={() => setExplanationOpen((v) => !v)}
-            className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/40"
-            aria-expanded={explanationOpen}
-          >
-            {explanationOpen ? (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            )}
-            <span className="text-sm font-semibold">Author&apos;s explanation</span>
-            <span className="ml-auto text-[0.7rem] text-muted-foreground">
-              How the author described their design
-            </span>
-          </button>
-          {explanationOpen && (
-            <div className="border-t px-4 py-4">
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-                {hldExplanation}
+          {aiReview ? (
+            <FeedbackPanel
+              aiReview={aiReview}
+              aiStatus="complete"
+              designId={designId}
+              isAuthor={isAuthor}
+              layout="page"
+              defaultCollapsed
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-3 p-8">
+              <p className="text-sm text-muted-foreground text-center">
+                No review available yet.
               </p>
+              {isAuthor && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => router.push(`/canvas?edit=${designId}&topic=${topicSlug}`)}
+                >
+                  Run AI Review
+                </Button>
+              )}
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
