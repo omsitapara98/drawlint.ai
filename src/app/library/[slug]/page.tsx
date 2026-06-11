@@ -119,8 +119,36 @@ export default async function TopicDesignsPage({ params }: PageProps) {
   const hasHints = topic.hints && topic.hints.length > 0;
   const hasProblemInfo = hasRequirements || hasScale || hasHints;
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://drawlint-ai.in";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `${topic.name} — System Design Examples`,
+    url: `${appUrl}/library/${slug}`,
+    description: topic.brief || topic.description || undefined,
+    isAccessibleForFree: true,
+    isPartOf: {
+      "@type": "WebSite",
+      name: "DrawLint.ai",
+      url: appUrl,
+    },
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: enriched.length,
+      itemListElement: enriched.map(({ design }, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: `${appUrl}/library/${slug}/${design._id.toString()}`,
+      })),
+    },
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Header />
 
       {/* Breadcrumb */}

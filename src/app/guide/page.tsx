@@ -539,7 +539,7 @@ export default function GuidePage() {
               View a completed system design with full AI review, responses, and re-evaluation.
             </p>
             <Link
-              href="/canvas?view=69e9f217a0b69e6c9446a7ea"
+              href="/library/multiplayer-online-game-matchmaking/69e9f217a0b69e6c9446a7ea"
               className="inline-flex items-center rounded-lg border border-violet-500/30 bg-violet-500/5 px-5 h-10 text-sm font-medium text-violet-400 transition-all hover:bg-violet-500/10 hover:border-violet-500/50"
             >
               View Example Design

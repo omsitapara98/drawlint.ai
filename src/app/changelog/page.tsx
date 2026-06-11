@@ -12,6 +12,11 @@ const CHANGELOG = [
     tag: "Update",
     items: [
       {
+        title: "Public Design Library",
+        description: "Every reviewed design is now public — no sign-in required to explore. Browse real system design solutions, open any submission to study the diagram, the author's written explanation, and the full AI Design Review side by side, including the hire → strong-hire signal re-evaluation. Sign in only when you want to submit your own. Canonical URLs, Open Graph metadata, and JSON-LD structured data make every design page discoverable in search.",
+        badge: "New" as const,
+      },
+      {
         title: "Daily Drills",
         description: "A new free, AI-generated quiz every day — 5 multiple-choice questions spanning all 27 system design patterns. Answer, learn from the per-question explanations, and build a daily streak. Daily and all-time leaderboards, with one scored attempt per day and unlimited practice rounds. No sign-in needed to play; sign in to save your score.",
         badge: "New" as const,
