@@ -561,8 +561,19 @@ function AIReviewContent({
   } | null>(null);
   const [reevaling, setReevaling] = useState(false);
   const [allExpanded, setAllExpanded] = useState(!defaultCollapsed);
+  const [summaryOpen, setSummaryOpen] = useState(!defaultCollapsed);
   const [leadOpen, setLeadOpen] = useState(!defaultCollapsed);
   const [followupsOpen, setFollowupsOpen] = useState(!defaultCollapsed);
+
+  const toggleAll = useCallback(() => {
+    setAllExpanded((prev) => {
+      const next = !prev;
+      setSummaryOpen(next);
+      setLeadOpen(next);
+      setFollowupsOpen(next);
+      return next;
+    });
+  }, []);
 
   // Clear stale reeval + responses whenever a genuinely new review object arrives.
   // Uses its own ref (not shared with response-clear) to avoid race conditions.
@@ -777,7 +788,16 @@ function AIReviewContent({
           <CardContent className="py-5">
             <div className="min-w-0">
               <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSummaryOpen((v) => !v)}
+                  className="flex items-center gap-2 text-left"
+                >
+                  {summaryOpen ? (
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
                   <Sparkles className="h-4 w-4 text-violet-500" />
                   <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     AI Review
@@ -785,16 +805,16 @@ function AIReviewContent({
                   <Badge className={`text-[10px] px-2 py-0 ${LEVEL_COLORS[level]}`}>
                     {LEVEL_LABELS[level]}
                   </Badge>
-                </div>
+                </button>
                 <button
-                  onClick={() => setAllExpanded((v) => !v)}
+                  onClick={toggleAll}
                   className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {allExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                   {allExpanded ? "Collapse All" : "Expand All"}
                 </button>
               </div>
-              <p className="text-sm text-foreground">{review.summary}</p>
+              {summaryOpen && <p className="text-sm text-foreground">{review.summary}</p>}
             </div>
           </CardContent>
         </Card>
