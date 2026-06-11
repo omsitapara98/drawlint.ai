@@ -184,7 +184,7 @@ export default function DesignDetailClient({
               <button
                 type="button"
                 onClick={() => setExplanationOpen((v) => !v)}
-                className="flex w-full shrink-0 items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/40"
+                className="flex h-14 w-full shrink-0 items-center gap-2 px-4 text-left transition-colors hover:bg-muted/40"
                 aria-expanded={explanationOpen}
               >
                 {explanationOpen ? (
@@ -214,7 +214,7 @@ export default function DesignDetailClient({
             <button
               type="button"
               onClick={() => setReviewOpen((v) => !v)}
-              className="flex w-full shrink-0 items-center gap-2 border-b px-4 py-3 text-left transition-colors hover:bg-muted/40"
+              className="flex h-14 w-full shrink-0 items-center gap-2 px-4 text-left transition-colors hover:bg-muted/40"
               aria-expanded={reviewOpen}
             >
               {reviewOpen ? (
@@ -228,7 +228,7 @@ export default function DesignDetailClient({
               <span className="text-sm font-semibold">Design Review</span>
             </button>
             {reviewOpen && (
-              <div className="min-h-0 flex-1 overflow-auto">
+              <div className="min-h-0 flex-1 overflow-auto border-t">
                 {aiReview ? (
                   <FeedbackPanel
                     aiReview={aiReview}
