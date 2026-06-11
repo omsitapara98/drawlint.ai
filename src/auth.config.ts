@@ -9,7 +9,9 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const pathname = nextUrl.pathname;
 
-      const protectedPrefixes = ["/canvas", "/library", "/challenge"];
+      // Note: /library is intentionally PUBLIC (browse designs + reviews without
+      // signing in). Only the canvas editor and challenge pages are gated.
+      const protectedPrefixes = ["/canvas", "/challenge"];
       const isProtected = protectedPrefixes.some(
         (p) => pathname === p || pathname.startsWith(p + "/"),
       );

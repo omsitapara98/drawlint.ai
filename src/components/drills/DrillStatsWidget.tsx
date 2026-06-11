@@ -17,7 +17,7 @@ interface DrillStats {
 const cardCls =
   "rounded-xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 shadow-md";
 
-export function DrillStatsWidget() {
+export function DrillStatsWidget({ refreshKey = 0 }: { refreshKey?: number } = {}) {
   const [stats, setStats] = useState<DrillStats | null>(null);
   const [show, setShow] = useState(false);
 
@@ -42,7 +42,7 @@ export function DrillStatsWidget() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   if (!show || !stats) return null;
 

@@ -7,11 +7,6 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ designId: string }> },
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { designId } = await params;
 
   let design;
@@ -26,8 +21,11 @@ export async function GET(
   }
 
   // Only drafts are owner-only; reviewed/submitted designs are publicly readable
-  if (design.status === "draft" && design.userId.toString() !== session.user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (design.status === "draft") {
+    const session = await auth();
+    if (!session?.user?.id || design.userId.toString() !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   try {

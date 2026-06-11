@@ -151,7 +151,7 @@ function Dropdown({
 
 /* ── Main grid ──────────────────────────────────────────────── */
 
-export function FilterableDesignGrid({ designs }: { designs: EnrichedDesign[] }) {
+export function FilterableDesignGrid({ designs, topicSlug }: { designs: EnrichedDesign[]; topicSlug: string }) {
   const [activeLevel, setActiveLevel] = useState("all");
   const [activeSignal, setActiveSignal] = useState("all");
   const [activeProvider, setActiveProvider] = useState("all");
@@ -221,7 +221,7 @@ export function FilterableDesignGrid({ designs }: { designs: EnrichedDesign[] })
           {results.map((design) => (
             <motion.div key={design.designId} variants={item}>
               <Link
-                href={`/canvas?view=${design.designId}`}
+                href={`/library/${topicSlug}/${design.designId}`}
                 className="group block rounded-xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 shadow-md shadow-black/[0.04] dark:shadow-none p-5 text-card-foreground hover:border-primary/30 hover:shadow-lg hover:shadow-violet-500/[0.08] dark:hover:shadow-[0_0_20px_oklch(0.72_0.25_285_/_15%)] hover:-translate-y-0.5 transition-all duration-300"
               >
                 <div className="flex items-center gap-3">

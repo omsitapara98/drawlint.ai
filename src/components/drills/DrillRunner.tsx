@@ -68,7 +68,7 @@ interface SubmitResponse {
 const cardCls =
   "rounded-xl border border-border dark:border-white/[0.08] bg-card dark:bg-card/60 shadow-md";
 
-export function DrillRunner() {
+export function DrillRunner({ onComplete }: { onComplete?: () => void } = {}) {
   const [data, setData] = useState<TodayPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -131,6 +131,7 @@ export function DrillRunner() {
       });
       const payload = (await res.json()) as SubmitResponse;
       setResult(payload);
+      onComplete?.();
     } catch {
       setError("Failed to submit your answers. Please try again.");
     } finally {

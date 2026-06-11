@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Loader2, Trophy, Flame } from "lucide-react";
@@ -66,16 +66,21 @@ function Avatar({ url, name }: { url: string | null; name: string }) {
   );
 }
 
-export function DrillLeaderboard() {
+export function DrillLeaderboard({ refreshKey = 0 }: { refreshKey?: number } = {}) {
   const [scope, setScope] = useState<Scope>("daily");
   const [daily, setDaily] = useState<DailyEntry[] | null>(null);
   const [allTime, setAllTime] = useState<AllTimeEntry[] | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Track the refreshKey each scope's cache was loaded at, so a bump forces a refetch.
+  const loadedDailyKey = useRef<number | null>(null);
+  const loadedAllTimeKey = useRef<number | null>(null);
+
   useEffect(() => {
     let cancelled = false;
     const cached = scope === "daily" ? daily : allTime;
-    if (cached) return;
+    const loadedKey = scope === "daily" ? loadedDailyKey.current : loadedAllTimeKey.current;
+    if (cached !== null && loadedKey === refreshKey) return;
 
     async function load() {
       setLoading(true);
@@ -86,13 +91,20 @@ export function DrillLeaderboard() {
         if (cancelled) return;
         if (scope === "daily") {
           setDaily((payload.entries ?? []) as DailyEntry[]);
+          loadedDailyKey.current = refreshKey;
         } else {
           setAllTime((payload.entries ?? []) as AllTimeEntry[]);
+          loadedAllTimeKey.current = refreshKey;
         }
       } catch {
         if (!cancelled) {
-          if (scope === "daily") setDaily([]);
-          else setAllTime([]);
+          if (scope === "daily") {
+            setDaily([]);
+            loadedDailyKey.current = refreshKey;
+          } else {
+            setAllTime([]);
+            loadedAllTimeKey.current = refreshKey;
+          }
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -103,7 +115,7 @@ export function DrillLeaderboard() {
     return () => {
       cancelled = true;
     };
-  }, [scope, daily, allTime]);
+  }, [scope, daily, allTime, refreshKey]);
 
   const entries = scope === "daily" ? daily : allTime;
   const isEmpty = entries !== null && entries.length === 0;

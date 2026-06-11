@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/layout";
 import { ParticleBackground } from "@/components/ui/particle-background";
-import { DrillRunner, DrillLeaderboard, DrillStatsWidget } from "@/components/drills";
+import { DrillsBoard } from "@/components/drills";
 import { Target } from "lucide-react";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://drawlint-ai.in";
@@ -78,15 +78,7 @@ export default function DrillsPage() {
             </p>
           </div>
 
-          <div className="mb-8">
-            <DrillStatsWidget />
-          </div>
-
-          <div className="mb-12">
-            <DrillRunner />
-          </div>
-
-          <DrillLeaderboard />
+          <DrillsBoard />
         </main>
       </div>
     </>
